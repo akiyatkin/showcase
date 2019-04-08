@@ -1,4 +1,10 @@
 {
 	"conf":"akiyatkin\\showcase\\Showcase",
-	"require":"infra.php"
+	"require":"infra.php",
+	"update":"update.php",
+	"catalogsrc":"~catalog/tables/",
+	"pricessrc":"~.prices/",
+	"title":"Каталог",
+	"listreverse":false,
+	"ignorelistname":false
 }
