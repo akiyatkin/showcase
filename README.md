@@ -1,26 +1,24 @@
 
+showcase_prices 		*price_id, [name], producer_id, time, order, count, duration
+showcase_catalog 		*catalog_id, [name], producer_id, time, order, count, duration
+===
+showcase_groups			*group_id, group, [group_nick], parent_id
+showcase_producers 		*producer_id, producer, [producer_nick]
+showcase_articles 		*article_id, article, [article_nick]
 
-!showcase_groups		*group_id, group, [group_nick], parent_id
-!showcase_props 		*prop_id, prop, [prop_nick], type (1 value, 2 number, 3 text) - number и text считаются только те свойство которые указаны в конфиге
-!showcase_values 		*value_id, value, [value_nick] - value_nick создаётся для тех свойств которые есть в фильтрах конфига
-!showcase_articles 		*article_id, article, [article_nick]
-!showcase_producers 	*producer_id, producer, [producer_nick]
-!showcase_items 		*item_id, [item_nick]
 
+showcase_props 			*prop_id, prop, [prop_nick], type (1 value, 2 number, 3 text) - number и text считаются только те свойство которые указаны в конфиге
+showcase_values 		*value_id, value, [value_nick] - value_nick создаётся для тех свойств которые есть в фильтрах конфига
 ====
-!showcase_prices 		*price_id, [name], producer_id, time, order, count, duration
-!showcase_catalog 		*catalog_id, [name], producer_id, time, order, count, duration
-====
 
-!showcase_models		*model_id, catalog_id, [producer_id, article_id], time, group_id
-!showcase_mvalues		[model_id, prop_id, value_id], price_id, order
-!showcase_mnumbers		[model_id, prop_id, number], price_id, order
-!showcase_mtexts		[model_id, prop_id], text, price_id, order
+showcase_items 			(model_id, item_num), [item_nick]
+showcase_models			*model_id, catalog_id, [producer_id, article_id], group_id, time (1 актив, 2 удалена - для сохранения ид)
 
-!showcase_mitems		*mitem_id, [model_id, item_id], time - time после изменений удалять старые
-!showcase_ivalues		[mitem_id, prop_id, value_id], price_id, order
-!showcase_inumbers		[mitem_id, prop_id, number], price_id, order
-!showcase_itexts		[mitem_id, prop_id], text, price_id, order
+showcase_mvalues		[model_id, item_num, prop_id, value_id], price_id, order
+showcase_mnumbers		[model_id, item_num, prop_id, number], price_id, order
+showcase_mtexts			[model_id, item_num, prop_id], text, price_id, order
+
+
 
 Если удалили колонку и у айтема пропал props - удаляются все пропсы модели, кроме тех у которых price_id
 
@@ -98,6 +96,8 @@ Showcase::parseNew();
 # justonevalue
 numbers и values по умолчанию сплитятся по запятым. Это поведение можно для какого-то свойства отменить указав его в свойстве justonevalue.
 
+# specprice
+Свойство specprice у позиции в каталоге делает цену каталога приоритетней цены прайса
 
 # Пример опций ~showcase.json
 ```json

@@ -7,21 +7,18 @@
 {PRICES:}
 	{:menu}
 	<h1>Прайсы</h1>
-	{list::item}
+	{list::itemprice}
 	{:foot}
 {CATALOG:}
 	{:menu}
 	<h1>Данные</h1>
-	{list::item}
+	{list::itemcatalog}
 	{:foot}
-{item:}
-	{:itemrow}
-	<span class="btn btn-primary" onclick="Action('load','{name}','{conf.catalogsrc}{file}')">Внести</span>
-	{isdata?:actdel}
-	<!--<span class="btn btn-info" onclick="Action('info','{name}','{conf.catalogsrc}{file}')">Подробней</span>-->
-	{:/itemrow}
-{actdel:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.catalogsrc}{file}')">Очистить</span>
-{itemrow:}
+{time:}<b title="{~date(:H:i,.)}">{~date(:d.m,.)}</b>
+{size:}<b title="Примерно {durationrate} Кб в секунду = {~multi(.,durationfactor)} сек">{.}</b> Кб, 
+{duration:}Обработка <b>{.}</b> сек,
+{icount:}Принято <b>{icount}</b> {~words(icount,:позиций,:позиции,:позиций)}.<br>
+{itemprice:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">
 		<div class="p-2" style="width:300px">
 			<big>{producer|:Общий}</big><br>
@@ -29,24 +26,47 @@
 		</div>
 		<div class="p-2 flex-grow-1">
 			{isdata?:icount}
-			{count?:count}<br>
+			{count?:price-count}<br>
 			{duration:duration} {time:time}<br>
-			{isopt?:Есть опции}
+			{isopt?:Есть опции?:Нет опций}
 		</div>
 		<div class="p-2" style="width:300px">
-			{/itemrow:}
+			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.catalogsrc}{file}')">Внести</span>
+			{isdata?:actdel}
 		</div>
 		
 	</div>
-	{time:}<b title="{~date(:H:i,.)}">{~date(:d.m,.)}</b>
-	{size:}<b title="Примерно {durationrate} Кб в секунду = {~multi(.,durationfactor)} сек">{.}</b> Кб, 
-	{duration:}Обработка <b>{.}</b> сек,
-	{icount:}Принято <b>{icount}</b> {~words(icount,:позиций,:позиции,:позиций)}.<br>
-	{count:}В документе <b>{count}</b> {~words(count,:позиций,:позиции,:позиций)}.
+	{price-count:}В документе <b>{count}</b> {~words(count,:строка,:строки,:строк)} с ключём прайса <b>{priceprop}</b>.
+{itemcatalog:}
+	<div class="d-flex table {mtime>time?:bg-warning} rounded">
+		<div class="p-2" style="width:300px">
+			<big>{producer|:Общий}</big><br>
+			<i>{file|:Нет файла}</i><br>{size:size} {mtime:time}
+		</div>
+		<div class="p-2 flex-grow-1">
+			{isdata?:icount}
+			{count?:catalog-count}<br>
+			{duration:duration} {time:time}<br>
+			{isopt?:Есть опции?:Нет опций}
+		</div>
+		<div class="p-2" style="width:300px">
+			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.catalogsrc}{file}')">Внести</span>
+			{isdata?:actdel}
+		</div>
+		
+	</div>
+	{catalog-count:}В документе <b>{count}</b> {~words(count,:строка,:строки,:строк)} с Артикулом.
+{actdel:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.catalogsrc}{file}')">Очистить</span>
+	
 {foot:}
 	<hr>
-	<div class="text-right">
-		<span class="btn btn-danger" onclick="Action('clearAll')">Очистить всё</span>
+	<div class="d-flex justify-content-between">
+		<div>
+			<span class="btn btn-info" onclick="Action('addFiles')">Связать с файлами</span>
+		</div>
+		<div>
+			<span class="btn btn-danger" onclick="Action('clearAll')">Очистить все данные и прайсы</span>
+		</div>
 	</div>
 	<hr>
 	{~print(options)}

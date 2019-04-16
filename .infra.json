@@ -2,6 +2,8 @@
 	"conf":"akiyatkin\\showcase\\Showcase",
 	"require":"infra.php",
 	"update":"update.php",
+	"dir":"~catalog/",
+	"groupimages":"~catalog/images/",
 	"catalogsrc":"~catalog/tables/",
 	"pricessrc":"~.prices/",
 	"title":"Каталог",
