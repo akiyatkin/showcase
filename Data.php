@@ -583,12 +583,16 @@ class Data {
 	}
 	public static function getModels() {
 		
-		$list = Data::all('SELECT p.producer, g.group, a.article, count(*) as `count`, c.name as catalog from showcase_models m
+		$list = Data::all('SELECT p.producer, g.group, a.article, count(*) as `count`, c.name  as catalog, n.number as Цена from showcase_models m
 			INNER JOIN showcase_producers p on p.producer_id = m.producer_id
 			INNER JOIN showcase_groups g on g.group_id = m.group_id
+			LEFT JOIN showcase_props ps on ps.prop_nick = "Цена"
+			LEFT JOIN showcase_mnumbers n on (n.model_id = m.model_id and ps.prop_id = n.prop_id)
+			
+			LEFT JOIN showcase_items i on i.model_id = m.model_id
 			INNER JOIN showcase_articles a on a.article_id = m.article_id
 			INNER JOIN showcase_catalog c on c.catalog_id = m.catalog_id
-			GROUP BY producer, article
+			GROUP BY m.model_id
 			order by m.model_id');
 		return $list;
 	}

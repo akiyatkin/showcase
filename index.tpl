@@ -14,7 +14,11 @@
 	{:menu}
 	<h1>Модели</h1>
 	{list::model}
-	{model:}<span title="Позиций {count}">{producer} {article}</span> <i>{group}</i> <small>{catalog}.xlsx</small><br>
+	{model:}
+		<div class="mb-2">
+			<span title="Позиций {count}">{producer} {article}</span><br><small>{Цена?:cost} <i>{group}</i> {catalog}.xlsx {count}</small>
+		</div>
+	{cost:}{~cost(Цена)} руб.
 {PRODUCERS:}
 	{:menu}
 	<h1>Производители</h1>
