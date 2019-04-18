@@ -10,11 +10,7 @@ use akiyatkin\showcase\Data;
 
 class Showcase {
 	public static $conf;
-	public static function getGroups() {
-		return Data::all('SELECT group_nick, group, count(*) as count FROM showcase_groups g
-			RIGHT JOIN showcase_models m ON g.group_id = m.group_id
-			GROUP BY group_nick');
-	}
+	
 	public static function getModel($producer, $article) {
 		$data = Data::fetch('SELECT m.model_id, a.article, g.group, p.producer
 			FROM showcase_models m, showcase_articles a, showcase_producers p, showcase_groups g

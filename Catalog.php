@@ -8,7 +8,12 @@ use infrajs\excel\Xlsx;
 use infrajs\db\Db;
 use akiyatkin\showcase\Data;
 use akiyatkin\showcase\Showcase;
+use infrajs\event\Event;
 
+
+Event::$classes['Showcase-catalog'] = function (&$obj) {
+	return $obj['pos']['producer'].' '.$obj['pos']['article'].' '.$obj['name'];
+};
 class Catalog {
 	
 	public static function getList() {
@@ -24,10 +29,29 @@ class Catalog {
 
 		return $options;
 	}
-	
+	public static function actionLoadAll() {
+		$options = Catalog::getList();
+		$res = [];
+		foreach ($options as $name => $row) {
+			if (empty($row['isfile'])) {
+				if (!empty($row['icount'])) {
+					$src = Showcase::$conf['catalogsrc'].$row['file'];
+					$res['Данные - удаляем '.$name] = Catalog::actionRemove($name, $src);
+					
+				}
+			} else {
+				if (!isset($row['time']) || $row['time'] < $row['mtime']) {
+					$src = Showcase::$conf['catalogsrc'].$row['file'];
+					$res['Данные - вносим '.$name] = Catalog::actionLoad($name, $src);
+				}
+			}
+		}
+		return $res;
+	}
 	public static function getOptions($filename = false) {//3 пересечения Опциии, Файлы, БазаДанных
 		$list = Data::getOptions('catalog');
 		$filelist = Data::getFileList(Showcase::$conf['catalogsrc']);
+		
 		foreach ($filelist as $name => $val) { // По файлам
 			if (!isset($list[$name])) $list[$name] = array();
 			$list[$name] += $filelist[$name];
@@ -129,7 +153,8 @@ class Catalog {
 		$ans = array();
 		$ans['Принято моделей'] = 0;
 		$ans['Принято позиций'] = 0;
-		Xlsx::runPoss( $data, function (&$pos) use (&$ans, &$filters, &$devcolumns, &$props, $catalog_id, $order, $time, &$count) {
+		$prop_id = Data::initProp('Иллюстрации','value'); //Для событий в цикле
+		Xlsx::runPoss( $data, function (&$pos) use ($name, &$ans, &$filters, &$devcolumns, &$props, $catalog_id, $order, $time, &$count) {
 			$count++;
 			if (isset($pos['items'])) $count += sizeof($pos['items']); //Считаем с позициями. В items одного items нет - он уже в описании модели.
 			$article_id = Data::initArticle($pos['Артикул']);
@@ -140,7 +165,7 @@ class Catalog {
 			$group_id = Data::col('SELECT group_id FROM showcase_groups WHERE group_nick = ?',[$group_nick]);
 
 			
-			$model_id = Catalog::initModel($producer_id, $article_id, $catalog_id, $order, $time, $group_id); //У существующей модели указывается time
+			$model_id = Catalog::initModel($name, $producer_id, $article_id, $catalog_id, $order, $time, $group_id); //У существующей модели указывается time
 
 			if (!$model_id) return; //Каталог не может управлять данной моделью, так как есть более приоритетный источник
 
@@ -154,10 +179,15 @@ class Catalog {
 				}
 				array_unshift($pos['items'], $item);
 			}
-
 			$r = Catalog::writeProps($model_id, $pos, 0);
-			if ($r) $ans['Принято моделей']++;
+			$obj = [
+				'model_id' => $model_id, 
+				'pos' => &$pos,
+				'name' => $name
+			];
+			Event::fire('Showcase-catalog.onload', $obj); //Срабатывает только для моделей
 
+			if ($r) $ans['Принято моделей']++;
 			if (isset($pos['items'])) {
 				$item_num = 0;
 				foreach ($pos['items'] as $item) {
@@ -166,6 +196,7 @@ class Catalog {
 					$r = Catalog::writeProps($model_id, $item, $item_num);
 					if ($r) $ans['Принято позиций']++;
 				}
+				
 				$ans['Принято позиций']--;
 			}
 		});
@@ -175,12 +206,13 @@ class Catalog {
 		$db->commit();
 		return $ans;
 	}
-	public static function writeProps($model_id, $data, $item_num = 0) {
-		if (empty($data['more'])) return false;
-		$options = Load::loadJSON('~showcase.json');
+	public static function writeProps($model_id, $item, $item_num = 0) {
+		if (empty($item['more'])) return false;
+		$options = Data::loadShowcaseConfig();
 		$order = 0;
 		$r = false;
-		foreach ($data['more'] as $prop => $val) {
+
+		foreach ($item['more'] as $prop => $val) {
 			$type = Data::checkType($prop);
 			$prop_id = Data::initProp($prop, $type);
 			
@@ -190,6 +222,7 @@ class Catalog {
 				Data::lastId('INSERT INTO `showcase_mtexts`(model_id, item_num, `prop_id`,`text`,`order`) VALUES(?,?,?,?,?)',
 					[$model_id, $item_num, $prop_id, $val, $order]
 				);
+				
 			} else {
 				$strid = ($type == 'number')? 'number' : 'value_id';
 				$ar = (in_array($prop, $options['justonevalue']))? [$val] : explode(',', $val);
@@ -207,6 +240,7 @@ class Catalog {
 					);
 				}	
 			}
+
 		}
 		return $r;
 	}
@@ -220,7 +254,7 @@ class Catalog {
 	public static function initItem($model_id, $item_num, string $value) {
 		$nick = Path::encode($value);
 		Data::exec(
-			'INSERT INTO showcase_items (model_id, item_num, item_nick) VALUES(?,?,?)',
+			'	INSERT INTO showcase_items (model_id, item_num, item_nick) VALUES(?,?,?)',
 			[$model_id, $item_num, $nick]
 		);	
 	}
@@ -249,9 +283,11 @@ class Catalog {
 		Data::exec('DELETE FROM showcase_mtexts WHERE model_id = ?', [$model_id]);
 		Data::exec('DELETE FROM showcase_items WHERE model_id = ?', [$model_id]);
 	}
-	public static function initModel($producer_id, $article_id, $catalog_id, $order, $time, $group_id) {
+	public static function initModel($name, $producer_id, $article_id, $catalog_id, $order, $time, $group_id) {
+		//$name только для кэша, чтобы модели-дубли заменяли друг друга.
 		
-		return Once::func( function ($producer_id, $article_id) use ($catalog_id, $order, $time, $group_id) {
+		$model_id = Once::func( function ($name, $producer_id, $article_id) use ($catalog_id, $order, $time, $group_id) {
+		
 			$row = Data::fetch('SELECT sm.model_id, sm.catalog_id, sc.order
 				FROM showcase_models sm, showcase_catalog sc 
 				WHERE sc.catalog_id = sm.catalog_id And sm.producer_id = ? AND sm.article_id = ?', [$producer_id, $article_id]);
@@ -264,11 +300,15 @@ class Catalog {
 				Data::exec('UPDATE showcase_models SET time = from_unixtime(?), catalog_id = ? WHERE model_id = ?',[$time, $catalog_id, $model_id]);
 				return $model_id;
 			}
-			return Data::lastId(
-				'INSERT INTO showcase_models (producer_id, article_id, catalog_id, time, group_id) VALUES(?,?,?,from_unixtime(?),?)',
+			$model_id = Data::lastId(
+				'INSERT INTO showcase_models (producer_id, article_id, catalog_id, `time`, group_id) VALUES(?,?,?,from_unixtime(?),?)',
 				[$producer_id, $article_id, $catalog_id, $time, $group_id]
-			);	
-		}, [$producer_id, $article_id]);
+			);
+			
+			return $model_id;
+		}, [$name, $producer_id, $article_id]);
+		
+		return $model_id;
 	}
 	
 	public static function loadMeta($name, $producer, $order) {

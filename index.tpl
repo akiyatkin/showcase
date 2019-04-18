@@ -1,9 +1,33 @@
 {menu:}
-	<a href="/-showcase/catalog">Данные</a> | <a href="/-showcase/prices">Прайсы</a>
+	{(:/-showcase/catalog):link}Данные{:/link} |
+	{(:/-showcase/prices):link}Прайсы{:/link} |
+	{(:/-showcase/groups):link}Группы{:/link} |
+	{(:/-showcase/producers):link}Производители{:/link} |
+	{(:/-showcase/models):link}Модели{:/link} 
 	{res:res}
+	{link:}<a class="{location.pathname=.?:font-weight-bold}" href="{.}">{/link:}</a>
 {root:}
 	{:menu}
+	<p>Всего в каталоге <b>{count} {~words(count,:модель,:модели,:моделей)}</b>.
 {res:}<div class="mt-2 alert alert-success">{~print(.)}</div>
+{MODELS:}
+	{:menu}
+	<h1>Модели</h1>
+	{list::model}
+	{model:}<span title="Позиций {count}">{producer} {article}</span> <i>{group}</i> <small>{catalog}.xlsx</small><br>
+{PRODUCERS:}
+	{:menu}
+	<h1>Производители</h1>
+	{list::producer}
+	{producer:}{producer} <small><b>{count}</b> {catalog}.xlsx</small><br>
+{GROUPS:}
+	{:menu}
+	<h1>Группы</h1>
+	{list::groups}
+	<br><br><br><br>
+	{groups:}
+		{group} <small><b>{count}</b> {catalog}.xlsx</small>
+		<div class="ml-4">{childs::groups}</div>
 {PRICES:}
 	{:menu}
 	<h1>Прайсы</h1>
@@ -21,21 +45,28 @@
 {itemprice:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">
 		<div class="p-2" style="width:300px">
-			<big>{producer|:Общий}</big><br>
+			<big>{producer|:com}</big><br>
 			<i>{file|:Нет файла}</i><br>{size:size} {mtime:time}
 		</div>
 		<div class="p-2 flex-grow-1">
 			{isdata?:icount}
 			{count?:price-count}<br>
 			{duration:duration} {time:time}<br>
-			{isopt?:Есть опции?:Нет опций}
+			{isopt?:showopt?:Нет опций}
 		</div>
 		<div class="p-2" style="width:300px">
-			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.catalogsrc}{file}')">Внести</span>
+			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.pricessrc}{file}')">Внести</span>
 			{isdata?:actdel}
 		</div>
 		
 	</div>
+	{showopt:}
+	<span class="a" onclick="$(this).next().slideToggle()">Есть опции</span>
+	<div style="display:none">
+	<b>Синонимы</b> {~print(synonyms)}
+	<b>Параметры</b> {~print(props)}
+	</div>
+	{com:}<b class="text-danger">Общий</b>
 	{price-count:}В документе <b>{count}</b> {~words(count,:строка,:строки,:строк)} с ключём прайса <b>{priceprop}</b>.
 {itemcatalog:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">
@@ -62,7 +93,9 @@
 	<hr>
 	<div class="d-flex justify-content-between">
 		<div>
-			<span class="btn btn-info" onclick="Action('addFiles')">Связать с файлами</span>
+			<span class="btn btn-primary" onclick="Action('loadAll')">Внести все новые данные и прайсы</span>
+			<!--<span class="btn btn-info" onclick="Action('addFiles')">Связать с файлами</span>-->
+			
 		</div>
 		<div>
 			<span class="btn btn-danger" onclick="Action('clearAll')">Очистить все данные и прайсы</span>

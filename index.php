@@ -11,7 +11,9 @@ ob_start();
 date_default_timezone_set("Europe/Samara");
 
 echo Rest::get( function () {
-	return Rest::parse('-showcase/index.tpl');
+	$ans = [];
+	$ans['count'] = Data::col('SELECT count(*) as `count` from showcase_models');
+	return Rest::parse('-showcase/index.tpl', $ans);
 }, 'catalog', function () {
 	$ans = array();
 
@@ -24,9 +26,22 @@ echo Rest::get( function () {
 
 	Catalog::init();
 	if ($action == 'clearAll') $ans['res'] = Data::actionClearAll();
-	if ($action == 'load') $ans['res'] = Catalog::actionLoad($name, $src);
+	if ($action == 'load') {
+		$opt = Catalog::getOptions($name);
+		$ans['res'] = [];
+		$ans['res']['Данные'] = Catalog::actionLoad($name, $src);
+		$ans['res']['Файлы'] = Data::actionAddFiles($opt['producer']);
+	}
 	if ($action == 'remove') $ans['res'] = Catalog::actionRemove($name, $src);
 	if ($action == 'addFiles') $ans['res'] = Data::actionAddFiles();
+	if ($action == 'loadAll') {
+		$ans['res'] = [];
+		Prices::init();
+		$ans['res']['Данные'] = Catalog::actionLoadAll();
+		$ans['res']['Прайсы'] = Prices::actionLoadAll();
+		$ans['res']['Файлы'] = Data::actionAddFiles();
+
+	}
 	
 
 	$list = Catalog::getList();
@@ -52,9 +67,14 @@ echo Rest::get( function () {
 	if ($action == 'addFiles') $ans['res'] = Data::actionAddFiles();
 	if ($action == 'load') $ans['res'] = Prices::actionLoad($name, $src);
 	if ($action == 'remove') $ans['res'] = Prices::actionRemove($name, $src);
-	
+	if ($action == 'loadAll') {
+		Catalog::init();
+		$ans['res'] = [];
+		$ans['res']['Данные'] = Catalog::actionLoadAll();
+		$ans['res']['Прайсы'] = Prices::actionLoadAll();
+		$ans['res']['Файлы'] = Data::actionAddFiles();
+	}
 	$list = Prices::getList();
-	
 	$ans['list'] = $list;
 	$ans['durationrate'] = 100; //килобайт в секунду
 	$ans['durationfactor'] = round(1/$ans['durationrate'],4); //секунд на килобайт*/
@@ -66,8 +86,16 @@ echo Rest::get( function () {
 	return Ans::ret($ans);
 }, 'groups', function() {
 	$ans = array();
-	$ans['list'] = Showcase::getGroups();
-	return Ans::ret($ans);
+	$ans['list'] = Data::getGroups();
+	return Rest::parse('-showcase/index.tpl', $ans, 'GROUPS');
+}, 'producers', function() {
+	$ans = array();
+	$ans['list'] = Data::getProducers();
+	return Rest::parse('-showcase/index.tpl', $ans, 'PRODUCERS');
+}, 'models', function() {
+	$ans = array();
+	$ans['list'] = Data::getModels();
+	return Rest::parse('-showcase/index.tpl', $ans, 'MODELS');
 }, 'pos', [
 	function (){
 		return 'producer/article';
