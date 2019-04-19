@@ -80,10 +80,6 @@ echo Rest::get( function () {
 	$ans['durationfactor'] = round(1/$ans['durationrate'],4); //секунд на килобайт*/
 	
 	return Rest::parse('-showcase/index.tpl', $ans, 'PRICES');
-}, 'search', function (){
-	$ans = array();
-	$ans['list'] = Showcase::search();
-	return Ans::ret($ans);
 }, 'groups', function() {
 	$ans = array();
 	$ans['list'] = Data::getGroups();
@@ -96,6 +92,10 @@ echo Rest::get( function () {
 	$ans = array();
 	$ans['list'] = Data::getModels();
 	return Rest::parse('-showcase/index.tpl', $ans, 'MODELS');
+}, 'search', function (){
+	$ans = array();
+	$ans['list'] = Showcase::search();
+	return Ans::ret($ans);
 }, 'pos', [
 	function (){
 		return 'producer/article';

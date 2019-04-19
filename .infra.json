@@ -2,11 +2,16 @@
 	"conf":"akiyatkin\\showcase\\Showcase",
 	"require":"infra.php",
 	"update":"update.php",
-	"dir":"~catalog/",
-	"groupimages":"~catalog/images/",
 	"catalogsrc":"~catalog/tables/",
 	"pricessrc":"~.prices/",
 	"title":"Каталог",
+	"dir":"~catalog/",
+	"grouparticles":"~catalog/articles/",
+	"groupimages":"~catalog/images/",
+	"columns":[],
+
+	
 	"listreverse":false,
 	"ignorelistname":false
+	
 }

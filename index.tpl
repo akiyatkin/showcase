@@ -3,7 +3,8 @@
 	{(:/-showcase/prices):link}Прайсы{:/link} |
 	{(:/-showcase/groups):link}Группы{:/link} |
 	{(:/-showcase/producers):link}Производители{:/link} |
-	{(:/-showcase/models):link}Модели{:/link} 
+	{(:/-showcase/models):link}Модели{:/link}  |
+	{(:/-showcase/api):link}API{:/link}
 	{res:res}
 	{link:}<a class="{location.pathname=.?:font-weight-bold}" href="{.}">{/link:}</a>
 {root:}
@@ -15,9 +16,11 @@
 	<h1>Модели</h1>
 	{list::model}
 	{model:}
-		<div class="mb-2">
-			<span title="Позиций {count}">{producer} {article}</span><br><small>{Цена?:cost} <i>{group}</i> {catalog}.xlsx {count}</small>
+		<div class="mb-2" style="clear:both">
+			<span title="Позиций {count}">{producer_nick} {article_nick}</span>{img?:pic}
+			<div><small>{Цена?:cost} <i>{group}</i> {catalog}.xlsx</small></div>
 		</div>
+	{pic:} <small class="a" onclick="$(this).addClass('float-right').removeClass('a').html('<img src=\'/-imager/?src={img}&w=100\'>&nbsp;')">image</small>
 	{cost:}{~cost(Цена)} руб.
 {PRODUCERS:}
 	{:menu}
@@ -27,7 +30,7 @@
 {GROUPS:}
 	{:menu}
 	<h1>Группы</h1>
-	{list::groups}
+	{list.childs::groups}
 	<br><br><br><br>
 	{groups:}
 		{group} <small><b>{count}</b> {catalog}.xlsx</small>

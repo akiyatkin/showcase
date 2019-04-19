@@ -35,9 +35,7 @@ class Catalog {
 		foreach ($options as $name => $row) {
 			if (empty($row['isfile'])) {
 				if (!empty($row['icount'])) {
-					$src = Showcase::$conf['catalogsrc'].$row['file'];
-					$res['Данные - удаляем '.$name] = Catalog::actionRemove($name, $src);
-					
+					$res['Данные - удаляем параметров '.$name] = Catalog::actionRemove($name);
 				}
 			} else {
 				if (!isset($row['time']) || $row['time'] < $row['mtime']) {
@@ -119,7 +117,7 @@ class Catalog {
 	
 	
 	
-	public static function actionRemove($name, $src) {
+	public static function actionRemove($name, $src = false) {
 		//Удаляются ключи model_id, mitem_id
 		$r = Data::exec('DELETE m, i, mv, mn, mt
 			FROM showcase_catalog c 
@@ -129,10 +127,10 @@ class Catalog {
 			LEFT JOIN showcase_mnumbers mn ON mn.model_id = m.model_id
 			LEFT JOIN showcase_mtexts mt ON mt.model_id = m.model_id
 			WHERE c.name = ?', [$name]);	
-		if (FS::is_file($src)) { //ФАйл есть запись остаётся
+		if ($src && FS::is_file($src)) { //ФАйл есть запись остаётся
 			Data::exec('UPDATE showcase_catalog SET time = null WHERE name = ?', [$name]);
 		} else {
-			Data::exec('DELETE FROM showcase_catalog c WHERE c.name = ?', [$name]);
+			Data::exec('DELETE FROM showcase_catalog WHERE name = ?', [$name]);
 		}
 		
 		return $r;
@@ -168,8 +166,9 @@ class Catalog {
 			$model_id = Catalog::initModel($name, $producer_id, $article_id, $catalog_id, $order, $time, $group_id); //У существующей модели указывается time
 
 			if (!$model_id) return; //Каталог не может управлять данной моделью, так как есть более приоритетный источник
-
-			if (isset($pos['items'])) {
+			Catalog::initItem($model_id, 0, '');
+			
+			if (isset($pos['items'])) { //1 item уже в модели надо его вынести в отдельный items и удалить из модели
 				$item = array();
 				$item['id'] = $pos['id'];
 				foreach ($pos['itemrows'] as $p => $v) {
@@ -179,6 +178,7 @@ class Catalog {
 				}
 				array_unshift($pos['items'], $item);
 			}
+
 			$r = Catalog::writeProps($model_id, $pos, 0);
 			$obj = [
 				'model_id' => $model_id, 
@@ -288,7 +288,7 @@ class Catalog {
 		
 		$model_id = Once::func( function ($name, $producer_id, $article_id) use ($catalog_id, $order, $time, $group_id) {
 		
-			$row = Data::fetch('SELECT sm.model_id, sm.catalog_id, sc.order
+			$row = Data::fetch('SELECT sm.model_id, sm.catalog_id, sc.order, sm.group_id
 				FROM showcase_models sm, showcase_catalog sc 
 				WHERE sc.catalog_id = sm.catalog_id And sm.producer_id = ? AND sm.article_id = ?', [$producer_id, $article_id]);
 			if ($row) {
@@ -297,7 +297,7 @@ class Catalog {
 					if ($order > $row['order']) return false;//Новый каталог в списке позже и не управляет этой позицией
 				}
 				Catalog::clearModel($model_id); //Нашли модель и удалили у неё свойства и items
-				Data::exec('UPDATE showcase_models SET time = from_unixtime(?), catalog_id = ? WHERE model_id = ?',[$time, $catalog_id, $model_id]);
+				Data::exec('UPDATE showcase_models SET time = from_unixtime(?), catalog_id = ?, group_id = ? WHERE model_id = ?',[$time, $catalog_id, $group_id, $model_id]);
 				return $model_id;
 			}
 			$model_id = Data::lastId(
@@ -348,9 +348,7 @@ class Catalog {
 		$group_id = $stmt->fetchColumn();
 		return $group_id;
 	}
-	public static function updateGroupParent($parent_id, $group_id) {
-		return Data::exec('UPDATE showcase_groups SET parent_id = ? WHERE group_id = ?',[$parent_id, $group_id]);
-	}
+	
 	public static function insertGroup($group, $parent_id, $group_nick, $catalog_id) {
 		$db = &Db::pdo();
 		$sql = 'INSERT INTO `showcase_groups`(`group`,`parent_id`,`group_nick`, `catalog_id`) VALUES(?,?,?,?)';
@@ -378,7 +376,7 @@ class Catalog {
 				$group_id = $row['group_id'];
 				if ($parent_nick && $parent_nick != $row['parent_nick'] && ($catalog_id == $row['catalog_id'] || $row['order'] < $order)) {
 					$parent_id = Catalog::getGroupId($parent_nick);
-					Catalog::updateGroupParent($parent_id, $group_id);
+					Data::exec('UPDATE showcase_groups SET parent_id = ? WHERE group_id = ?',[$parent_id, $group_id]);
 				}
 				$groups[$group_nick] = $group_id;
 				return $r;
