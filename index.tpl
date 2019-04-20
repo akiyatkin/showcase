@@ -1,19 +1,25 @@
 {menu:}
-	{(:/-showcase/catalog):link}Данные{:/link} |
-	{(:/-showcase/prices):link}Прайсы{:/link} |
-	{(:/-showcase/groups):link}Группы{:/link} |
-	{(:/-showcase/producers):link}Производители{:/link} |
-	{(:/-showcase/models):link}Модели{:/link}  |
-	{(:/-showcase/api):link}API{:/link}
-	<span class="float-right">Загрузить с Яндекс Диска
-	<a href="/-showcase/prices?-ydisk=tables">Данные</a> | 
-	<a href="/-showcase/prices?-ydisk=prices">Прайсы</a> 
-	</span>
+	<div class="mb-3">
+		{(:/-showcase/catalog):link}Данные{:/link} |
+		{(:/-showcase/prices):link}Прайсы{:/link} |
+		{(:/-showcase/groups):link}Группы{:/link} |
+		{(:/-showcase/producers):link}Производители{:/link} |
+		{(:/-showcase/models):link}Модели{:/link}  |
+		{(:/-showcase/api):link}API{:/link}
+		<span class="float-right">Загрузить с Яндекс Диска
+		<a class="btn btn-outline-info btn-sm" href="/-showcase/catalog?-ydisk=tables">Данные</a>
+		<a class="btn btn-outline-info btn-sm" href="/-showcase/prices?-ydisk=prices">Прайсы</a> 
+		</span>
+	</div>
 	{res:res}
 	{link:}<a class="{location.pathname=.?:font-weight-bold}" href="{.}">{/link:}</a>
 {root:}
 	{:menu}
-	<p>Всего в каталоге <b>{count} {~words(count,:модель,:модели,:моделей)}</b>.
+	<div class="card mt-3">
+		<div class="card-body">
+			Всего в каталоге <b>{count} {~words(count,:модель,:модели,:моделей)}</b>.<br>
+		</div>
+	</div>
 {res:}<div class="mt-2 alert alert-success">{~print(.)}</div>
 {MODELS:}
 	{:menu}

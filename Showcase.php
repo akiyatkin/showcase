@@ -86,6 +86,25 @@ class Showcase {
 		}
 		return $groups;
 	}
+	public static function getGroupsIn($md) {
+		$groups = [];
+		foreach ($md['group'] as $group => $one) {
+			$group_id = Data::col('SELECT group_id from showcase_groups where group_nick = ?',[$group]);
+			if ($group_id == 1) {
+				$groups = [];
+			} else if ($group_id) {
+				$gs = Showcase::nestedGroups($group_id);
+				$gs = array_column($gs,'group_id');
+				$gs[] = $group_id;
+				$groups = array_merge($groups, $gs);
+			}
+		}
+		if ($groups) { //Если есть группа надо достать все вложенные группы
+			$groups = array_unique($groups);
+		}
+		return $groups;
+		
+	}
 	public static function search($md, &$ans, $page = 1) {
 		$count = $md['count'];
 		$cost_id = Data::initProp("Цена");
@@ -93,25 +112,12 @@ class Showcase {
 		$nalichie_id = Data::initProp("Наличие на складе");
 		$ans['filters'] = [];
 		$grquery = '';
-		$groups = [];
-		foreach ($md['group'] as $group => $one) {
-			$group_id = Data::col('SELECT group_id from showcase_groups where group_nick = ?',[$group]);
 
-			if ($group_id) {
-
-				$gs = Showcase::nestedGroups($group_id);
-				$gs = array_column($gs,'group_id');
-				$gs[] = $group_id;
-				$groups = array_merge($groups, $gs);
-
-			}
-		}
-		if ($groups) { //Если есть группа надо достать все вложенные группы
-			$groups = array_unique($groups);
+		$groups = Showcase::getGroupsIn($md);
+		if ($groups) {
 			$grquery = implode(',', $groups);
 			$grquery = 'and m.group_id in ('.$grquery.')';
 		}
-
 		$prquery = '';
 		$prods = [];
 		foreach ($md['producer'] as $prod => $one) {
@@ -138,24 +144,24 @@ class Showcase {
 		$join = [];
 		$no = [];
 	
-		foreach ($md['more'] as $prop => $vals) {
-		
-			$prop_id = Data::initProp($prop);
-			if (!$prop_id) {
+		foreach ($md['more'] as $prop_nick => $vals) {
+			$prop = Data::fetch('SELECT * from showcase_props where prop_nick = ?',[$prop_nick]);
+			if (!$prop) {
 				$ans['filters'][] = array( 
-					'name' => 'more.'.$prop,
+					'name' => 'more.'.$prop_nick,
 					'value' => implode(', ', array_keys($vals)),
-					'title' => 'Нет свойства '.$prop 
+					'title' => 'Нет свойства '.$prop_nick 
 				);
 				$no[] = 'and 1=0';
 				continue;
 			}
+			$prop_id = $prop['prop_id'];
 			$ans['filters'][] = array( 
-				'name' => 'more.'.$prop,
+				'name' => 'more.'.$prop_nick,
 				'value' => implode(', ',array_keys($vals)),
-				'title' => $prop 
+				'title' => $prop['prop']
 			);
-			$type = Data::checkType($prop);
+			$type = Data::checkType($prop_nick);
 
 			foreach ($vals as $val => $one) {
 				if ($type == 'value') {
@@ -317,6 +323,7 @@ class Showcase {
 				unset($ans['childs'][$i]['childs'][$ii]['childs']);
 			}
 		}
+		if (sizeof($ans['childs']) == 1) unset($ans['childs']);
 		$pages = ceil($size / $count);
 		if ($pages < $page) $page = $pages;
 		$ans['count'] = (int) $size;
@@ -326,6 +333,10 @@ class Showcase {
 	public static function getColumns(){
 		$options = Data::getOptions();
 		return array_merge(Showcase::$columns, $options['columns']);
+	}
+	public static function getOptions(){
+		$options = Data::getOptions();
+		return $options;
 	}
 	public static $columns = array("images", "files", "texts","videos", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании");
 	public static function getModel($producer, $article, $item_nick = '') {
@@ -341,8 +352,9 @@ class Showcase {
 			', [':article'=>$article,':producer'=>$producer]);
 		if (!$data) return false;
 		
-		$item_num = Data::col('SELECT item_num from showcase_items where model_id = ? and item_nick = ?',[$data['model_id'], $item_nick]);
-		if ($item_num === false) return false;
+		$item = Data::fetch('SELECT item_num, item, item_nick from showcase_items where model_id = ? and item_nick = ?',[$data['model_id'], $item_nick]);
+		if ($item === false) return false;
+		$item_num = $item['item_num'];
 		//exit;
 
 		$list1 = Data::all('SELECT p.prop, p.prop_nick, v.value as val, smv.order
@@ -376,7 +388,8 @@ class Showcase {
 			if ($a['order'] < $b['order']) return 1;
 		});
 		Showcase::makeMore($data, $list);
-		$data['item_nick'] = $item_nick;
+		$data += $item;
+		
 		if ($item_nick) {
 			$its = Data::all('
 					SELECT i.item_nick, ps.prop, ps.prop_nick, v.value as val from showcase_mvalues mv

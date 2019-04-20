@@ -184,7 +184,9 @@ class Catalog {
 				'pos' => &$pos,
 				'name' => $name
 			];
-			Event::fire('Showcase-catalog.onload', $obj); //Срабатывает только для моделей
+			Event::fire('Showcase-catalog.onload', $obj); 
+			//Срабатывает только для моделей. МОжно добавить недостающие свойства. 
+			//Сгенерировать id для items
 
 			if ($r) $ans['Принято моделей']++;
 			if (isset($pos['items'])) {
@@ -253,8 +255,8 @@ class Catalog {
 	public static function initItem($model_id, $item_num, $value) {
 		$nick = Path::encode($value);
 		Data::exec(
-			'	INSERT INTO showcase_items (model_id, item_num, item_nick) VALUES(?,?,?)',
-			[$model_id, $item_num, $nick]
+			'INSERT INTO showcase_items (model_id, item_num, item_nick, item) VALUES(?,?,?,?)',
+			[$model_id, $item_num, $nick, $value]
 		);	
 	}
 	public static function clearCatalog($catalog_id) {
