@@ -10,6 +10,7 @@ use infrajs\sequence\Sequence;
 use infrajs\db\Db;
 use infrajs\config\Config;
 use akiyatkin\showcase\Data;
+use infrajs\ans\Ans;
 use infrajs\mark\Mark as Marker;
 
 class Showcase {
@@ -36,6 +37,9 @@ class Showcase {
 	}
 	public static function initMark(&$ans = array(), $val = '', $art = '')
 	{
+		$val = Ans::GET('val');
+		$val = Path::encode(Path::toutf(strip_tags($val)));
+		$art = Ans::GET('art');
 		if ($val && !$art) {
 
 			$group = Showcase::getGroup($val);
@@ -69,7 +73,7 @@ class Showcase {
 			return Data::col('SELECT producer_nick from showcase_producers where producer_nick = ?',[$producer_nick]);
 		}, [$producer_nick]);
 	}
-	public static function getGroup($group_nick) {
+	public static function getGroup($group_nick = false) {
 		$group = Data::getGroups($group_nick);
 		unset($group['catalog']);
 		return $group;
@@ -133,6 +137,7 @@ class Showcase {
 
 		$join = [];
 		$no = [];
+	
 		foreach ($md['more'] as $prop => $vals) {
 		
 			$prop_id = Data::initProp($prop);
@@ -151,6 +156,7 @@ class Showcase {
 				'title' => $prop 
 			);
 			$type = Data::checkType($prop);
+
 			foreach ($vals as $val => $one) {
 				if ($type == 'value') {
 					if ($val == 'yes') {
@@ -169,7 +175,7 @@ class Showcase {
 						$no[] = 'and p'.$prop_id.'.prop_id is null';
 						$join[] = 'LEFT JOIN showcase_mnumbers p'.$prop_id.' on (p'.$prop_id.'.model_id = m.model_id and p'.$prop_id.'.prop_id = '.$prop_id.')';
 					} else {
-						$number = (int) $val;
+						$number = (float) $val;
 						$join[] = 'INNER JOIN showcase_mnumbers p'.$prop_id.' on (p'.$prop_id.'.model_id = m.model_id and p'.$prop_id.'.prop_id = '.$prop_id.' and p'.$prop_id.'.number = '.$number.')';
 					}
 				}
@@ -245,7 +251,7 @@ class Showcase {
 
 
 		$groups = Data::fetchto('
-			SELECT v.value as img, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_models m
+			SELECT max(v.value) as img, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_models m
 			LEFT JOIN showcase_groups g on g.group_id = m.group_id
 			LEFT JOIN showcase_producers pr on pr.producer_id = m.producer_id
 			LEFT JOIN showcase_articles a on a.article_id = m.article_id
@@ -317,7 +323,11 @@ class Showcase {
 
 		$ans['numbers'] = Showcase::numbers($page, $pages, 11);
 	}
-	public static $columns = array("images", "files", "texts","videos", "Наименование","Файл","Иллюстрация","Файлы","Фото","Цена","Описание","Скрыть фильтры в полном описании");
+	public static function getColumns(){
+		$options = Data::getOptions();
+		return array_merge(Showcase::$columns, $options['columns']);
+	}
+	public static $columns = array("images", "files", "texts","videos", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании");
 	public static function getModel($producer, $article, $item_nick = '') {
 		$data = Data::fetch('SELECT 
 			m.model_id, p.producer_nick, 
@@ -335,7 +345,7 @@ class Showcase {
 		if ($item_num === false) return false;
 		//exit;
 
-		$list1 = Data::all('SELECT p.prop, v.value as val, smv.order
+		$list1 = Data::all('SELECT p.prop, p.prop_nick, v.value as val, smv.order
 			FROM showcase_mvalues smv, showcase_values v, showcase_props p
 			WHERE smv.value_id = v.value_id
 			AND p.prop_id = smv.prop_id
@@ -343,14 +353,17 @@ class Showcase {
 			AND (smv.item_num = 0 or smv.item_num = ?)
 			',[$data['model_id'], $item_num]);
 		
-		$list2 = Data::all('SELECT p.prop, smv.number as val, smv.order
+		$list2 = Data::all('SELECT p.prop, p.prop_nick, smv.number as val, smv.order
 			FROM showcase_mnumbers smv, showcase_props p
 			WHERE p.prop_id = smv.prop_id
 			AND smv.model_id = ?
 			AND (smv.item_num = 0 or smv.item_num = ?)
 		',[$data['model_id'], $item_num]);
+		foreach ($list2 as $i => $row) {
+			$list2[$i]['val'] = (float) $row['val'];
+		}
 		
-		$list3 = Data::all('SELECT p.prop, smv.text as val, smv.order
+		$list3 = Data::all('SELECT p.prop, p.prop_nick, smv.text as val, smv.order
 			FROM showcase_mtexts smv, showcase_props p
 			WHERE p.prop_id = smv.prop_id
 			AND smv.model_id = ?
@@ -363,21 +376,21 @@ class Showcase {
 			if ($a['order'] < $b['order']) return 1;
 		});
 		Showcase::makeMore($data, $list);
+		$data['item_nick'] = $item_nick;
 		if ($item_nick) {
-			$data['item_nick'] = $item_nick;
 			$its = Data::all('
-					SELECT i.item_nick, ps.prop, v.value as val from showcase_mvalues mv
+					SELECT i.item_nick, ps.prop, ps.prop_nick, v.value as val from showcase_mvalues mv
 					left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
 					left join showcase_props ps on ps.prop_id = mv.prop_id
 					left join showcase_values v on v.value_id = mv.value_id
 					where mv.model_id = ? and mv.item_num > 0 
 					UNION ALL
-					SELECT i.item_nick, ps.prop, mv.number as val from showcase_mnumbers mv
+					SELECT i.item_nick, ps.prop, ps.prop_nick, mv.number as val from showcase_mnumbers mv
 					left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
 					left join showcase_props ps on ps.prop_id = mv.prop_id
 					WHERE mv.model_id = ? and mv.item_num > 0 
 					UNION ALL
-					SELECT i.item_nick, ps.prop, mv.text as val from showcase_mtexts mv
+					SELECT i.item_nick, ps.prop, ps.prop_nick, mv.text as val from showcase_mtexts mv
 					left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
 					left join showcase_props ps on ps.prop_id = mv.prop_id
 					where mv.model_id = ? and mv.item_num > 0 
@@ -399,6 +412,8 @@ class Showcase {
 			$data['items'] = array_values($items);
 		}
 		$data += Showcase::getGroup($data['group_nick']);
+		unset($data['childs']);
+
 		if (isset($data['files'])) {
 			foreach ($data['files'] as $i => $path) {
 				$fd = Load::pathinfo($path);
@@ -412,11 +427,13 @@ class Showcase {
 	public static function makeMore(&$data, $list) {
 		$option = Data::getOptions();
 		$conf = Showcase::$conf;
-		$columns = array_merge(Showcase::$columns, $conf['columns']);
+		$columns = Showcase::getColumns();
+		
 		$more = array();
 		foreach ($list as $row) {
 			$prop = $row['prop'];
-			if (in_array($prop, $columns)) {
+			$prop_nick = $row['prop_nick'];
+			if (in_array($prop_nick, $columns)) {
 				if (!isset($data[$prop])) $data[$prop] = [];
 				$data[$prop][] = $row['val'];
 			} else {

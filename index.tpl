@@ -5,6 +5,10 @@
 	{(:/-showcase/producers):link}Производители{:/link} |
 	{(:/-showcase/models):link}Модели{:/link}  |
 	{(:/-showcase/api):link}API{:/link}
+	<span class="float-right">Загрузить с Яндекс Диска
+	<a href="/-showcase/prices?-ydisk=tables">Данные</a> | 
+	<a href="/-showcase/prices?-ydisk=prices">Прайсы</a> 
+	</span>
 	{res:res}
 	{link:}<a class="{location.pathname=.?:font-weight-bold}" href="{.}">{/link:}</a>
 {root:}
@@ -61,7 +65,7 @@
 			{duration:duration} {time:time}<br>
 			{isopt?:showopt?:Нет опций}
 		</div>
-		<div class="p-2" style="width:300px">
+		<div class="p-2 text-right" style="width:300px">
 			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.pricessrc}{file}')">Внести</span>
 			{isdata?:actdel}
 		</div>
@@ -87,20 +91,20 @@
 			{duration:duration} {time:time}<br>
 			{isopt?:Есть опции?:Нет опций}
 		</div>
-		<div class="p-2" style="width:300px">
-			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.catalogsrc}{file}')">Внести</span>
-			{isdata?:actdel}
-		</div>
-		
+		{actions?:actions}
 	</div>
 	{catalog-count:}В документе <b>{count}</b> {~words(count,:строка,:строки,:строк)} с Артикулом.
 {actdel:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.catalogsrc}{file}')">Очистить</span>
-	
+{actions:}
+		<div class="p-2 text-right" style="width:300px">
+			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.catalogsrc}{file}')">Внести</span>
+			{isdata?:actdel}
+		</div>
 {foot:}
 	<hr>
 	<div class="d-flex justify-content-between">
 		<div>
-			<span class="btn btn-primary" onclick="Action('loadAll')">Внести все новые данные и прайсы</span>
+			<a href="/-showcase/update" class="btn btn-primary">Внести все новые данные и прайсы</a>
 			<!--<span class="btn btn-info" onclick="Action('addFiles')">Связать с файлами</span>-->
 			
 		</div>

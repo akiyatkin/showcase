@@ -141,7 +141,6 @@ class Catalog {
 		$row = Data::fetch('SELECT catalog_id, `order` from showcase_catalog where name = ?',[$name]);
 		$catalog_id = $row['catalog_id'];
 		$order = $row['order'];
-
 		$data = Catalog::readCatalog($name, $src);
 		$groups = Catalog::applyGroups($data, $catalog_id, $order);
 		$props = array();
@@ -357,26 +356,27 @@ class Catalog {
 		$group_id = $db->lastInsertId();
 		return $group_id;
 	}
-	public static function applyGroups($data, $catalog_id, $order) {
+	public static function applyGroups($data, $catalog_id, $order) { //order нового каталога
+		
 		$groups = array();
 		Xlsx::runGroups($data, function &($group) use ($catalog_id, &$groups, $order){
 			$r = null;
 			$group_nick =  $group['id'];
+			$parent_nick = $group['gid'];
 			if (isset($groups[$group_nick])) return $r;
-			$sql = 'SELECT g1.group, g1.group_id, c.order, g2.group_nick as parent_nick, g1.catalog_id 
+			$row = Data::fetch('SELECT g1.group, g1.group_id, c.order, g2.group_nick as parent_nick, g1.catalog_id 
 					FROM showcase_groups g1 
 					LEFT JOIN showcase_groups g2 ON g1.parent_id = g2.group_id 
 					LEFT JOIN showcase_catalog c ON g1.catalog_id = c.catalog_id 
-					WHERE g1.group_nick = ?';
-			$stmt = Db::stmt($sql);
-			$stmt->execute([$group_nick]);
-			$row =  $stmt->fetch();
-			$parent_nick = $group['gid'];
+					WHERE g1.group_nick = ?',[$group_nick]);
 			if ($row) {
+
 				$group_id = $row['group_id'];
-				if ($parent_nick && $parent_nick != $row['parent_nick'] && ($catalog_id == $row['catalog_id'] || $row['order'] < $order)) {
+				if ($catalog_id == $row['catalog_id'] || $row['order'] > $order) {
+					//$order - новый прайс должен стоять выше старого
 					$parent_id = Catalog::getGroupId($parent_nick);
-					Data::exec('UPDATE showcase_groups SET parent_id = ? WHERE group_id = ?',[$parent_id, $group_id]);
+
+					Data::exec('UPDATE showcase_groups SET parent_id = ?, `catalog_id` = ? WHERE group_id = ?',[$parent_id, $catalog_id, $group_id]);
 				}
 				$groups[$group_nick] = $group_id;
 				return $r;

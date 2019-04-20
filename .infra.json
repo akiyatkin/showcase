@@ -11,8 +11,6 @@
 	"grouparticles":"~catalog/articles/",
 	"groupimages":"~catalog/images/",
 	"hiddenarticle":false,
-	"columns":[],
-
 	
 	"listreverse":false,
 	"ignorelistname":false

@@ -14,9 +14,35 @@ echo Rest::get( function () {
 	$ans = [];
 	$ans['count'] = Data::col('SELECT count(*) as `count` from showcase_models');
 	return Rest::parse('-showcase/index.tpl', $ans);
-}, 'catalog', function () {
+}, 'update', function () {
 	$ans = array();
 
+	$action = Ans::REQ('action');
+	$name = Ans::REQ('name');
+	$src = Ans::REQ('src');
+
+
+	$ans['post'] = $_POST;
+	$ans['conf'] = Showcase::$conf;
+
+	Catalog::init();
+	
+	$ans['res'] = [];
+	Prices::init();
+	$ans['res']['Данные'] = Catalog::actionLoadAll();
+	$ans['res']['Прайсы'] = Prices::actionLoadAll();
+	$ans['res']['Файлы'] = Data::actionAddFiles();	
+
+	$list = Catalog::getList();
+	$ans['list'] = $list;
+	$ans['durationrate'] = 10; //килобайт в секунду
+	$ans['durationfactor'] = round(1/$ans['durationrate'],4); //секунд на килобайт
+	
+
+	return Rest::parse('-showcase/index.tpl', $ans, 'CATALOG');
+}, 'catalog', function () {
+	$ans = array();
+	$ans['actions'] = true;
 	$action = Ans::REQ('action');
 	$name = Ans::REQ('name');
 	$src = Ans::REQ('src');

@@ -41,7 +41,7 @@ return Rest::get( function () {
 	$ans['breadcrumbs'][] = array('href'=>'','title'=>$conf['title'],'add'=>'group');
 	$ans['breadcrumbs'][] = array('active'=>true, 'href'=>'producers','title'=>'Производители');
 	return Ans::ret($ans);
-	
+
 	},"seo", function(){
 		$ans = [];
 		$link = Ans::GET('seo');
@@ -61,7 +61,7 @@ return Rest::get( function () {
 		$val = Path::encode(Path::toutf(strip_tags($val)));
 		$art = Ans::GET('art');
 
-		$md = Showcase::initMark($ans, $val, $art);
+		$md = Showcase::initMark($ans);
 		
 		$ans['page'] = Ans::GET('p','integer',1);
 		if ($ans['page'] < 1) $ans['page'] = 1;

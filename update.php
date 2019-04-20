@@ -142,6 +142,7 @@ CREATE TABLE IF NOT EXISTS `showcase_items` (
 	`model_id` MEDIUMINT unsigned NOT NULL COMMENT '',
 	`item_num` SMALLINT unsigned NOT NULL COMMENT '',
 	`item_nick` varchar(255) NOT NULL COMMENT '',
+	`item` varchar(255) NOT NULL COMMENT ''
 	PRIMARY KEY (`model_id`, `item_num`),
 	UNIQUE (`model_id`,`item_nick`)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;

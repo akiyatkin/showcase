@@ -607,6 +607,7 @@ class Data {
 			});
 			return $root;
 		});
+		$root['path'] = [];
 		if ($group_nick) {
 			return Xlsx::runGroups($root, function &($group) use ($group_nick){
 				if ($group['group_nick'] == $group_nick) return $group;
