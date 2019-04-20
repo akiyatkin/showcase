@@ -250,7 +250,7 @@ class Catalog {
 	
 	
 	
-	public static function initItem($model_id, $item_num, string $value) {
+	public static function initItem($model_id, $item_num, $value) {
 		$nick = Path::encode($value);
 		Data::exec(
 			'	INSERT INTO showcase_items (model_id, item_num, item_nick) VALUES(?,?,?)',
