@@ -92,10 +92,6 @@ echo Rest::get( function () {
 	$ans = array();
 	$ans['list'] = Data::getModels();
 	return Rest::parse('-showcase/index.tpl', $ans, 'MODELS');
-}, 'search', function (){
-	$ans = array();
-	$ans['list'] = Showcase::search();
-	return Ans::ret($ans);
 }, 'pos', [
 	function (){
 		return 'producer/article';

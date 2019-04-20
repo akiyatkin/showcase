@@ -89,6 +89,7 @@ class Prices {
 		return $row['price_id'];
 	}
 	public static function getMyModels($type, $producer_id, $prop_id, $value) {
+		//Вообщедолжна быть одна модель. Прайс связываеся с этими моделями по prop_id и value
 		if ($type == 'value') {
 			$id = Data::initValue($value);
 			$mainprop = 'value_id';
@@ -145,6 +146,7 @@ class Prices {
 				}
 
 				$val = $pos[$p['prop']];
+				
 				$oldorder = 0;
 				$t = 'm'.$p['type'].'s';	//mvalues
 				$mainprop = ($p['type'] == 'value') ?'value_id': $p['type'];
@@ -170,6 +172,7 @@ class Prices {
 					Data::exec('INSERT showcase_'.$t.' (model_id, item_num, prop_id, '.$mainprop.', price_id, `order`)
 					VALUES(?,?,?,?,?,?)', [$model_id, $item_num, $p['prop_id'], $value_id, $price_id, $oldorder]);
 				}
+
 			}
 			if ($r) $modified++;
 			$list[$i]['r'] = $r;

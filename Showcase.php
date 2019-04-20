@@ -27,7 +27,14 @@ class Showcase {
 		}
 		return $mark;
 	}
-	public static function initMark(&$ans = array(), $val, $art)
+	public static function getProducers() {
+		$list = Data::getProducers();
+		foreach($list as $k => $prod) {
+			unset($list[$k]['catalog']);
+		}
+		return $list;
+	}
+	public static function initMark(&$ans = array(), $val = '', $art = '')
 	{
 		if ($val && !$art) {
 
@@ -35,7 +42,7 @@ class Showcase {
 
 			if (!isset($_GET['m'])) $_GET['m'] = '';
 			if ($group) {
-				$_GET['m'].=':group::.'.$val.'=1';
+				$_GET['m'].=':group::.'.$group['group_nick'].'=1';
 			} else {
 				$producer = Showcase::getProducer($val);
 				if ($producer) {
@@ -58,10 +65,14 @@ class Showcase {
 		return $ar['md'];
 	}
 	public static function getProducer($producer_nick) {
-		return Data::col('SELECT producer_nick from showcase_producers where producer_nick = ?',[$producer_nick]);
+		return Once::func(function ($producer_nick){
+			return Data::col('SELECT producer_nick from showcase_producers where producer_nick = ?',[$producer_nick]);
+		}, [$producer_nick]);
 	}
 	public static function getGroup($group_nick) {
-		return Data::col('SELECT group_nick from showcase_groups where group_nick = ?',[$group_nick]);	
+		$group = Data::getGroups($group_nick);
+		unset($group['catalog']);
+		return $group;
 	}
 	public static function nestedGroups($group_id) {
 		$groups = Data::all('SELECT group_id from showcase_groups where parent_id = ?',[$group_id]);
@@ -73,7 +84,6 @@ class Showcase {
 	}
 	public static function search($md, &$ans, $page = 1) {
 		$count = $md['count'];
-		$count = 40;
 		$cost_id = Data::initProp("Цена");
 		$image_id = Data::initProp("images");
 		$nalichie_id = Data::initProp("Наличие на складе");
@@ -82,11 +92,14 @@ class Showcase {
 		$groups = [];
 		foreach ($md['group'] as $group => $one) {
 			$group_id = Data::col('SELECT group_id from showcase_groups where group_nick = ?',[$group]);
+
 			if ($group_id) {
+
 				$gs = Showcase::nestedGroups($group_id);
-				$gs = array_column($groups,'group_id');
+				$gs = array_column($gs,'group_id');
 				$gs[] = $group_id;
 				$groups = array_merge($groups, $gs);
+
 			}
 		}
 		if ($groups) { //Если есть группа надо достать все вложенные группы
@@ -245,23 +258,24 @@ class Showcase {
 		//Найти общего предка для всех групп
 		//Пропустить 1 вложенную группу
 		//Отсортировать группы по их order
-		
+
 		$root = Data::getGroups();
-		$root['group_nick'] = '';
-		
-		
+
 		Xlsx::runGroups($root, function &(&$group) use ($groups){
 			$r = null;
 			$nick = $group['group_nick'];
 			if (!isset($groups[$nick])) return $r;
 			$group['found'] = $groups[$nick]['count'];
+			$group['img'] = $groups[$nick]['img'];
 			return $r;
 		});
+
 		Xlsx::runGroups ($root, function &(&$group, $i, &$parent) {
 			$r = null;
 			if (!$parent) return $r;
+			if (isset($group['img']) && empty($parent['img'])) $parent['img'] = $group['img'];
 			if (!isset($group['found'])) {
-				unset($parent['childs'][$i]);
+				array_splice($parent['childs'], $i, 1);
 				return $r;
 			}
 			if (!isset($parent['found'])) $parent['found'] = 0;
@@ -276,6 +290,7 @@ class Showcase {
 			});
 			return $r;
 		}, true);
+		
 		$conf = Showcase::$conf;
 		Xlsx::runGroups ($root, function &(&$group, $conf) {
 			$r = null;
@@ -290,18 +305,24 @@ class Showcase {
 			return $r;
 		});
 		$ans['childs'] = array_values($root['childs']);
+		foreach($ans['childs'] as $i => $ch) {
+			if (empty($ans['childs'][$i]['childs'])) continue;
+			foreach($ans['childs'][$i]['childs'] as $ii => $cch) {
+				unset($ans['childs'][$i]['childs'][$ii]['childs']);
+			}
+		}
 		$pages = ceil($size / $count);
 		if ($pages < $page) $page = $pages;
 		$ans['count'] = (int) $size;
 
 		$ans['numbers'] = Showcase::numbers($page, $pages, 11);
 	}
-	public static $columns = array("images", "files", "texts","videos", "Наименование","Файл","Иллюстрация","Файлы","Фото","prod2","Цена","Описание","Скрыть фильтры в полном описании");
+	public static $columns = array("images", "files", "texts","videos", "Наименование","Файл","Иллюстрация","Файлы","Фото","Цена","Описание","Скрыть фильтры в полном описании");
 	public static function getModel($producer, $article, $item_nick = '') {
 		$data = Data::fetch('SELECT 
-			m.model_id, p.producer_nick as producer, 
-			p.producer as Производитель, a.article_nick as article, 
-			a.article as Артикул, g.group_nick as `group`, g.group as Группа
+			m.model_id, p.producer_nick, 
+			p.producer, a.article_nick, 
+			a.article, g.group_nick, g.group
 			FROM showcase_models m
 			INNER JOIN showcase_articles a on (a.article_id = m.article_id and a.article_nick = :article)
 			LEFT JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = :producer)
@@ -321,7 +342,7 @@ class Showcase {
 			AND smv.model_id = ?
 			AND (smv.item_num = 0 or smv.item_num = ?)
 			',[$data['model_id'], $item_num]);
-
+		
 		$list2 = Data::all('SELECT p.prop, smv.number as val, smv.order
 			FROM showcase_mnumbers smv, showcase_props p
 			WHERE p.prop_id = smv.prop_id
@@ -338,17 +359,10 @@ class Showcase {
 		$list = array_merge($list1, $list2, $list3);
 
 		usort($list, function($a, $b){
-			if ($a['order'] > $b['order']) return 1;
-			if ($a['order'] < $b['order']) return -1;
+			if ($a['order'] > $b['order']) return -1;
+			if ($a['order'] < $b['order']) return 1;
 		});
-		
-
 		Showcase::makeMore($data, $list);
-
-		
-		//unset($data['model_id']);
-		
-		
 		if ($item_nick) {
 			$data['item_nick'] = $item_nick;
 			$its = Data::all('
@@ -383,6 +397,15 @@ class Showcase {
 				Showcase::makeMore($items[$k], $list);
 			}
 			$data['items'] = array_values($items);
+		}
+		$data += Showcase::getGroup($data['group_nick']);
+		if (isset($data['files'])) {
+			foreach ($data['files'] as $i => $path) {
+				$fd = Load::pathinfo($path);
+				$fd['size'] = round(FS::filesize($path)/1000000, 2);
+				if (!$fd['size']) $fd['size'] = '0.01';
+				$data['files'][$i] = $fd;
+			} 
 		}
 		return $data;
 	}
@@ -560,12 +583,14 @@ class Showcase {
 			} else {
 				$group = $root;
 			}
-			
 			$ans['is'] = 'group';	
 			$ans['breadcrumbs'][] = array('href' => '','title' => $conf['title'], 'add' => 'group:');
-			array_map(function ($p) use (&$ans) {
-				$ans['breadcrumbs'][] = array('href' => $p,'title' => $p);
-			}, $group['path']);
+			if (isset($group['path'])) {
+				array_map(function ($p) use (&$ans) {
+					$group = Showcase::getGroup($p);
+					$ans['breadcrumbs'][] = array('href' => $group['group_nick'],'title' => $group['group']);
+				}, $group['path']);
+			}
 			if (sizeof($ans['breadcrumbs']) == 1) {
 				array_unshift($ans['breadcrumbs'],array('main' => true,"title" => "Главная","nomark" => true));
 			}
@@ -575,7 +600,7 @@ class Showcase {
 			
 			
 			
-			if (!$group['path']) {
+			if (!isset($group['path'])) {
 				if (sizeof($ans['filters'])) { //Если есть выбранные фильтры, ссылка на каталог сбрасывает выбор
 					$ans['breadcrumbs'][sizeof($ans['breadcrumbs'])-1]['href'] = '';
 					$ans['breadcrumbs'][sizeof($ans['breadcrumbs'])-1]['add'] = false;

@@ -1,4 +1,5 @@
 {
+	"pub":["hiddenarticle"],
 	"conf":"akiyatkin\\showcase\\Showcase",
 	"require":"infra.php",
 	"update":"update.php",
@@ -6,8 +7,10 @@
 	"pricessrc":"~.prices/",
 	"title":"Каталог",
 	"dir":"~catalog/",
+	"menu":"-showcase/menu.json",
 	"grouparticles":"~catalog/articles/",
 	"groupimages":"~catalog/images/",
+	"hiddenarticle":false,
 	"columns":[],
 
 	

@@ -11,14 +11,14 @@ use infrajs\config\Config;
 class Data {
 	public static $timer;
 	public static $timerprev;
-	public static function timer($msg = '') {
+	public static function timer($msg = 'метка') {
 		$t =  microtime(true);
 		if (!Data::$timer) Data::$timer = $t;
 		if (!Data::$timerprev) Data::$timerprev = $t;		
 		$begin = round(($t - Data::$timer) * 1000);
 		$prev = round(($t - Data::$timerprev) * 1000);
 		Data::$timerprev = $t;
-		echo $begin.'-'.$prev.' '.$msg.'<br>';
+		echo $begin.'-'.$prev.' '.$msg.'<br>'."\n";
 	}
 	public static $types = ['number','text','value'];
 	public static function fetch($sql, $args = []) {
@@ -322,11 +322,12 @@ class Data {
 					
 
 					$article_id = Data::col('SELECT article_id from showcase_articles where article_nick = ?', [$art]);
-
+					
 					if (!$article_id) {
-						$altart = str_replace($prod, '', $art); //Удалили из артикула продусера
+						$altart = str_ireplace($prod, '', $art); //Удалили из артикула продусера
 						$altart = Path::encode($altart);
 						$article_id = Data::col('SELECT article_id from showcase_articles where article_nick = ?', [$altart]);
+
 						if (!$article_id) {
 							$ans['Бесхозных файлов']++;
 							continue;//Имя файла как артикул не зарегистрировано, даже если удалить производителя
@@ -567,8 +568,8 @@ class Data {
 		}, true);
 		return $list;
 	}
-	public static function getGroups() {
-		return Once::func(function (){
+	public static function getGroups($group_nick = false) {
+		$root = Once::func(function (){
 			$list = Data::fetchto('SELECT g.group_nick, g.group, c.name as catalog, count(*) as count, max(model_id) as notempty, g2.group_nick as parent_nick FROM showcase_groups g
 			left JOIN showcase_models m ON g.group_id = m.group_id
 			inner JOIN showcase_catalog c ON c.catalog_id = g.catalog_id
@@ -595,14 +596,26 @@ class Data {
 			
 			Xlsx::runGroups($root, function &(&$group, $i, $parent) {
 				$r = null;
-				$group['path'] = [];
-				if (!$parent || empty($parent['group'])) return $r;
+				if (!$parent) return $r;
+				if (!isset($parent['path'])) {
+					$group['path'] = [$group['group_nick']];
+					return $r;
+				}
 				$group['path'] = $parent['path'];
-				$group['path'][] = $parent['group'];
+				$group['path'][] = $group['group_nick'];
 				return $r;
 			});
 			return $root;
 		});
+		if ($group_nick) {
+			return Xlsx::runGroups($root, function &($group) use ($group_nick){
+				if ($group['group_nick'] == $group_nick) return $group;
+				$r = null;
+				return $r;
+
+			});
+		}
+		return $root;
 	}
 	public static function getProducers() {
 		
