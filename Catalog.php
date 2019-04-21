@@ -8,7 +8,12 @@ use infrajs\excel\Xlsx;
 use infrajs\db\Db;
 use akiyatkin\showcase\Data;
 use akiyatkin\showcase\Showcase;
+use infrajs\event\Event;
 
+
+Event::$classes['Showcase-catalog'] = function (&$obj) {
+	return $obj['pos']['producer'].' '.$obj['pos']['article'].' '.$obj['name'];
+};
 class Catalog {
 	
 	public static function getList() {
@@ -24,10 +29,27 @@ class Catalog {
 
 		return $options;
 	}
-	
+	public static function actionLoadAll() {
+		$options = Catalog::getList();
+		$res = [];
+		foreach ($options as $name => $row) {
+			if (empty($row['isfile'])) {
+				if (!empty($row['icount'])) {
+					$res['Данные - удаляем параметров '.$name] = Catalog::actionRemove($name);
+				}
+			} else {
+				if (!isset($row['time']) || $row['time'] < $row['mtime']) {
+					$src = Showcase::$conf['catalogsrc'].$row['file'];
+					$res['Данные - вносим '.$name] = Catalog::actionLoad($name, $src);
+				}
+			}
+		}
+		return $res;
+	}
 	public static function getOptions($filename = false) {//3 пересечения Опциии, Файлы, БазаДанных
 		$list = Data::getOptions('catalog');
 		$filelist = Data::getFileList(Showcase::$conf['catalogsrc']);
+		
 		foreach ($filelist as $name => $val) { // По файлам
 			if (!isset($list[$name])) $list[$name] = array();
 			$list[$name] += $filelist[$name];
@@ -95,7 +117,7 @@ class Catalog {
 	
 	
 	
-	public static function actionRemove($name, $src) {
+	public static function actionRemove($name, $src = false) {
 		//Удаляются ключи model_id, mitem_id
 		$r = Data::exec('DELETE m, i, mv, mn, mt
 			FROM showcase_catalog c 
@@ -105,10 +127,10 @@ class Catalog {
 			LEFT JOIN showcase_mnumbers mn ON mn.model_id = m.model_id
 			LEFT JOIN showcase_mtexts mt ON mt.model_id = m.model_id
 			WHERE c.name = ?', [$name]);	
-		if (FS::is_file($src)) { //ФАйл есть запись остаётся
+		if ($src && FS::is_file($src)) { //ФАйл есть запись остаётся
 			Data::exec('UPDATE showcase_catalog SET time = null WHERE name = ?', [$name]);
 		} else {
-			Data::exec('DELETE FROM showcase_catalog c WHERE c.name = ?', [$name]);
+			Data::exec('DELETE FROM showcase_catalog WHERE name = ?', [$name]);
 		}
 		
 		return $r;
@@ -119,7 +141,6 @@ class Catalog {
 		$row = Data::fetch('SELECT catalog_id, `order` from showcase_catalog where name = ?',[$name]);
 		$catalog_id = $row['catalog_id'];
 		$order = $row['order'];
-
 		$data = Catalog::readCatalog($name, $src);
 		$groups = Catalog::applyGroups($data, $catalog_id, $order);
 		$props = array();
@@ -129,7 +150,8 @@ class Catalog {
 		$ans = array();
 		$ans['Принято моделей'] = 0;
 		$ans['Принято позиций'] = 0;
-		Xlsx::runPoss( $data, function (&$pos) use (&$ans, &$filters, &$devcolumns, &$props, $catalog_id, $order, $time, &$count) {
+		$prop_id = Data::initProp('Иллюстрации','value'); //Для событий в цикле
+		Xlsx::runPoss( $data, function (&$pos) use ($name, &$ans, &$filters, &$devcolumns, &$props, $catalog_id, $order, $time, &$count) {
 			$count++;
 			if (isset($pos['items'])) $count += sizeof($pos['items']); //Считаем с позициями. В items одного items нет - он уже в описании модели.
 			$article_id = Data::initArticle($pos['Артикул']);
@@ -140,11 +162,12 @@ class Catalog {
 			$group_id = Data::col('SELECT group_id FROM showcase_groups WHERE group_nick = ?',[$group_nick]);
 
 			
-			$model_id = Catalog::initModel($producer_id, $article_id, $catalog_id, $order, $time, $group_id); //У существующей модели указывается time
+			$model_id = Catalog::initModel($name, $producer_id, $article_id, $catalog_id, $order, $time, $group_id); //У существующей модели указывается time
 
 			if (!$model_id) return; //Каталог не может управлять данной моделью, так как есть более приоритетный источник
-
-			if (isset($pos['items'])) {
+			Catalog::initItem($model_id, 0, '');
+			
+			if (isset($pos['items'])) { //1 item уже в модели надо его вынести в отдельный items и удалить из модели
 				$item = array();
 				$item['id'] = $pos['id'];
 				foreach ($pos['itemrows'] as $p => $v) {
@@ -156,8 +179,16 @@ class Catalog {
 			}
 
 			$r = Catalog::writeProps($model_id, $pos, 0);
-			if ($r) $ans['Принято моделей']++;
+			$obj = [
+				'model_id' => $model_id, 
+				'pos' => &$pos,
+				'name' => $name
+			];
+			Event::fire('Showcase-catalog.onload', $obj); 
+			//Срабатывает только для моделей. МОжно добавить недостающие свойства. 
+			//Сгенерировать id для items
 
+			if ($r) $ans['Принято моделей']++;
 			if (isset($pos['items'])) {
 				$item_num = 0;
 				foreach ($pos['items'] as $item) {
@@ -166,6 +197,7 @@ class Catalog {
 					$r = Catalog::writeProps($model_id, $item, $item_num);
 					if ($r) $ans['Принято позиций']++;
 				}
+				
 				$ans['Принято позиций']--;
 			}
 		});
@@ -175,12 +207,13 @@ class Catalog {
 		$db->commit();
 		return $ans;
 	}
-	public static function writeProps($model_id, $data, $item_num = 0) {
-		if (empty($data['more'])) return false;
-		$options = Load::loadJSON('~showcase.json');
+	public static function writeProps($model_id, $item, $item_num = 0) {
+		if (empty($item['more'])) return false;
+		$options = Data::loadShowcaseConfig();
 		$order = 0;
 		$r = false;
-		foreach ($data['more'] as $prop => $val) {
+
+		foreach ($item['more'] as $prop => $val) {
 			$type = Data::checkType($prop);
 			$prop_id = Data::initProp($prop, $type);
 			
@@ -190,6 +223,7 @@ class Catalog {
 				Data::lastId('INSERT INTO `showcase_mtexts`(model_id, item_num, `prop_id`,`text`,`order`) VALUES(?,?,?,?,?)',
 					[$model_id, $item_num, $prop_id, $val, $order]
 				);
+				
 			} else {
 				$strid = ($type == 'number')? 'number' : 'value_id';
 				$ar = (in_array($prop, $options['justonevalue']))? [$val] : explode(',', $val);
@@ -207,6 +241,7 @@ class Catalog {
 					);
 				}	
 			}
+
 		}
 		return $r;
 	}
@@ -217,11 +252,11 @@ class Catalog {
 	
 	
 	
-	public static function initItem($model_id, $item_num, string $value) {
+	public static function initItem($model_id, $item_num, $value) {
 		$nick = Path::encode($value);
 		Data::exec(
-			'INSERT INTO showcase_items (model_id, item_num, item_nick) VALUES(?,?,?)',
-			[$model_id, $item_num, $nick]
+			'INSERT INTO showcase_items (model_id, item_num, item_nick, item) VALUES(?,?,?,?)',
+			[$model_id, $item_num, $nick, $value]
 		);	
 	}
 	public static function clearCatalog($catalog_id) {
@@ -249,10 +284,12 @@ class Catalog {
 		Data::exec('DELETE FROM showcase_mtexts WHERE model_id = ?', [$model_id]);
 		Data::exec('DELETE FROM showcase_items WHERE model_id = ?', [$model_id]);
 	}
-	public static function initModel($producer_id, $article_id, $catalog_id, $order, $time, $group_id) {
+	public static function initModel($name, $producer_id, $article_id, $catalog_id, $order, $time, $group_id) {
+		//$name только для кэша, чтобы модели-дубли заменяли друг друга.
 		
-		return Once::func( function ($producer_id, $article_id) use ($catalog_id, $order, $time, $group_id) {
-			$row = Data::fetch('SELECT sm.model_id, sm.catalog_id, sc.order
+		$model_id = Once::func( function ($name, $producer_id, $article_id) use ($catalog_id, $order, $time, $group_id) {
+		
+			$row = Data::fetch('SELECT sm.model_id, sm.catalog_id, sc.order, sm.group_id
 				FROM showcase_models sm, showcase_catalog sc 
 				WHERE sc.catalog_id = sm.catalog_id And sm.producer_id = ? AND sm.article_id = ?', [$producer_id, $article_id]);
 			if ($row) {
@@ -261,14 +298,18 @@ class Catalog {
 					if ($order > $row['order']) return false;//Новый каталог в списке позже и не управляет этой позицией
 				}
 				Catalog::clearModel($model_id); //Нашли модель и удалили у неё свойства и items
-				Data::exec('UPDATE showcase_models SET time = from_unixtime(?), catalog_id = ? WHERE model_id = ?',[$time, $catalog_id, $model_id]);
+				Data::exec('UPDATE showcase_models SET time = from_unixtime(?), catalog_id = ?, group_id = ? WHERE model_id = ?',[$time, $catalog_id, $group_id, $model_id]);
 				return $model_id;
 			}
-			return Data::lastId(
-				'INSERT INTO showcase_models (producer_id, article_id, catalog_id, time, group_id) VALUES(?,?,?,from_unixtime(?),?)',
+			$model_id = Data::lastId(
+				'INSERT INTO showcase_models (producer_id, article_id, catalog_id, `time`, group_id) VALUES(?,?,?,from_unixtime(?),?)',
 				[$producer_id, $article_id, $catalog_id, $time, $group_id]
-			);	
-		}, [$producer_id, $article_id]);
+			);
+			
+			return $model_id;
+		}, [$name, $producer_id, $article_id]);
+		
+		return $model_id;
 	}
 	
 	public static function loadMeta($name, $producer, $order) {
@@ -308,9 +349,7 @@ class Catalog {
 		$group_id = $stmt->fetchColumn();
 		return $group_id;
 	}
-	public static function updateGroupParent($parent_id, $group_id) {
-		return Data::exec('UPDATE showcase_groups SET parent_id = ? WHERE group_id = ?',[$parent_id, $group_id]);
-	}
+	
 	public static function insertGroup($group, $parent_id, $group_nick, $catalog_id) {
 		$db = &Db::pdo();
 		$sql = 'INSERT INTO `showcase_groups`(`group`,`parent_id`,`group_nick`, `catalog_id`) VALUES(?,?,?,?)';
@@ -319,26 +358,27 @@ class Catalog {
 		$group_id = $db->lastInsertId();
 		return $group_id;
 	}
-	public static function applyGroups($data, $catalog_id, $order) {
+	public static function applyGroups($data, $catalog_id, $order) { //order нового каталога
+		
 		$groups = array();
 		Xlsx::runGroups($data, function &($group) use ($catalog_id, &$groups, $order){
 			$r = null;
 			$group_nick =  $group['id'];
+			$parent_nick = $group['gid'];
 			if (isset($groups[$group_nick])) return $r;
-			$sql = 'SELECT g1.group, g1.group_id, c.order, g2.group_nick as parent_nick, g1.catalog_id 
+			$row = Data::fetch('SELECT g1.group, g1.group_id, c.order, g2.group_nick as parent_nick, g1.catalog_id 
 					FROM showcase_groups g1 
 					LEFT JOIN showcase_groups g2 ON g1.parent_id = g2.group_id 
 					LEFT JOIN showcase_catalog c ON g1.catalog_id = c.catalog_id 
-					WHERE g1.group_nick = ?';
-			$stmt = Db::stmt($sql);
-			$stmt->execute([$group_nick]);
-			$row =  $stmt->fetch();
-			$parent_nick = $group['gid'];
+					WHERE g1.group_nick = ?',[$group_nick]);
 			if ($row) {
+
 				$group_id = $row['group_id'];
-				if ($parent_nick && $parent_nick != $row['parent_nick'] && ($catalog_id == $row['catalog_id'] || $row['order'] < $order)) {
+				if ($catalog_id == $row['catalog_id'] || $row['order'] > $order) {
+					//$order - новый прайс должен стоять выше старого
 					$parent_id = Catalog::getGroupId($parent_nick);
-					Catalog::updateGroupParent($parent_id, $group_id);
+
+					Data::exec('UPDATE showcase_groups SET parent_id = ?, `catalog_id` = ? WHERE group_id = ?',[$parent_id, $catalog_id, $group_id]);
 				}
 				$groups[$group_nick] = $group_id;
 				return $r;

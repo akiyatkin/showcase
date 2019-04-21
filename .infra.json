@@ -1,12 +1,18 @@
 {
+	"pub":["hiddenarticle"],
 	"conf":"akiyatkin\\showcase\\Showcase",
 	"require":"infra.php",
 	"update":"update.php",
-	"dir":"~catalog/",
-	"groupimages":"~catalog/images/",
 	"catalogsrc":"~catalog/tables/",
 	"pricessrc":"~.prices/",
 	"title":"Каталог",
+	"dir":"~catalog/",
+	"menu":"-showcase/menu.json",
+	"grouparticles":"~catalog/articles/",
+	"groupimages":"~catalog/images/",
+	"hiddenarticle":false,
+	
 	"listreverse":false,
 	"ignorelistname":false
+	
 }

@@ -2,8 +2,10 @@
 
 use infrajs\db\Db;
 use infrajs\ans\Ans;
+use infrajs\path\Path;
 
-
+Path::mkdir('~auto/');
+Path::mkdir('~auto/.showcase/');
 
 function scexec($sql) {
 	$db = &Db::pdo();
@@ -33,9 +35,8 @@ CREATE TABLE IF NOT EXISTS `showcase_prices` (
 	`order` SMALLINT unsigned COMMENT 'Порядок применнеия данных',
 	`count` SMALLINT unsigned COMMENT 'Количество записей',
 	`duration` SMALLINT unsigned COMMENT 'Записывается время разбора данных',
-	PRIMARY KEY (`price_id`),
-	UNIQUE INDEX (`name`)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+	PRIMARY KEY (`price_id`)
+) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
 
 scexec($sql);
@@ -52,9 +53,8 @@ CREATE TABLE IF NOT EXISTS `showcase_catalog` (
 	`order` SMALLINT unsigned COMMENT 'Порядок определяется при обновлении всех файлов',
 	`count` SMALLINT unsigned COMMENT 'Количество позиций в файле',
 	`duration` SMALLINT unsigned COMMENT 'Записывается время разбора данных',
-	PRIMARY KEY (`catalog_id`),
-	UNIQUE INDEX (`name`)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+	PRIMARY KEY (`catalog_id`)
+) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
 
 scexec($sql);
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS `showcase_groups` (
 	`catalog_id` SMALLINT unsigned NOT NULL COMMENT 'Кто записал структуру и может изменить её',
 	PRIMARY KEY (`group_id`),
 	UNIQUE INDEX (`group_nick`)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
 scexec($sql);
 
@@ -81,9 +81,8 @@ CREATE TABLE IF NOT EXISTS `showcase_props` (
 	`prop_nick` varchar(255) NOT NULL COMMENT '',
 	`type` TINYINT unsigned NOT NULL COMMENT '1 value, 2 number, 3 text',
 	PRIMARY KEY (`prop_id`),
-	UNIQUE (`prop_nick`)
 	UNIQUE INDEX (prop_nick)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
 scexec($sql);
 
@@ -94,7 +93,7 @@ CREATE TABLE IF NOT EXISTS `showcase_values` (
 	`value_nick` varchar(255) NOT NULL COMMENT '',
 	PRIMARY KEY (`value_id`),
 	UNIQUE INDEX (`value_nick`)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
 scexec($sql);
 
@@ -105,7 +104,7 @@ CREATE TABLE IF NOT EXISTS `showcase_articles` (
 	`article_nick` varchar(255) NOT NULL COMMENT '',
 	PRIMARY KEY (`article_id`),
 	UNIQUE INDEX (`article_nick`)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
 scexec($sql);
 
@@ -115,8 +114,8 @@ CREATE TABLE IF NOT EXISTS `showcase_producers` (
 	`producer` varchar(255) NOT NULL COMMENT '',
 	`producer_nick` varchar(255) NOT NULL COMMENT '',
 	PRIMARY KEY (`producer_id`),
-	UNIQUE INDEX (`producer_nick`)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+	UNIQUE (`producer_nick`)
+) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
 scexec($sql);
 
@@ -132,8 +131,9 @@ CREATE TABLE IF NOT EXISTS `showcase_models` (
 	`time` DATETIME NULL DEFAULT NULL COMMENT '',
 	`group_id` SMALLINT unsigned NOT NULL COMMENT '',
 	PRIMARY KEY (`model_id`),
-	UNIQUE INDEX (`article_id`, `producer_id`)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+	UNIQUE INDEX (`article_id`, `producer_id`),
+	INDEX (group_id, producer_id)
+) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
 scexec($sql);
 
@@ -142,9 +142,10 @@ CREATE TABLE IF NOT EXISTS `showcase_items` (
 	`model_id` MEDIUMINT unsigned NOT NULL COMMENT '',
 	`item_num` SMALLINT unsigned NOT NULL COMMENT '',
 	`item_nick` varchar(255) NOT NULL COMMENT '',
+	`item` varchar(255) NOT NULL COMMENT '',
 	PRIMARY KEY (`model_id`, `item_num`),
-	UNIQUE INDEX (`model_id`,`item_nick`)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+	UNIQUE (`model_id`,`item_nick`)
+) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 END;
 scexec($sql);
 
@@ -157,9 +158,10 @@ CREATE TABLE IF NOT EXISTS `showcase_mvalues` (
 	`value_id` MEDIUMINT unsigned NOT NULL COMMENT '16 млн',
 	`price_id` SMALLINT unsigned NULL COMMENT '65 тыс',
 	`order` SMALLINT unsigned NOT NULL COMMENT '',
-	PRIMARY KEY (`model_id`, `item_num`, `prop_id`, `value_id`),
+	UNIQUE (`model_id`, `item_num`, `prop_id`, `value_id`),
+	INDEX (model_id),
 	INDEX (prop_id, value_id)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 END;
 scexec($sql);
 
@@ -171,9 +173,10 @@ CREATE TABLE IF NOT EXISTS `showcase_mnumbers` (
 	`number` DECIMAL(19,2) NOT NULL COMMENT '',
 	`price_id` SMALLINT unsigned NULL COMMENT '65 тыс',
 	`order` SMALLINT unsigned NOT NULL COMMENT '',
-	PRIMARY KEY (`model_id`, `item_num`, `prop_id`, `number`),
+	UNIQUE (`model_id`, `item_num`, `prop_id`, `number`),
+	INDEX (model_id),
 	INDEX (prop_id, number)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 END;
 scexec($sql);
 
@@ -185,7 +188,8 @@ CREATE TABLE IF NOT EXISTS `showcase_mtexts` (
 	`text` text NOT NULL COMMENT '',
 	`price_id` SMALLINT unsigned NULL COMMENT '65 тыс',
 	`order` SMALLINT unsigned NOT NULL COMMENT '',
-	PRIMARY KEY (`model_id`, `item_num`, `prop_id`)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+	UNIQUE (`model_id`, `item_num`, `prop_id`),
+	INDEX (model_id)
+) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 END;
 scexec($sql);

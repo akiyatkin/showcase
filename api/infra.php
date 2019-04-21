@@ -1,0 +1,98 @@
+<?php
+use akiyatkin\showcase\Showcase;
+
+Showcase::add('count', function () {
+	$conf = Showcase::$conf;
+	return 10;
+}, function (&$val) {
+	$val = (int) $val;
+	if ($val < 1 || $val > 1000) return false;
+	return true;
+});
+Showcase::add('reverse', function () {
+	return false;
+}, function (&$val) {
+	$val = !!$val;
+	return true;
+});
+Showcase::add('sort', function () {
+	return '';
+}, function ($val) {
+	return in_array($val, array('name', 'art', 'group', 'change', 'cost'));
+});
+
+Showcase::add('producer', function () {
+	return array();
+}, function (&$val) {
+	if (!is_array($val)) return false;
+	$val = array_filter($val);
+	$producers = array_keys($val);
+	$producers = array_filter($producers, function (&$value) {
+		if (in_array($value,array('yes', 'no'))) return true;
+		if (Showcase::getProducer($value)) return true;
+		return false;
+	});
+	$val = array_fill_keys($producers, 1);
+	return !!$val;
+});
+
+Showcase::add('group', function () {
+	return array();
+}, function (&$val) {
+	if (!is_array($val)){
+		$s = $val;
+		$val = array();
+		$val[$s] = 1;
+	}
+	$val = array_filter($val);
+	$values = array_keys($val);
+	$values = array_filter($values, function (&$value) {
+		if(in_array($value,array('yes', 'no'))) return true;
+		if(!$value)return false;
+		if(!Showcase::getGroup($value))return false;
+		return true;
+	});
+	$val = array_fill_keys($values, 1);
+	return !!$val;
+});
+
+Showcase::add('search', function () {
+	return '';
+}, function (&$val) {
+	$val = strip_tags($val);
+	return is_string($val);
+});
+
+Showcase::add('cost', function () {
+	return array();
+}, function (&$val) {
+	if (!is_array($val)) return false;
+	$val = array_filter($val);//Удаляет false значения
+	$values = array_keys($val);
+	$values = array_filter($values, function (&$value) {
+		if (in_array($value, array('yes', 'no'))) return true;
+		if (!$value) return false;
+		return true;
+	});
+	$mm = isset($val['minmax']);
+	if ($mm) $minmax = $val['minmax'];
+	$val = array_fill_keys($values, 1);
+	if ($mm) $val['minmax'] = $minmax;
+	return !!$val;
+});
+Showcase::add('more', function () {
+	return array();
+}, function (&$val) {
+	if (!is_array($val)) return;
+	foreach($val as $k => $v){
+		if (!is_array($v)) {
+			unset($val[$k]);
+		} else {
+			foreach($v as $kk => $vv){
+				if (!$vv) unset($val[$k][$kk]);
+			}
+			if (!$val[$k]) unset($val[$k]);
+		}		
+	}
+	return !!$val;
+});
