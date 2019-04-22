@@ -11,13 +11,12 @@ showcase_props 			*prop_id, prop, [prop_nick], type (1 value, 2 number, 3 text) 
 showcase_values 		*value_id, value, [value_nick] - value_nick создаётся для тех свойств которые есть в фильтрах конфига
 ====
 
-showcase_items 			(model_id, item_num), [item_nick]
+showcase_items 			(model_id, item_num), item, [item_nick]
 showcase_models			*model_id, catalog_id, [producer_id, article_id], group_id, time (1 актив, 2 удалена - для сохранения ид)
 
 showcase_mvalues		[model_id, item_num, prop_id, value_id], price_id, order
 showcase_mnumbers		[model_id, item_num, prop_id, number], price_id, order
 showcase_mtexts			[model_id, item_num, prop_id], text, price_id, order
-
 
 
 Если удалили колонку и у айтема пропал props - удаляются все пропсы модели, кроме тех у которых price_id
@@ -92,6 +91,10 @@ Showcase::parseNew();
 Связь с файлами рассчитывается по производителям.
 - Выгружаются все артикулы производителя. 
 - Индексируются все файлы имеющие отношение к производителю, имя файла считается артикулом(по запятым несколько артикулов) и по ассоциативному массиву с артикулами позиций вносятся изменения в базу данных. Для этих опций указывается price_id 1 и файлы не будут удалятся при внесении обновлённых данных.
+
+# Фото, Файл, Файлы, Иллюстрации
+Фото, Файл - шаблон имени файла
+Иллюстрации - Путь до иллюстрации в интернете, как есть попадает в images
 
 # justonevalue
 numbers и values по умолчанию сплитятся по запятым. Это поведение можно для какого-то свойства отменить указав его в свойстве justonevalue.
