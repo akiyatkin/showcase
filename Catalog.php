@@ -141,13 +141,16 @@ class Catalog {
 		$row = Data::fetch('SELECT catalog_id, `order` from showcase_catalog where name = ?',[$name]);
 		$catalog_id = $row['catalog_id'];
 		$order = $row['order'];
+
+		$ans = array('Файл'=>$src);
+
 		$data = Catalog::readCatalog($name, $src);
-		$groups = Catalog::applyGroups($data, $catalog_id, $order);
+		$groups = Catalog::applyGroups($data, $catalog_id, $order, $ans);
 		$props = array();
 		$count = 0;
 		$db = &Db::pdo();
 		$db->beginTransaction();
-		$ans = array();
+		
 		$ans['Принято моделей'] = 0;
 		$ans['Принято позиций'] = 0;
 		$prop_id = Data::initProp('Иллюстрации','value'); //Для событий в цикле
@@ -350,18 +353,15 @@ class Catalog {
 		return $group_id;
 	}
 	
-	public static function insertGroup($group, $parent_id, $group_nick, $catalog_id) {
-		$db = &Db::pdo();
-		$sql = 'INSERT INTO `showcase_groups`(`group`,`parent_id`,`group_nick`, `catalog_id`) VALUES(?,?,?,?)';
-		$stmt = Db::stmt($sql);
-		$stmt->execute([$group, $parent_id, $group_nick,$catalog_id]);
-		$group_id = $db->lastInsertId();
-		return $group_id;
-	}
-	public static function applyGroups($data, $catalog_id, $order) { //order нового каталога
+	
+	public static function applyGroups($data, $catalog_id, $order, &$ans) { //order нового каталога
 		
 		$groups = array();
-		Xlsx::runGroups($data, function &($group) use ($catalog_id, &$groups, $order){
+		$ans['Найденно групп'] = 0;
+		$ans['Новых групп'] = 0;
+		
+		Xlsx::runGroups($data, function &($group) use ($catalog_id, &$groups, $order, &$ans){
+			$ans['Найденно групп']++;
 			$r = null;
 			$group_nick =  $group['id'];
 			$parent_nick = $group['gid'];
@@ -372,7 +372,6 @@ class Catalog {
 					LEFT JOIN showcase_catalog c ON g1.catalog_id = c.catalog_id 
 					WHERE g1.group_nick = ?',[$group_nick]);
 			if ($row) {
-
 				$group_id = $row['group_id'];
 				if ($catalog_id == $row['catalog_id'] || $row['order'] > $order) {
 					//$order - новый прайс должен стоять выше старого
@@ -383,15 +382,16 @@ class Catalog {
 				$groups[$group_nick] = $group_id;
 				return $r;
 			}
-			
+			$ans['Новых групп']++;
 			if ($group['gid']) {
 				$parent_nick = $group['gid'];
 				$parent_id = Catalog::getGroupId($parent_nick);	
 			} else {
 				$parent_id = null;
 			}
+
+			$group_id = Data::lastId('INSERT INTO `showcase_groups`(`group`,`parent_id`,`group_nick`, `catalog_id`) VALUES(?,?,?,?)',[$group['title'], $parent_id, $group_nick,$catalog_id]);
 			
-			$group_id = Catalog::insertGroup($group['title'], $parent_id, $group_nick, $catalog_id);
 			$groups[$group_nick] = $group_id;
 			return $r;
 		});
