@@ -624,9 +624,13 @@ class Showcase {
 			if (sizeof($ans['breadcrumbs']) == 1) {
 				array_unshift($ans['breadcrumbs'],array('main' => true,"title" => "Главная","nomark" => true));
 			}
-			$ans['name'] = $group['group'];//имя группы длинное
+			
+				$ans['name'] = $group['group'];//имя группы длинное
+				$ans['title'] = $group['group'];
+
+			
 			//$ans['descr']  =  isset($group['descr']['Описание группы']) ? $group['descr']['Описание группы'] : '';
-			$ans['title'] = $group['group'];
+			
 			
 			
 			

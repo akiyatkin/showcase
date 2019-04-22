@@ -591,6 +591,7 @@ class Data {
 				if (!isset($parents[$group['group_nick']])) continue;
 				$group['childs'] = $parents[$group['group_nick']];
 			}
+			if (!$parents) return array('childs'=>[], 'group_nick'=>false, 'group'=>'Группа не найдена');
 			$childs = $parents[(string)null];
 			$root = $childs[0];
 			
