@@ -33,7 +33,7 @@ echo Rest::get( function () {
 	$ans['res']['Прайсы'] = Prices::actionLoadAll();
 	//$ans['res']['Файлы'] = Data::actionAddFiles();	
 	if ($action == 'addFiles') $ans['res'] = Data::actionAddFiles();
-	
+
 	$list = Catalog::getList();
 	$ans['list'] = $list;
 	$ans['durationrate'] = 10; //килобайт в секунду
@@ -60,10 +60,16 @@ echo Rest::get( function () {
 		$opt = Catalog::getOptions($name);
 		$ans['res'] = [];
 		$ans['res']['Данные'] = Catalog::actionLoad($name, $src);
-		$ans['res']['Файлы'] = Data::actionAddFiles($opt['producer']);
+		//$ans['res']['Файлы'] = Data::actionAddFiles($opt['producer']);
 	}
 	if ($action == 'remove') $ans['res'] = Catalog::actionRemove($name, $src);
-	if ($action == 'addFiles') $ans['res'] = Data::actionAddFiles();
+	if ($action == 'addFiles') {
+		$opt = Catalog::getOptions($name);
+		$ans['res'] = Data::actionAddFiles($opt['producer']);
+	}
+	if ($action == 'addFilesAll') {
+		$ans['res'] = Data::actionAddFiles();
+	}
 	if ($action == 'loadAll') {
 		$ans['res'] = [];
 		Prices::init();
@@ -97,12 +103,15 @@ echo Rest::get( function () {
 	if ($action == 'addFiles') $ans['res'] = Data::actionAddFiles();
 	if ($action == 'load') $ans['res'] = Prices::actionLoad($name, $src);
 	if ($action == 'remove') $ans['res'] = Prices::actionRemove($name, $src);
+	if ($action == 'addFilesAll') {
+		$ans['res'] = Data::actionAddFiles();
+	}
 	if ($action == 'loadAll') {
 		Catalog::init();
 		$ans['res'] = [];
 		$ans['res']['Данные'] = Catalog::actionLoadAll();
 		$ans['res']['Прайсы'] = Prices::actionLoadAll();
-		$ans['res']['Файлы'] = Data::actionAddFiles();
+		//$ans['res']['Файлы'] = Data::actionAddFiles();
 	}
 	$list = Prices::getList();
 	$ans['list'] = $list;

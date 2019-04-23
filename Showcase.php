@@ -311,7 +311,7 @@ class Showcase {
 				$group['childs'] = array_values($group['childs'][0]['childs']);
 			}
 			
-			$img = Rubrics::find($conf['icons'], $group['group_nick'], 'images');
+			$img = Rubrics::find($conf['icons'], $group['group_nick'], Data::$images);
 			if ($img) $group['img'] = $img;
 			return $r;
 		});
@@ -425,15 +425,6 @@ class Showcase {
 		}
 		$data += Showcase::getGroup($data['group_nick']);
 		unset($data['childs']);
-
-		if (isset($data['files'])) {
-			foreach ($data['files'] as $i => $path) {
-				$fd = Load::pathinfo($path);
-				$fd['size'] = round(FS::filesize($path)/1000000, 2);
-				if (!$fd['size']) $fd['size'] = '0.01';
-				$data['files'][$i] = $fd;
-			} 
-		}
 		return $data;
 	}
 	public static function makeMore(&$data, $list) {

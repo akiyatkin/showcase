@@ -27,6 +27,13 @@ class Catalog {
 			$options[$name] = $options[$name] + $row;
 		}
 
+		$savedlist = Data::fetchto('SELECT c.name, c.ans as ans from showcase_catalog c','name');
+		foreach ($savedlist as $name => $row) {
+			$options[$name] =  $row + $options[$name];
+		}
+		foreach ($options as $name => $row) {
+			if($row['ans']) $options[$name]['ans'] = Load::json_decode($row['ans']);
+		}
 		return $options;
 	}
 	public static function actionLoadAll() {
@@ -205,7 +212,9 @@ class Catalog {
 		});
 		Catalog::removeOldModels($time, $catalog_id);
 		$duration = (time() - $time);
-		Data::exec('UPDATE showcase_catalog SET `time` = from_unixtime(?), `duration` = ?, count = ? WHERE catalog_id = ?', [$time, $duration, $count, $catalog_id]);
+		$jsonans = Load::json_encode($ans);
+		Data::exec('UPDATE showcase_catalog SET `time` = from_unixtime(?), `duration` = ?, count = ?, ans = ? 
+			WHERE catalog_id = ?', [$time, $duration, $count, $jsonans, $catalog_id]);
 		$db->commit();
 		return $ans;
 	}

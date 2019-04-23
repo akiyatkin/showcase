@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS `showcase_producers` (
 	`producer_id` SMALLINT unsigned NOT NULL AUTO_INCREMENT COMMENT '',
 	`producer` varchar(255) NOT NULL COMMENT '',
 	`producer_nick` varchar(255) NOT NULL COMMENT '',
+	`icon` varchar(255) NULL COMMENT '',
 	PRIMARY KEY (`producer_id`),
 	UNIQUE (`producer_nick`)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;

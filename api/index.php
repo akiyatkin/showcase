@@ -10,12 +10,15 @@ use infrajs\path\Path;
 use infrajs\view\View;
 use infrajs\each\Each;
 use infrajs\rubrics\Rubrics;
-ob_start();
+//ob_start();
 date_default_timezone_set("Europe/Samara");
 return Rest::get( function () {
 	$ans = [];
 	$ans['count'] = Data::col('SELECT count(*) as `count` from showcase_models');
 	echo Rest::parse('-showcase/api/index.tpl', $ans, 'API');
+}, 'groups', function ($name){
+	$data =  Load::loadJSON('-showcase/api/'.$name.'.php');
+	return Ans::ret($data);
 }, 'producers', [function (){
 	$ans = [];
 	$fd = Showcase::initMark($ans);
@@ -140,7 +143,7 @@ return Rest::get( function () {
 		$article = Path::toutf(strip_tags($article));
 
 		unset($ans['md']);
-	unset($ans['m']);
+		unset($ans['m']);
 		if (!$pos) {
 			http_response_code(404);
 			return Ans::err($ans,'Position not found');
@@ -188,6 +191,15 @@ return Rest::get( function () {
 						$ans['pos']['texts'][$i]  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение 
 					}
 				}
+				if (isset($ans['pos']['files'])) {
+					foreach ($ans['pos']['files'] as $i => $path) {
+						$fd = Load::pathinfo($path);
+						$fd['size'] = round(FS::filesize($path)/1000000, 2);
+						if (!$fd['size']) $fd['size'] = '0.01';
+						$ans['pos']['files'][$i] = $fd;
+					} 
+				}
+				
 				array_map(function($p) use (&$ans){
 					$group = Showcase::getGroup($p);
 					$ans['breadcrumbs'][] = array('title'=>$group['group'],'href'=>$p);

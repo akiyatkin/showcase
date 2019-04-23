@@ -67,6 +67,7 @@ class Data {
 		$opt = $opt + array(
 			'catalog'=>[],
 			'justonevalue'=>[],
+			'columns'=>[],
 			'prices'=>[],
 			'filters'=>[],
 			'values'=>[]	
@@ -287,33 +288,46 @@ class Data {
 		}
 		return sizeof($images);
 	}
-	public static function actionAddFiles($producer = false){
-		/*Индексируем все файлы producer - article, папки files, images, в том числе опцию Файлы
+	public static function actionAddFiles($producer_nick = false){
+		/*Индексируем все файлы producer_nick - article, папки files, images, в том числе опцию Файлы
 		Очищаем в базе всю инфомацию о связях с файлами- значения пропов images, files, texts
 		Бежим и вносим новые связи
-		producer
+		producer_nick
 			article
 				files
 				texts
 				images
 
 		*/
-		return Once::func( function ($producer) {
-			$producer_id = ($producer) ? Data::initProducer($producer): false; //Собираем файлы определённого производителя
+
+		return Once::func( function ($producer_nick) {
+			$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$producer_nick]);
 			
+			//$producer_id = ($producer_nick) ? Data::initProducer($producer_nick): false; //Собираем файлы определённого производителя
+			$ans = [];
+			if ($producer_nick) {
+				if ($producer_id) {
+					$ans['Поиск'] = 'По производителю '.$producer_nick;	
+				} else {
+					$ans['Поиск'] = 'Производитель не найден '.$producer_nick;
+					return $ans;
+				}
+			} else {
+				$ans['Поиск'] = 'По всем производителям';
+			}
 			$list = [];
-			Data::addFilesFaylov($list, $producer); //Файлы
-			Data::addFilesFS($list, $producer);
-			Data::addFilesSyns($list, $producer); //Синонимы Фото и Файл
+			Data::addFilesFaylov($list, $producer_nick); //Файлы
+			Data::addFilesFS($list, $producer_nick);
+			Data::addFilesSyns($list, $producer_nick); //Синонимы Фото и Файл
 			
 			$db = &Db::pdo();
 			$db->beginTransaction();
-			Data::removeFiles($producer);
+			Data::removeFiles($producer_nick);
 
 			$pid = [];
 			foreach (Data::$files as $type) $pid[$type] = Data::initProp($type, 'value');
 
-			$ans['Иллюстраций с прямым адресом'] = Data::applyIllustracii($producer);
+			$ans['Иллюстраций с прямым адресом'] = Data::applyIllustracii($producer_nick);
 			$ans['Иллюстраций на сервере'] = 0;
 			$ans['Бесхозных файлов'] = 0;
 			$ans['Моделей с иллюстрациями'] = 0;
@@ -370,17 +384,17 @@ class Data {
 			$db->commit();
 			
 			return $ans;
-		},[$producer]);
+		},[$producer_nick]);
 
 	}
 	public static function addFilesIcons() {
 		$images_id = Data::initProp('images');
 		$root = Data::getGroups();
-		
+		$conf = Showcase::$conf;
 		Xlsx::runGroups($root, function &(&$group) use ($images_id){
-
 			//Ищим свою картинку
-			$icon = Rubrics::find(Showcase::$conf['icons'], $group['group_nick'], 'images');
+			$group['icon'] = null;
+			$icon = Rubrics::find(Showcase::$conf['icons'], $group['group_nick'], Data::$images);
 			if ($icon) {
 				$group['icon'] = $icon;
 			} else {
@@ -406,15 +420,43 @@ class Data {
 					}
 				}
 			}
-			if ($group['icon']) {
-				Data::exec('UPDATE showcase_groups SET icon = ? WHERE group_nick = ?',
-					[$group['icon'], $group['group_nick']]
-				);		
-			}
+			
+			Data::exec('UPDATE showcase_groups SET icon = ? WHERE group_nick = ?',
+				[$group['icon'], $group['group_nick']]
+			);
 			
 			$r = null;
 			return $r;
 		}, true);
+
+
+		$list = Data::all('SELECT producer_nick FROM showcase_producers');
+		foreach ($list as $k => $prod) {
+			$list[$k]['icon'] = null;
+			//Посмотрели в иконках
+			$icon = Rubrics::find($conf['icons'], $prod['producer_nick'], Data::$images);
+			if ($icon) {
+				$list[$k]['icon'] = $icon;
+				continue;
+			} 
+			//Посмотрели в папках с файлами
+			$dir = Rubrics::find($conf['folders'], $prod['producer_nick'], 'dir');
+			$images = FS::scandir($dir, function ($file) use (&$conf, &$prod, $dir) {
+				$fd = Load::nameInfo($file);
+				if (!in_array($fd['ext'], Data::$images)) return true;
+				return false;
+			});
+			if ($images) {
+				$list[$k]['icon'] = $dir.$images[0];
+				continue;
+			}
+		}
+		foreach($list as $prod) {
+			Data::exec('UPDATE showcase_producers SET icon = ? WHERE producer_nick = ?',
+				[$prod['icon'], $prod['producer_nick']]
+			);
+		}
+		
 	}
 	public static function initArticle($value) {
 		return Once::func( function ($value) {
@@ -685,7 +727,7 @@ class Data {
 	}
 	public static function getProducers() {
 		
-		$list = Data::all('SELECT p.producer, p.producer_nick, count(*) as `count`, c.name as catalog from showcase_models m
+		$list = Data::all('SELECT p.producer, p.icon, p.producer_nick, count(*) as `count`, c.name as catalog from showcase_models m
 			INNER JOIN showcase_producers p on p.producer_id = m.producer_id
 			INNER JOIN showcase_catalog c on c.catalog_id = m.catalog_id
 			GROUP BY producer

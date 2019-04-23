@@ -36,7 +36,7 @@
 	{:menu}
 	<h1>Производители</h1>
 	{list::producer}
-	{producer:}{producer} <small><b>{count}</b> {catalog}.xlsx</small><br>
+	{producer:}{producer} <small><b>{count}</b> {catalog}.xlsx {icon:pic}</small><br>
 {GROUPS:}
 	{:menu}
 	<h1>Группы</h1>
@@ -95,15 +95,17 @@
 			{isdata?:icount}
 			{count?:catalog-count}<br>
 			{duration:duration} {time:time}<br>
-			{isopt?:Есть опции?:Нет опций}
+			{isopt?:Есть опции?:Нет опций} {ans:ans}
 		</div>
 		{actions?:actions}
 	</div>
+	{ans:}<span class="a" onclick="$(this).next().slideToggle()">Ответ</span><div style="display:none" class="alert alert-success">{~print(.)}</div>
 	{catalog-count:}В документе <b>{count}</b> {~words(count,:строка,:строки,:строк)} с Артикулом.
 {actdel:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.tables}{file}')">Очистить</span>
 {actions:}
 		<div class="p-2 text-right" style="width:300px">
 			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.tables}{file}')">Внести</span>
+			<span class="btn btn-info" onclick="Action('addFiles','{name}','{conf.tables}{file}')">Связать</span>
 			{isdata?:actdel}
 		</div>
 {foot:}
@@ -112,7 +114,7 @@
 		<div>
 			<!--<a href="/-showcase/update" class="btn btn-primary">Внести все новые данные и прайсы</a>-->
 			<span class="btn btn-primary" onclick="Action('loadAll')">Внести все новые данные и прайсы</span>
-			<span class="btn btn-info" onclick="Action('addFiles')">Связать с файлами</span>
+			<span class="btn btn-info" onclick="Action('addFilesAll')">Связать с файлами</span>
 			
 		</div>
 		<div>
@@ -120,7 +122,6 @@
 		</div>
 	</div>
 	<hr>
-	{~print(options)}
 	<form id="form" method="POST">
 		<input id="formaction" type="hidden" name="action" value="">
 		<input id="formsrc" type="hidden" name="src" value="">

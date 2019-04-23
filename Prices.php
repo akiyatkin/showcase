@@ -265,7 +265,8 @@ class Prices {
 			});
 		}
 		$duration = (time() - $time);
-		$r = Data::exec('UPDATE showcase_prices SET `time` = from_unixtime(?), `duration` = ?, `count` = ? WHERE price_id = ?', [$time, $duration, $ans['Позиций с ключём'], $price_id]);
+		$jsonans = Load::json_encode($ans);
+		$r = Data::exec('UPDATE showcase_prices SET `time` = from_unixtime(?), `duration` = ?, `count` = ?, ans = ? WHERE price_id = ?', [$time, $duration, $ans['Позиций с ключём'], $jsonans, $price_id]);
 		$db->commit();
 		return $ans;
 	}
