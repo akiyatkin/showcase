@@ -218,5 +218,5 @@ return Rest::get( function () {
 		}]
 	]
 ], function (){
-	echo 'catalog, price, search';
+	echo 'catalog, price, search, groups';
 });

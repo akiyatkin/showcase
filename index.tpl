@@ -43,8 +43,14 @@
 	{list.childs::groups}
 	<br><br><br><br>
 	{groups:}
-		{group} <small> ({group_nick}) {catalog}.xlsx</small> <b>{count}</b>{icon:pic}
-		<div class="ml-4">{childs::groups}</div>
+		<div>
+		{~length(childs)?:subgroup?:justgroup}
+	</div>
+		{subgroup:}
+		<div><span class="a" onclick="$(this).parent().parent().find('.sub:first').slideToggle()">{group}</span> <small> ({group_nick}) {catalog}.xlsx</small> <b>{sum}</b>{icon:pic}</div>
+		<div class="ml-4 sub">{childs::groups}</div>
+		{justgroup:}
+		<div>{group}</span> <small> ({group_nick}) {catalog}.xlsx</small> <b>{count}</b>{icon:pic}</div>
 {PRICES:}
 	{:menu}
 	<h1>Прайсы</h1>

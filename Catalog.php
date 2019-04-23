@@ -32,7 +32,7 @@ class Catalog {
 			$options[$name] =  $row + $options[$name];
 		}
 		foreach ($options as $name => $row) {
-			if($row['ans']) $options[$name]['ans'] = Load::json_decode($row['ans']);
+			if (isset($row['ans'])) $options[$name]['ans'] = Load::json_decode($row['ans']);
 		}
 		return $options;
 	}
@@ -113,6 +113,7 @@ class Catalog {
 		$data = Xlsx::init($src, array(
 			'root' => $conf['title'],
 			'more' => true,
+			'Группы не уникальны' => $conf['Группы не уникальны'],
 			'Имя файла' => "Производитель",
 			'Игнорировать имена листов' => $conf['ignorelistname'],
 			'listreverse' => false,
@@ -154,11 +155,14 @@ class Catalog {
 		$groups = Catalog::applyGroups($data, $catalog_id, $order, $ans);
 		$props = array();
 		$count = 0;
+
+		$ans['Принято моделей'] = 0;
+		$ans['Принято позиций'] = 0;
+
 		$db = &Db::pdo();
 		$db->beginTransaction();
 		
-		$ans['Принято моделей'] = 0;
-		$ans['Принято позиций'] = 0;
+		
 		$prop_id = Data::initProp('Иллюстрации','value'); //Для событий в цикле
 		Xlsx::runPoss( $data, function (&$pos) use ($name, &$ans, &$filters, &$devcolumns, &$props, $catalog_id, $order, $time, &$count) {
 			$count++;
@@ -370,11 +374,11 @@ class Catalog {
 	public static function applyGroups($data, $catalog_id, $order, &$ans) { //order нового каталога
 		
 		$groups = array();
-		$ans['Найденно групп'] = 0;
+		$ans['Найдено групп'] = 0;
 		$ans['Новых групп'] = 0;
 		
 		Xlsx::runGroups($data, function &($group) use ($catalog_id, &$groups, $order, &$ans){
-			$ans['Найденно групп']++;
+			$ans['Найдено групп']++;
 			$r = null;
 			$group_nick =  $group['id'];
 			$parent_nick = $group['gid'];

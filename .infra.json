@@ -21,7 +21,7 @@
 	"groupimages":"~catalog/images/",
 
 	"hiddenarticle":false,
-	
+	"Группы не уникальны":false,
 	"listreverse":false,
 	"ignorelistname":false
 	

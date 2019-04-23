@@ -712,6 +712,17 @@ class Data {
 				$group['path'][] = $group['group_nick'];
 				return $r;
 			});
+			Xlsx::runGroups($root, function &(&$group, $i, $parent) {
+				$group['sum'] = $group['count'];
+				if (isset($group['childs'])) {
+					foreach ($group['childs'] as $child) {
+						$group['sum'] += $child['sum'];
+					}
+					
+				}
+				$r = null;
+				return $r;
+			}, true);
 			return $root;
 		});
 		$root['path'] = [];
