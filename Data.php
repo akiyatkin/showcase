@@ -4,6 +4,7 @@ use akiyatkin\fs\FS;
 use infrajs\load\Load;
 use infrajs\path\Path;
 use infrajs\once\Once;
+use infrajs\rubrics\Rubrics;
 use infrajs\excel\Xlsx;
 use infrajs\db\Db;
 use infrajs\config\Config;
@@ -21,6 +22,9 @@ class Data {
 		echo $begin.'-'.$prev.' '.$msg.'<br>'."\n";
 	}
 	public static $types = ['number','text','value'];
+	public static $images = ['png', 'gif', 'jpg', 'jpeg'];
+	public static $texts = ['html', 'tpl', 'mht', 'docx'];
+	public static $videos = ['avi','ogv','mp4','swf'];
 	public static function fetch($sql, $args = []) {
 		$stmt = Db::stmt($sql);
 		$stmt->execute($args);
@@ -231,9 +235,9 @@ class Data {
 	}
 	public static function fileType($src) {
 		$fd = Load::pathInfo($src);
-		if (in_array($fd['ext'], array('png', 'gif', 'jpg'))) return 'images';
-		if (in_array($fd['ext'], array('html', 'tpl', 'mht', 'docx'))) return 'texts';
-		if (in_array($fd['ext'], array('avi','ogv','mp4','swf'))) return 'videos';
+		if (in_array($fd['ext'], Data::$images)) return 'images';
+		if (in_array($fd['ext'], Data::$texts)) return 'texts';
+		if (in_array($fd['ext'], Data::$videos)) return 'videos';
 		return 'files';
 	}
 	public static function removeFiles($producer){
@@ -306,8 +310,6 @@ class Data {
 			$db->beginTransaction();
 			Data::removeFiles($producer);
 
-
-
 			$pid = [];
 			foreach (Data::$files as $type) $pid[$type] = Data::initProp($type, 'value');
 
@@ -362,11 +364,57 @@ class Data {
 					}
 				}
 			}
+			Data::addFilesIcons();
+			
+
 			$db->commit();
 			
 			return $ans;
 		},[$producer]);
 
+	}
+	public static function addFilesIcons() {
+		$images_id = Data::initProp('images');
+		$root = Data::getGroups();
+		
+		Xlsx::runGroups($root, function &(&$group) use ($images_id){
+
+			//Ищим свою картинку
+			$icon = Rubrics::find(Showcase::$conf['icons'], $group['group_nick'], 'images');
+			if ($icon) {
+				$group['icon'] = $icon;
+			} else {
+				//Ищим картинку своей позииции
+				$row = Data::fetch('SELECT g.group_nick, g.group, g.group_id, v.value as icon from showcase_groups g
+					inner join showcase_models m on (m.group_id = g.group_id)	
+					inner join showcase_mvalues mv on (mv.model_id = m.model_id and mv.prop_id = :images_id)
+					left join showcase_values v on (v.value_id = mv.value_id)
+					where g.group_nick = :group_nick
+					', [':images_id' => $images_id, ':group_nick' => $group['group_nick']]);
+				
+				if ($row) {
+					$group['icon'] = $row['icon'];
+				} else {
+					//Ищим картинку ближайшей вложенной группы
+					if (isset($group['childs'])) {
+						foreach ($group['childs'] as $child) {
+							if ($child['icon']) {
+								$group['icon'] = $child['icon'];
+								break;
+							}
+						}
+					}
+				}
+			}
+			if ($group['icon']) {
+				Data::exec('UPDATE showcase_groups SET icon = ? WHERE group_nick = ?',
+					[$group['icon'], $group['group_nick']]
+				);		
+			}
+			
+			$r = null;
+			return $r;
+		}, true);
 	}
 	public static function initArticle($value) {
 		return Once::func( function ($value) {
@@ -384,33 +432,60 @@ class Data {
 			);	
 		}, [$value]);
 	}
-	public static function addFilesFSproducer(&$list, $prod) {
-		$dir = Showcase::$conf['dir'];
-		if (!Path::theme($dir.$prod.'/')) return; //Подходят только папки
-		
-
-		if (in_array($prod,['articles','tables'])) return; //Относится к группам
-		if (!isset($list[$prod])) $list[$prod] = array();
-		FS::scandir($dir.$prod.'/', function ($fart) use ($dir, &$list, $prod) {
-			$art = mb_strtolower($fart);
-			if (!Path::theme($dir.$prod.'/'.$art.'/')) return; //Подходят только папки
-			if (in_array($art, ['files','images','texts'])) return;
-				
-			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];//Data::$files;
-			FS::scandir($dir.$prod.'/'.$fart.'/', function ($file) use (&$list, $prod, $dir, $art, $fart) {
-				$src = $dir.$prod.'/'.$fart.'/'.$file;
-				$type = Data::fileType($src);
-				$list[$prod][$art][0][$src] = $type;
-			});	
-		});
-	
-		$index = Data::getIndex($dir.$prod.'/images/',  array('jpg', 'png', 'jpeg'));
+	public static function addFilesFS(&$list, $prod) {
+		if ($prod) {
+			Data::addFilesFSproducer($list, $prod);
+			Data::addFilesFSimages($list, $prod);
+		} else {
+			$dir = Showcase::$conf['folders'];
+			FS::scandir($dir, function ($prod) use (&$list) {
+				Data::addFilesFSproducer($list, $prod);
+			});
+			$dir = Showcase::$conf['images'];
+			FS::scandir($dir, function ($prod) use (&$list) {
+				Data::addFilesFSimages($list, $prod);
+			});
+			
+		}
+		foreach ($list as $prod => $arts) if (!$arts) unset($list[$prod]); 
+	}
+	public static function addFilesFSimages(&$list, $prod) {
+		$dir = Showcase::$conf['images'].$prod.'/';
+		if (!Path::theme($dir.'/')) return; //Подходят только папки
+		$index = Data::getIndex($dir,  Data::$images);
 		foreach ($index as $art => $images) {
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
 			$images = array_fill_keys($images,'images');
 			$list[$prod][$art][0] += $images;
 		}
-		$index = Data::getIndex($dir.$prod.'/files/');
+	}
+	public static function addFilesFSproducer(&$list, $prod) {
+		$dir = Showcase::$conf['folders'];
+		if (!Path::theme($dir.'/')) return; //Подходят только папки
+		
+
+		if (in_array($prod,['articles','tables'])) return; //Относится к группам
+		if (!isset($list[$prod])) $list[$prod] = array();
+		FS::scandir($dir.'/', function ($fart) use ($dir, &$list, $prod) {
+			$art = mb_strtolower($fart);
+			if (!Path::theme($dir.'/'.$art.'/')) return; //Подходят только папки
+			if (in_array($art, ['files','images','texts'])) return;
+				
+			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];//Data::$files;
+			FS::scandir($dir.'/'.$fart.'/', function ($file) use (&$list, $prod, $dir, $art, $fart) {
+				$src = $dir.'/'.$fart.'/'.$file;
+				$type = Data::fileType($src);
+				$list[$prod][$art][0][$src] = $type;
+			});	
+		});
+	
+		$index = Data::getIndex($dir.'/images/',  Data::$images);
+		foreach ($index as $art => $images) {
+			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
+			$images = array_fill_keys($images,'images');
+			$list[$prod][$art][0] += $images;
+		}
+		$index = Data::getIndex($dir.'/files/');
 		foreach ($index as $art => $files) {
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
 			foreach ($files as $src) {
@@ -419,19 +494,9 @@ class Data {
 			
 		}
 	}
-	public static function addFilesFS(&$list, $producer) {
-		if ($producer) {
-			Data::addFilesFSproducer($list, $producer);
-		} else {
-			$dir = Showcase::$conf['dir'];
-			FS::scandir($dir, function ($prod) use (&$list) {
-				Data::addFilesFSproducer($list, $prod);
-			});
-		}
-		foreach ($list as $prod => $arts) if (!$arts) unset($list[$prod]); 
-	}
+	
 	public static function addFilesFaylov(&$list, $producer) {
-		$dir = Showcase::$conf['dir'];
+		$dir = Showcase::$conf['folders'];
 		//Можно ли привязать файлы к item. Да, только через свойства Файлы, Файл, Фото. Для связи достаточно item_num
 		$fayliid = Data::initProp('Файлы', 'value');//Пути. Могут быть несколько (pr.producer, a.article, pr.item_num)
 		if ($producer) {
@@ -467,9 +532,8 @@ class Data {
 				continue;
 			} 
 			$src = $dir.$fayl['value'];
-
-			if (!Path::theme($src)) continue;
-
+			if (!Path::theme($src)) $src = $fayl['value'];
+			if (!Path::theme($src)) continue; //В Файлы путь указывается от корня data
 			
 			if (FS::is_dir($src)) {
 				$fs = [];
@@ -570,7 +634,7 @@ class Data {
 	}
 	public static function getGroups($group_nick = false) {
 		$root = Once::func(function (){
-			$list = Data::fetchto('SELECT g.group_nick, g.group, c.name as catalog, count(*) as count, max(model_id) as notempty, g2.group_nick as parent_nick FROM showcase_groups g
+			$list = Data::fetchto('SELECT g.group_nick, g.icon, g.group, c.name as catalog, count(*) as count, max(model_id) as notempty, g2.group_nick as parent_nick FROM showcase_groups g
 			left JOIN showcase_models m ON g.group_id = m.group_id
 			inner JOIN showcase_catalog c ON c.catalog_id = g.catalog_id
 			left JOIN showcase_groups g2 ON g2.group_id = g.parent_id

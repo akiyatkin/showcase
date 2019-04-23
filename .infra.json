@@ -3,13 +3,23 @@
 	"conf":"akiyatkin\\showcase\\Showcase",
 	"require":"infra.php",
 	"update":"update.php",
-	"catalogsrc":"~catalog/tables/",
-	"pricessrc":"~.prices/",
 	"title":"Каталог",
-	"dir":"~catalog/",
+	
+	"icons":"~images/",
+	"images":"~images/",
+	"files":"~files/",
+	"texts":"~pages/",
+	"folders":"~catalog/",
+	"groups":"~pages/",
+	"tables":"~tables/",
+	"prices":"~.prices/",
+
 	"menu":"-showcase/menu.json",
+	"pricessrc":"~.prices/",
+	"catalogsrc":"~catalog/tables/",
 	"grouparticles":"~catalog/articles/",
 	"groupimages":"~catalog/images/",
+
 	"hiddenarticle":false,
 	
 	"listreverse":false,

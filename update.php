@@ -31,10 +31,11 @@ CREATE TABLE IF NOT EXISTS `showcase_prices` (
 	`price_id` SMALLINT unsigned NOT NULL AUTO_INCREMENT COMMENT 'id источника',
 	`name` varchar(255) NOT NULL COMMENT 'Идентификационное имя источника - имя файла',
 	`producer_id` SMALLINT unsigned COMMENT 'Производитель, ограничение для будущих операций',
-	`time` DATETIME NULL DEFAULT NULL COMMENT 'Позволяет после обновления удалить все старые свойства',
+	`time` DATETIME NULL DEFAULT NULL COMMENT 'Дата последнего внесения',
 	`order` SMALLINT unsigned COMMENT 'Порядок применнеия данных',
 	`count` SMALLINT unsigned COMMENT 'Количество записей',
 	`duration` SMALLINT unsigned COMMENT 'Записывается время разбора данных',
+	`ans` text NULL COMMENT '',
 	PRIMARY KEY (`price_id`)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
@@ -49,10 +50,11 @@ CREATE TABLE IF NOT EXISTS `showcase_catalog` (
 	`catalog_id` SMALLINT unsigned NOT NULL AUTO_INCREMENT COMMENT 'id источника',
 	`name` varchar(255) NOT NULL COMMENT 'Идентификационное имя источника - имя файла',
 	`producer_id` SMALLINT unsigned COMMENT 'Производитель, ограничение для будущих операций',
-	`time` DATETIME NULL DEFAULT NULL COMMENT '',
+	`time` DATETIME NULL DEFAULT NULL COMMENT 'Дата последнего внесения',
 	`order` SMALLINT unsigned COMMENT 'Порядок определяется при обновлении всех файлов',
-	`count` SMALLINT unsigned COMMENT 'Количество позиций в файле',
+	`count` SMALLINT unsigned COMMENT 'Количество записей',
 	`duration` SMALLINT unsigned COMMENT 'Записывается время разбора данных',
+	`ans` text NULL COMMENT '',
 	PRIMARY KEY (`catalog_id`)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
@@ -67,6 +69,7 @@ CREATE TABLE IF NOT EXISTS `showcase_groups` (
 	`group` varchar(255) NOT NULL COMMENT '',
 	`parent_id` SMALLINT unsigned NULL COMMENT '',
 	`group_nick` varchar(255) NOT NULL COMMENT '',
+	`icon` varchar(255) NULL COMMENT '',
 	`catalog_id` SMALLINT unsigned NOT NULL COMMENT 'Кто записал структуру и может изменить её',
 	PRIMARY KEY (`group_id`),
 	UNIQUE INDEX (`group_nick`)

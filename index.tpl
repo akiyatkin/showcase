@@ -1,13 +1,13 @@
 {menu:}
 	<div class="mb-3">
-		{(:/-showcase/catalog):link}Данные{:/link} |
+		( {(:/-showcase/tables):link}Данные{:/link} |
 		{(:/-showcase/prices):link}Прайсы{:/link} |
 		{(:/-showcase/groups):link}Группы{:/link} |
-		{(:/-showcase/producers):link}Производители{:/link} |
+		{(:/-showcase/producers):link}Производители{:/link} )
 		{(:/-showcase/models):link}Модели{:/link}  |
 		{(:/-showcase/api):link}API{:/link}
 		<span class="float-right">Загрузить с Яндекс Диска
-		<a class="btn btn-outline-info btn-sm" href="/-showcase/catalog?-ydisk=tables">Данные</a>
+		<a class="btn btn-outline-info btn-sm" href="/-showcase/tables?-ydisk=tables">Данные</a>
 		<a class="btn btn-outline-info btn-sm" href="/-showcase/prices?-ydisk=prices">Прайсы</a> 
 		</span>
 	</div>
@@ -27,10 +27,10 @@
 	{list::model}
 	{model:}
 		<div class="mb-2" style="clear:both">
-			<span title="Позиций {count}">{producer_nick} {article_nick}</span>{img?:pic}
+			<span title="Позиций {count}">{producer_nick} {article_nick}</span>{img:pic}
 			<div><small>{Цена?:cost} <i>{group}</i> {catalog}.xlsx</small></div>
 		</div>
-	{pic:} <small class="a" onclick="$(this).addClass('float-right').removeClass('a').html('<img src=\'/-imager/?src={img}&w=100\'>&nbsp;')">image</small>
+	{pic:} <small class="a" onclick="$(this).addClass('float-right').removeClass('a').html('<img src=\'/-imager/?src={.}&w=100\'>&nbsp;')">image</small>
 	{cost:}{~cost(Цена)} руб.
 {PRODUCERS:}
 	{:menu}
@@ -43,7 +43,7 @@
 	{list.childs::groups}
 	<br><br><br><br>
 	{groups:}
-		{group} <small><b>{count}</b> {catalog}.xlsx</small>
+		{group} <small> ({group_nick}) {catalog}.xlsx</small> <b>{count}</b>{icon:pic}
 		<div class="ml-4">{childs::groups}</div>
 {PRICES:}
 	{:menu}
@@ -72,7 +72,7 @@
 			{isopt?:showopt?:Нет опций}
 		</div>
 		<div class="p-2 text-right" style="width:300px">
-			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.pricessrc}{file}')">Внести</span>
+			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.prices}{file}')">Внести</span>
 			{isdata?:actdel}
 		</div>
 		
@@ -100,18 +100,19 @@
 		{actions?:actions}
 	</div>
 	{catalog-count:}В документе <b>{count}</b> {~words(count,:строка,:строки,:строк)} с Артикулом.
-{actdel:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.catalogsrc}{file}')">Очистить</span>
+{actdel:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.tables}{file}')">Очистить</span>
 {actions:}
 		<div class="p-2 text-right" style="width:300px">
-			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.catalogsrc}{file}')">Внести</span>
+			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.tables}{file}')">Внести</span>
 			{isdata?:actdel}
 		</div>
 {foot:}
 	<hr>
 	<div class="d-flex justify-content-between">
 		<div>
-			<a href="/-showcase/update" class="btn btn-primary">Внести все новые данные и прайсы</a>
-			<!--<span class="btn btn-info" onclick="Action('addFiles')">Связать с файлами</span>-->
+			<!--<a href="/-showcase/update" class="btn btn-primary">Внести все новые данные и прайсы</a>-->
+			<span class="btn btn-primary" onclick="Action('loadAll')">Внести все новые данные и прайсы</span>
+			<span class="btn btn-info" onclick="Action('addFiles')">Связать с файлами</span>
 			
 		</div>
 		<div>

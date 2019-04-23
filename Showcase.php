@@ -6,6 +6,7 @@ use infrajs\path\Path;
 use infrajs\each\Each;
 use infrajs\once\Once;
 use infrajs\excel\Xlsx;
+use infrajs\rubrics\Rubrics;
 use infrajs\sequence\Sequence;
 use infrajs\db\Db;
 use infrajs\config\Config;
@@ -309,11 +310,9 @@ class Showcase {
 			while (isset($group['childs']) && sizeof($group['childs']) == 1 && isset($group['childs'][0]['childs'])) {
 				$group['childs'] = array_values($group['childs'][0]['childs']);
 			}
-
-			$img = Path::theme($conf['groupimages'].$group['group_nick'].'.jpg');
-			if (!$img) $img = Path::theme($conf['groupimages'].$group['group_nick'].'.png');
+			
+			$img = Rubrics::find($conf['icons'], $group['group_nick'], 'images');
 			if ($img) $group['img'] = $img;
-
 			return $r;
 		});
 		$ans['childs'] = array_values($root['childs']);

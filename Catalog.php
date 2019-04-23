@@ -39,7 +39,7 @@ class Catalog {
 				}
 			} else {
 				if (!isset($row['time']) || $row['time'] < $row['mtime']) {
-					$src = Showcase::$conf['catalogsrc'].$row['file'];
+					$src = Showcase::$conf['tables'].$row['file'];
 					$res['Данные - вносим '.$name] = Catalog::actionLoad($name, $src);
 				}
 			}
@@ -48,7 +48,7 @@ class Catalog {
 	}
 	public static function getOptions($filename = false) {//3 пересечения Опциии, Файлы, БазаДанных
 		$list = Data::getOptions('catalog');
-		$filelist = Data::getFileList(Showcase::$conf['catalogsrc']);
+		$filelist = Data::getFileList(Showcase::$conf['tables']);
 		
 		foreach ($filelist as $name => $val) { // По файлам
 			if (!isset($list[$name])) $list[$name] = array();
@@ -88,7 +88,7 @@ class Catalog {
 
 		$conf = Showcase::$conf;
 		$options = Catalog::getOptions();
-		$list = Data::getFileList($conf['catalogsrc']);
+		$list = Data::getFileList($conf['tables']);
 		$order = 0;
 		foreach ($list as $filename => $val) {
 			$order++;	
@@ -103,14 +103,13 @@ class Catalog {
 	
 	public static function readCatalog($name, $src) {
 		$conf = Showcase::$conf;
-		$columns = array_merge(array("Артикул","Производитель"));
 		$data = Xlsx::init($src, array(
 			'root' => $conf['title'],
 			'more' => true,
 			'Имя файла' => "Производитель",
 			'Игнорировать имена листов' => $conf['ignorelistname'],
-			'listreverse' => $conf['listreverse'],
-			'Известные колонки' => $columns
+			'listreverse' => false,
+			'Известные колонки' => array("Артикул","Производитель")
 		));
 		return $data;
 	}
@@ -273,8 +272,13 @@ class Catalog {
 			INNER JOIN showcase_models m ON m.model_id = p.model_id
 			WHERE p.price_id is null and m.catalog_id = ?', [$catalog_id]);
 
-		$count = Data::exec('DELETE p FROM showcase_mtexts p, showcase_models m
-			WHERE m.model_id = p.model_id and p.price_id is null and m.catalog_id = ?', [$catalog_id]);
+		Data::exec('DELETE p FROM showcase_groups p
+			INNER JOIN showcase_models m ON m.model_id = p.model_id
+			WHERE p.price_id is null and m.catalog_id = ?', [$catalog_id]);
+
+		Data::exec('DELETE p FROM showcase_mtexts p
+			INNER JOIN showcase_models m ON m.model_id = p.model_id
+			WHERE p.price_id is null and m.catalog_id = ?', [$catalog_id]);
 		/*echo $catalog_id;
 		echo '<br>';
 		echo $count;

@@ -31,8 +31,9 @@ echo Rest::get( function () {
 	Prices::init();
 	$ans['res']['Данные'] = Catalog::actionLoadAll();
 	$ans['res']['Прайсы'] = Prices::actionLoadAll();
-	$ans['res']['Файлы'] = Data::actionAddFiles();	
-
+	//$ans['res']['Файлы'] = Data::actionAddFiles();	
+	if ($action == 'addFiles') $ans['res'] = Data::actionAddFiles();
+	
 	$list = Catalog::getList();
 	$ans['list'] = $list;
 	$ans['durationrate'] = 10; //килобайт в секунду
@@ -41,6 +42,9 @@ echo Rest::get( function () {
 
 	return Rest::parse('-showcase/index.tpl', $ans, 'CATALOG');
 }, 'catalog', function () {
+	header('location: /-showcase/tables');
+	exit;
+}, 'tables', function () {
 	$ans = array();
 	$ans['actions'] = true;
 	$action = Ans::REQ('action');
@@ -65,7 +69,7 @@ echo Rest::get( function () {
 		Prices::init();
 		$ans['res']['Данные'] = Catalog::actionLoadAll();
 		$ans['res']['Прайсы'] = Prices::actionLoadAll();
-		$ans['res']['Файлы'] = Data::actionAddFiles();
+		//$ans['res']['Файлы'] = Data::actionAddFiles();
 
 	}
 	
