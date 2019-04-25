@@ -3,7 +3,7 @@ showcase_prices 		*price_id, [name], producer_id, time, order, count, duration, 
 showcase_catalog 		*catalog_id, [name], producer_id, time, order, count, duration, ans
 ===
 showcase_groups			*group_id, group, [group_nick], parent_id, icon
-showcase_producers 		*producer_id, producer, [producer_nick], logo
+showcase_producers 		*producer_id, producer, [producer_nick], icon
 showcase_articles 		*article_id, article, [article_nick]
 
 

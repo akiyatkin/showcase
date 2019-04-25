@@ -113,7 +113,7 @@ class Catalog {
 		$data = Xlsx::init($src, array(
 			'root' => $conf['title'],
 			'more' => true,
-			'Группы не уникальны' => $conf['Группы не уникальны'],
+			'Группы уникальны' => $conf['Группы уникальны'],
 			'Имя файла' => "Производитель",
 			'Игнорировать имена листов' => $conf['ignorelistname'],
 			'listreverse' => false,
@@ -142,6 +142,25 @@ class Catalog {
 		
 		return $r;
 	}
+	public static function actionRead($name, $src)
+	{
+		$data = Catalog::readCatalog($name, $src);
+		Xlsx::runGroups($data, function &(&$group) {
+			$group['data'] = sizeof($group['data']);
+			unset($group['head']);
+			unset($group['unset']);
+			unset($group['gid']);
+			unset($group['Группа']);
+			unset($group['pitch']);
+			unset($group['path']);
+			unset($group['name']);
+			unset($group['id']);
+			if(empty($group['childs']))unset($group['childs']);
+			$r = null;
+			return $r;
+		});
+		return $data;
+	}
 	public static function actionLoad($name, $src)
 	{
 		$time = time();
@@ -152,6 +171,7 @@ class Catalog {
 		$ans = array('Файл'=>$src);
 
 		$data = Catalog::readCatalog($name, $src);
+		
 		$groups = Catalog::applyGroups($data, $catalog_id, $order, $ans);
 		$props = array();
 		$count = 0;
@@ -376,21 +396,29 @@ class Catalog {
 		$groups = array();
 		$ans['Найдено групп'] = 0;
 		$ans['Новых групп'] = 0;
-		
+		/*echo '<pre>';
+		Xlsx::runGroups($data, function &(&$group){
+			unset($group['data']);
+			$r = null;
+			return $r;
+		});
+		print_r($data);
+		exit;*/
 		Xlsx::runGroups($data, function &($group) use ($catalog_id, &$groups, $order, &$ans){
 			$ans['Найдено групп']++;
 			$r = null;
 			$group_nick =  $group['id'];
 			$parent_nick = $group['gid'];
 			if (isset($groups[$group_nick])) return $r;
-			$row = Data::fetch('SELECT g1.group, g1.group_id, c.order, g2.group_nick as parent_nick, g1.catalog_id 
+			$row = Data::fetch('SELECT g1.group, g1.group_id, c.order, g2.group_nick as parent_nick, c.catalog_id 
 					FROM showcase_groups g1 
 					LEFT JOIN showcase_groups g2 ON g1.parent_id = g2.group_id 
 					LEFT JOIN showcase_catalog c ON g1.catalog_id = c.catalog_id 
 					WHERE g1.group_nick = ?',[$group_nick]);
+
 			if ($row) {
 				$group_id = $row['group_id'];
-				if ($catalog_id == $row['catalog_id'] || $row['order'] > $order) {
+				if ($catalog_id == $row['catalog_id'] || $row['order'] > $order || !$row['catalog_id']) {
 					//$order - новый прайс должен стоять выше старого
 					$parent_id = Catalog::getGroupId($parent_nick);
 
@@ -399,6 +427,7 @@ class Catalog {
 				$groups[$group_nick] = $group_id;
 				return $r;
 			}
+			
 			$ans['Новых групп']++;
 			if ($group['gid']) {
 				$parent_nick = $group['gid'];

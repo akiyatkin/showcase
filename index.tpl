@@ -27,7 +27,7 @@
 	{list::model}
 	{model:}
 		<div class="mb-2" style="clear:both">
-			<span title="Позиций {count}">{producer_nick} {article_nick}</span>{img:pic}
+			<a title="Позиций {count}" href="/-showcase/api/pos/{producer_nick}/{article_nick}">{producer_nick} {article_nick}</a>{img:pic}
 			<div><small>{Цена?:cost} <i>{group}</i> {catalog}.xlsx</small></div>
 		</div>
 	{pic:} <small class="a" onclick="$(this).addClass('float-right').removeClass('a').html('<img src=\'/-imager/?src={.}&w=100\'>&nbsp;')">image</small>
@@ -48,7 +48,7 @@
 	</div>
 		{subgroup:}
 		<div><span class="a" onclick="$(this).parent().parent().find('.sub:first').slideToggle()">{group}</span> <small> ({group_nick}) {catalog}.xlsx</small> <b>{sum}</b>{icon:pic}</div>
-		<div class="ml-4 sub">{childs::groups}</div>
+		<div class="ml-4 sub" style="display:none">{childs::groups}</div>
 		{justgroup:}
 		<div>{group}</span> <small> ({group_nick}) {catalog}.xlsx</small> <b>{count}</b>{icon:pic}</div>
 {PRICES:}
@@ -94,7 +94,7 @@
 {itemcatalog:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">
 		<div class="p-2" style="width:300px">
-			<big>{producer|:Общий}</big><br>
+			<big>{producer|:Общие данные}</big><br>
 			<i>{file|:Нет файла}</i><br>{size:size} {mtime:time}
 		</div>
 		<div class="p-2 flex-grow-1">
@@ -109,7 +109,8 @@
 	{catalog-count:}В документе <b>{count}</b> {~words(count,:строка,:строки,:строк)} с Артикулом.
 {actdel:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.tables}{file}')">Очистить</span>
 {actions:}
-		<div class="p-2 text-right" style="width:300px">
+		<div class="p-2 text-right" style="width:400px">
+			<span class="btn btn-secondary" onclick="Action('read','{name}','{conf.tables}{file}')">Разобрать</span>
 			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.tables}{file}')">Внести</span>
 			<span class="btn btn-info" onclick="Action('addFiles','{name}','{conf.tables}{file}')">Связать</span>
 			{isdata?:actdel}

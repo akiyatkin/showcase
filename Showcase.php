@@ -164,29 +164,48 @@ class Showcase {
 			);
 			$type = Data::checkType($prop_nick);
 
-			foreach ($vals as $val => $one) {
-				if ($type == 'value') {
-					if ($val == 'yes') {
-						$join[] = 'INNER JOIN showcase_mvalues p'.$prop_id.' on (p'.$prop_id.'.model_id = m.model_id and p'.$prop_id.'.prop_id = '.$prop_id.')';;
-					} else if ($val == 'no') {
-						$no[] = 'and p'.$prop_id.'.prop_id is null';
-						$join[] = 'LEFT JOIN showcase_mvalues p'.$prop_id.' on (p'.$prop_id.'.model_id = m.model_id and p'.$prop_id.'.prop_id = '.$prop_id.')';
-					} else {
-						$value_id = Data::initValue($val);
-						$join[] = 'INNER JOIN showcase_mvalues p'.$prop_id.' on (p'.$prop_id.'.model_id = m.model_id and p'.$prop_id.'.prop_id = '.$prop_id.' and p'.$prop_id.'.value_id = '.$value_id.')';
-					}
-				} else {
-					if ($val == 'yes') {
-						$join[] = 'INNER JOIN showcase_mnumbers p'.$prop_id.' on (p'.$prop_id.'.model_id = m.model_id and p'.$prop_id.'.prop_id = '.$prop_id.')';
-					} else if ($val == 'no') {
-						$no[] = 'and p'.$prop_id.'.prop_id is null';
-						$join[] = 'LEFT JOIN showcase_mnumbers p'.$prop_id.' on (p'.$prop_id.'.model_id = m.model_id and p'.$prop_id.'.prop_id = '.$prop_id.')';
-					} else {
-						$number = (float) $val;
-						$join[] = 'INNER JOIN showcase_mnumbers p'.$prop_id.' on (p'.$prop_id.'.model_id = m.model_id and p'.$prop_id.'.prop_id = '.$prop_id.' and p'.$prop_id.'.number = '.$number.')';
-					}
+
+			
+			$un = $prop_id;
+			if ($type == 'value') {
+				if (isset($vals['no'])) {
+					unset($vals['no']);
+					$no[] = 'and p'.$un.'.prop_id is null';
+					$join[] = 'LEFT JOIN showcase_mvalues p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
+				} else if (isset($vals['yes'])) {
+					unset($vals['yes']);
+					$join[] = 'INNER JOIN showcase_mvalues p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
+				}
+			} else {
+				if (isset($vals['no'])) {
+					unset($vals['no']);
+					$no[] = 'and p'.$un.'.prop_id is null';
+					$join[] = 'LEFT JOIN showcase_mnumbers p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
+				} else if (isset($vals['yes'])) {
+					unset($vals['yes']);
+					$join[] = 'INNER JOIN showcase_mnumbers p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
 				}
 			}
+			if ($vals) {
+				if ($type == 'value') {
+					$joinp = [];
+					foreach ($vals as $val => $one) {
+						$value_id = Data::initValue($val);
+						$joinp[] = 'p'.$un.'.value_id = '.$value_id;
+					}
+					$joinp = implode(' OR ', $joinp);
+					$join[] = 'INNER JOIN showcase_mvalues p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.' and ('.$joinp.'))';
+				} else {
+					$joinp = [];
+					foreach ($vals as $val => $one) {
+						$number = (float) $val;
+						$join[] = 'p'.$un.'.number = '.$number;
+					}
+					$joinp = implode(' OR ', $joinp);
+					$join[] = 'INNER JOIN showcase_mnumbers p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.' and ('.$joinp.'))';
+				}
+			}
+			
 			
 		}
 		if (!empty($md['search'])) {
@@ -228,7 +247,7 @@ class Showcase {
 		$no = implode(' ', $no);	
 		$start = ($page-1)*$count;
 
-		$models = Data::all('
+		$sql = '
 			SELECT SQL_CALC_FOUND_ROWS max(i.item_nick) as item_nick, mn.number, a.article_nick, pr.producer_nick, GROUP_CONCAT(m.group_id) from showcase_items i
 			LEFT JOIN showcase_models m on i.model_id = m.model_id
 			LEFT JOIN showcase_groups g on g.group_id = m.group_id
@@ -247,8 +266,11 @@ class Showcase {
 			IF(mn2.value_id = :nal3,0,1), 
 			IF(mn.number IS NULL,1,0), 
 			mn.number
-			limit '.$start.','.$count
-		, [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id, 
+			limit '.$start.','.$count;
+		//echo '<pre>';
+		//echo $sql;
+
+		$models = Data::all($sql, [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id, 
 			':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3]);
 		$size = Data::col('SELECT FOUND_ROWS()');
 		foreach ($models as $k=>$m) {
@@ -337,7 +359,7 @@ class Showcase {
 		$options = Data::getOptions();
 		return $options;
 	}
-	public static $columns = array("images", "files", "texts","videos", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании");
+	public static $columns = array("images", "files", "texts","videos", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие-на-складе");
 	public static function getModel($producer, $article, $item_nick = '') {
 		$data = Data::fetch('SELECT 
 			m.model_id, p.producer_nick, 
@@ -423,7 +445,8 @@ class Showcase {
 			}
 			$data['items'] = array_values($items);
 		}
-		$data += Showcase::getGroup($data['group_nick']);
+		$g = Showcase::getGroup($data['group_nick']);
+		$data += $g;
 		unset($data['childs']);
 		return $data;
 	}

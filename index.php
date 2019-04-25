@@ -62,6 +62,7 @@ echo Rest::get( function () {
 		$ans['res']['Данные'] = Catalog::actionLoad($name, $src);
 		//$ans['res']['Файлы'] = Data::actionAddFiles($opt['producer']);
 	}
+	if ($action == 'read') $ans['res'] = Catalog::actionRead($name, $src);
 	if ($action == 'remove') $ans['res'] = Catalog::actionRemove($name, $src);
 	if ($action == 'addFiles') {
 		$opt = Catalog::getOptions($name);

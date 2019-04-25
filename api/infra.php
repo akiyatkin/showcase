@@ -84,14 +84,29 @@ Showcase::add('more', function () {
 	return array();
 }, function (&$val) {
 	if (!is_array($val)) return;
-	foreach($val as $k => $v){
+
+	 
+	foreach ($val as $k => $v){
 		if (!is_array($v)) {
 			unset($val[$k]);
 		} else {
-			foreach($v as $kk => $vv){
-				if (!$vv) unset($val[$k][$kk]);
+			if (!empty($val[$k]['no']) && !empty($val[$k]['yes'])) { 
+				//что-то должно обедить или объединиться
+				//Выбрать все отмеченные и все не отмеченные сбрасывает выбор. 
+				//Становится выбрать всё по этому критерию.
+				unset($val[$k]); //критерий удаляется
+				continue;
+			} else if (!empty($val[$k]['yes'])) {
+				//если все указанные, остальные уточнения не имеют смысла и остаётся только yes
+				$val[$k] = [ 'yes' => 1 ];
+			} else {
+				foreach($v as $kk => $vv){
+					if (!$vv) unset($val[$k][$kk]);
+					else $val[$k][$kk] = 1;//Все значения значений сбрасываются на 1
+				}
+				if (!$val[$k]) unset($val[$k]);	
 			}
-			if (!$val[$k]) unset($val[$k]);
+			
 		}		
 	}
 	return !!$val;

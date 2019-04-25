@@ -22,7 +22,7 @@ class Data {
 		echo $begin.'-'.$prev.' '.$msg.'<br>'."\n";
 	}
 	public static $types = ['number','text','value'];
-	public static $images = ['png', 'gif', 'jpg', 'jpeg'];
+	public static $images = ['png', 'gif', 'jpg', 'jpeg','svg'];
 	public static $texts = ['html', 'tpl', 'mht', 'docx'];
 	public static $videos = ['avi','ogv','mp4','swf'];
 	public static function fetch($sql, $args = []) {
@@ -319,7 +319,6 @@ class Data {
 			Data::addFilesFaylov($list, $producer_nick); //Файлы
 			Data::addFilesFS($list, $producer_nick);
 			Data::addFilesSyns($list, $producer_nick); //Синонимы Фото и Файл
-			
 			$db = &Db::pdo();
 			$db->beginTransaction();
 			Data::removeFiles($producer_nick);
@@ -675,10 +674,12 @@ class Data {
 		return $list;
 	}
 	public static function getGroups($group_nick = false) {
+
+		
 		$root = Once::func(function (){
 			$list = Data::fetchto('SELECT g.group_nick, g.icon, g.group, c.name as catalog, count(*) as count, max(model_id) as notempty, g2.group_nick as parent_nick FROM showcase_groups g
 			left JOIN showcase_models m ON g.group_id = m.group_id
-			inner JOIN showcase_catalog c ON c.catalog_id = g.catalog_id
+			left JOIN showcase_catalog c ON c.catalog_id = g.catalog_id
 			left JOIN showcase_groups g2 ON g2.group_id = g.parent_id
 			GROUP BY group_nick
 			order by g.group_id','group_nick');
@@ -691,16 +692,16 @@ class Data {
 				$parents[$group['parent_nick']][] = &$group;
 			}
 
-			
+		
 			$p = null;
 			foreach ($list as $i => &$group) {
 				if (!isset($parents[$group['group_nick']])) continue;
 				$group['childs'] = $parents[$group['group_nick']];
 			}
-			if (!$parents) return array('childs'=>[], 'group_nick'=>false, 'group'=>'Группа не найдена');
-			$childs = $parents[(string)null];
+			if (!$parents || !isset($parents[''])) return array('childs'=>[], 'group_nick'=>false, 'group'=>'Группа не найдена');
+			$childs = $parents[''];
 			$root = $childs[0];
-			
+
 			Xlsx::runGroups($root, function &(&$group, $i, $parent) {
 				$r = null;
 				if (!$parent) return $r;
