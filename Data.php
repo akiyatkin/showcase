@@ -431,11 +431,11 @@ class Data {
 
 		$list = Data::all('SELECT producer_nick FROM showcase_producers');
 		foreach ($list as $k => $prod) {
-			$list[$k]['icon'] = null;
+			$list[$k]['logo'] = null;
 			//Посмотрели в иконках
-			$icon = Rubrics::find($conf['icons'], $prod['producer_nick'], Data::$images);
-			if ($icon) {
-				$list[$k]['icon'] = $icon;
+			$logo = Rubrics::find($conf['icons'], $prod['producer_nick'], Data::$images);
+			if ($logo) {
+				$list[$k]['logo'] = $logo;
 				continue;
 			} 
 			//Посмотрели в папках с файлами
@@ -446,13 +446,13 @@ class Data {
 				return false;
 			});
 			if ($images) {
-				$list[$k]['icon'] = $dir.$images[0];
+				$list[$k]['logo'] = $dir.$images[0];
 				continue;
 			}
 		}
 		foreach($list as $prod) {
-			Data::exec('UPDATE showcase_producers SET icon = ? WHERE producer_nick = ?',
-				[$prod['icon'], $prod['producer_nick']]
+			Data::exec('UPDATE showcase_producers SET logo = ? WHERE producer_nick = ?',
+				[$prod['logo'], $prod['producer_nick']]
 			);
 		}
 		
@@ -739,7 +739,7 @@ class Data {
 	}
 	public static function getProducers() {
 		
-		$list = Data::all('SELECT p.producer, p.icon, p.producer_nick, count(*) as `count`, c.name as catalog from showcase_models m
+		$list = Data::all('SELECT p.producer, p.logo, p.producer_nick, count(*) as `count`, c.name as catalog from showcase_models m
 			INNER JOIN showcase_producers p on p.producer_id = m.producer_id
 			INNER JOIN showcase_catalog c on c.catalog_id = m.catalog_id
 			GROUP BY producer

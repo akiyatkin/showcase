@@ -1,4 +1,7 @@
 
+
+
+
 showcase_prices 		*price_id, [name], producer_id, time, order, count, duration, ans
 showcase_catalog 		*catalog_id, [name], producer_id, time, order, count, duration, ans
 ===

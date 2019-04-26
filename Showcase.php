@@ -362,7 +362,7 @@ class Showcase {
 	public static $columns = array("images", "files", "texts","videos", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие-на-складе");
 	public static function getModel($producer, $article, $item_nick = '') {
 		$data = Data::fetch('SELECT 
-			m.model_id, p.producer_nick, 
+			m.model_id, p.producer_nick, p.logo, g.icon,
 			p.producer, a.article_nick, 
 			a.article, g.group_nick, g.group
 			FROM showcase_models m

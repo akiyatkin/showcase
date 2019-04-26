@@ -172,6 +172,7 @@ return Rest::get( function () {
 		},
 		[function ($a, $producer, $article, $item_nick = false) {
 			$ans = array();
+			Showcase::initMark($ans, $producer, $article);
 			$ans['pos'] = Showcase::getModel($producer, $article, $item_nick);
 			
 			$producer = Path::toutf(strip_tags($producer));
