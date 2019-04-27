@@ -7,7 +7,6 @@ use akiyatkin\showcase\Prices;
 use akiyatkin\showcase\Data;
 use akiyatkin\showcase\Showcase;
 
-ob_start();
 date_default_timezone_set("Europe/Samara");
 
 echo Rest::get( function () {
@@ -115,6 +114,7 @@ echo Rest::get( function () {
 		//$ans['res']['Файлы'] = Data::actionAddFiles();
 	}
 	$list = Prices::getList();
+
 	$ans['list'] = $list;
 	$ans['durationrate'] = 100; //килобайт в секунду
 	$ans['durationfactor'] = round(1/$ans['durationrate'],4); //секунд на килобайт*/

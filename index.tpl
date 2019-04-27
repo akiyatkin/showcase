@@ -68,18 +68,18 @@
 {itemprice:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">
 		<div class="p-2" style="width:300px">
-			<big>{producer|:com}</big><br>
+			<big>{producer|(:Общий прайс для всех производителей):com}</big><br>
 			<i>{file|:Нет файла}</i><br>{size:size} {mtime:time}
 		</div>
 		<div class="p-2 flex-grow-1">
 			{isdata?:icount}
 			{count?:price-count}<br>
 			{duration:duration} {time:time}<br>
-			{isopt?:showopt?:Нет опций}
+			{isopt?:showopt?:Нет опций}  {ans:ans}
 		</div>
 		<div class="p-2 text-right" style="width:300px">
 			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.prices}{file}')">Внести</span>
-			{isdata?:actdel}
+			{isdata?:actdelprice}
 		</div>
 		
 	</div>
@@ -89,12 +89,12 @@
 	<b>Синонимы</b> {~print(synonyms)}
 	<b>Параметры</b> {~print(props)}
 	</div>
-	{com:}<b class="text-danger">Общий</b>
+	{com:}<b class="text-danger">{.}</b>
 	{price-count:}В документе <b>{count}</b> {~words(count,:строка,:строки,:строк)} с ключём прайса <b>{priceprop}</b>.
 {itemcatalog:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">
 		<div class="p-2" style="width:300px">
-			<big>{producer|:Общие данные}</big><br>
+			<big>{producer|(:Общие данные для всех производителей):com}</big><br>
 			<i>{file|:Нет файла}</i><br>{size:size} {mtime:time}
 		</div>
 		<div class="p-2 flex-grow-1">
@@ -107,6 +107,7 @@
 	</div>
 	{ans:}<span class="a" onclick="$(this).next().slideToggle()">Ответ</span><div style="display:none" class="alert alert-success">{~print(.)}</div>
 	{catalog-count:}В документе <b>{count}</b> {~words(count,:строка,:строки,:строк)} с Артикулом.
+{actdelprice:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.prices}{file}')">Очистить</span>
 {actdel:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.tables}{file}')">Очистить</span>
 {actions:}
 		<div class="p-2 text-right" style="width:400px">

@@ -17,26 +17,30 @@ Event::$classes['Showcase-prices'] = function (&$obj) {
 class Prices {
 	public static function getList() {
 		$options = Prices::getOptions();
-		foreach ($options as $name => $row) $options[$name]['icount'] = 0;	
+	
 		$savedlist = Data::fetchto('
-			SELECT t.name, count(DISTINCT t.model_id, t.item_num) as icount FROM (
-				SELECT p.name, v.model_id, v.item_num
+			SELECT ps.name, ps.ans, count(DISTINCT t.model_id, t.item_num) as icount FROM (
+				SELECT p.price_id, v.model_id, v.item_num
 				from showcase_mnumbers v, showcase_prices p
 				WHERE p.price_id = v.price_id and v.price_id is not null
 				
 				UNION ALL
-				SELECT p.name, v.model_id, v.item_num
+				SELECT p.price_id, v.model_id, v.item_num
 				from showcase_mtexts v, showcase_prices p
 				WHERE p.price_id = v.price_id and v.price_id is not null
 				
 				UNION ALL
-				SELECT p.name, v.model_id, v.item_num
+				SELECT p.price_id, v.model_id, v.item_num
 				from showcase_mvalues v, showcase_prices p
 				WHERE p.price_id = v.price_id and v.price_id is not null
 			) t
-			GROUP BY t.name
+			RIGHT JOIN showcase_prices ps ON ps.price_id = t.price_id
+			GROUP BY ps.name
     	','name');
-		foreach ($savedlist as $name => $row) if ($name) $options[$name]['icount'] += $row['icount'];
+		foreach ($savedlist as $name => $row) {
+			$row['ans'] = Load::json_decode($row['ans'],true);
+			if ($name) $options[$name] += $row;
+		}
 		return $options;
 	}
 	public static function actionLoadAll() {
@@ -151,16 +155,19 @@ class Prices {
 				$t = 'm'.$p['type'].'s';	//mvalues
 				$mainprop = ($p['type'] == 'value') ?'value_id': $p['type'];
 
-				$row = Data::fetch('SELECT p.order from showcase_'.$t.' v, showcase_prices p 
-					WHERE v.price_id = p.price_id 
-					AND model_id = ? 
+				$row = Data::fetch('SELECT p.order from showcase_'.$t.' v
+					left join showcase_prices p on p.price_id = v.price_id
+					WHERE
+					model_id = ? 
 					AND item_num = ? AND prop_id = ?',
 					[$model_id, $item_num, $p['prop_id']]);
 
 				if ($row) {
-					$oldorder = $row['order'];
-					if ($oldorder < $order) {
-						continue; //Свойство установлено из более приоритетного прайса
+					if ($row['order']){
+						$oldorder = $row['order'];
+						if ($oldorder < $order) {
+							continue; //Свойство установлено из более приоритетного прайса
+						}
 					}
 					Prices::deleteProp($model_id, $item_num, $p['prop_id']);
 				}
