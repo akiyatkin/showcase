@@ -132,19 +132,6 @@ echo Rest::get( function () {
 	$ans = array();
 	$ans['list'] = Data::getModels();
 	return Rest::parse('-showcase/index.tpl', $ans, 'MODELS');
-}, 'pos', [
-	function (){
-		return 'producer/article';
-	},[
-		function( ) {
-			return 'article';
-		},
-		function ($a, $producer, $article) {
-			$ans = array();
-			$ans['pos'] = Showcase::getModel($producer, $article);
-			return Ans::ret($ans);
-		}
-	]
-], function (){
+}, function (){
 	return 'catalog, price, search';
 });

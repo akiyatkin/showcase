@@ -3,6 +3,7 @@ use infrajs\load\Load;
 use infrajs\rest\Rest;
 use infrajs\ans\Ans;
 use akiyatkin\showcase\Catalog;
+use infrajs\event\Event;
 use akiyatkin\showcase\Prices;
 use akiyatkin\showcase\Data;
 use akiyatkin\showcase\Showcase;
@@ -170,14 +171,14 @@ return Rest::get( function () {
 		function( ) {
 			echo 'article';
 		},
-		[function ($a, $producer, $article, $item_nick = false) {
+		[function ($a, $producer_nick, $article_nick, $item_nick = false) {
 			$ans = array();
-			Showcase::initMark($ans, $producer, $article);
-			$ans['pos'] = Showcase::getModel($producer, $article, $item_nick);
+			Showcase::initMark($ans, $producer_nick, $article_nick);
+			$producer_nick = Path::toutf(strip_tags($producer_nick));
+			$article_nick = Path::toutf(strip_tags($article_nick));
+			$ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick, $item_nick);
 			
-			$producer = Path::toutf(strip_tags($producer));
-			$article = Path::toutf(strip_tags($article));
-			$active = $article;
+			$active = $article_nick;
 			if (Showcase::$conf['hiddenarticle']) {
 				if(isset($pos['Наименование'])) {
 					$active = $pos['Наименование'];
@@ -186,36 +187,22 @@ return Rest::get( function () {
 				}
 			}
 			
-			if ($ans['pos']) {
-				if (isset($ans['pos']['texts'])) {
-					foreach ($ans['pos']['texts'] as $i => $src) {
-						$ans['pos']['texts'][$i]  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение 
-					}
-				}
-				if (isset($ans['pos']['files'])) {
-					foreach ($ans['pos']['files'] as $i => $path) {
-						$fd = Load::pathinfo($path);
-						$fd['size'] = round(FS::filesize($path)/1000000, 2);
-						if (!$fd['size']) $fd['size'] = '0.01';
-						$ans['pos']['files'][$i] = $fd;
-					} 
-				}
-				
-				array_map(function($p) use (&$ans){
-					$group = Showcase::getGroup($p);
-					$ans['breadcrumbs'][] = array('title'=>$group['group'],'href'=>$p);
-				}, $ans['pos']['path']);
-				$ans['breadcrumbs'][] = array('href'=>$producer, 'title'=>$producer);
-				$ans['breadcrumbs'][] = array('active'=>true, 'title'=>$active);
-				return Ans::ret($ans);
-			} else {
+			if (!$ans['pos']) {
 				$ans['breadcrumbs'][] = array('href'=>'producers','title'=>'Производители');
-				$ans['breadcrumbs'][] = array('href'=>'','title'=>$producer,'href'=>$producer);
+				$ans['breadcrumbs'][] = array('href'=>'','title'=>$producer_nick,'href'=>$producer_nick);
 				$ans['breadcrumbs'][] = array('active'=>true, 'title'=>$active);
 				return Ans::err($ans);
 			}
-
+			
+			
+			array_map(function($p) use (&$ans){
+				$group = Showcase::getGroup($p);
+				$ans['breadcrumbs'][] = array('title'=>$group['group'],'href'=>$p);
+			}, $ans['pos']['path']);
+			$ans['breadcrumbs'][] = array('href'=>$producer_nick, 'title'=>$ans['pos']['producer']);
+			$ans['breadcrumbs'][] = array('active'=>true, 'title'=>$active);
 			return Ans::ret($ans);
+
 		}]
 	]
 ], function (){

@@ -8,11 +8,25 @@ use infrajs\once\Once;
 use infrajs\excel\Xlsx;
 use infrajs\rubrics\Rubrics;
 use infrajs\sequence\Sequence;
+use infrajs\event\Event;
 use infrajs\db\Db;
 use infrajs\config\Config;
 use akiyatkin\showcase\Data;
 use infrajs\ans\Ans;
 use infrajs\mark\Mark as Marker;
+
+
+Event::$classes['Showcase-position'] = function ($pos) {
+	$id = $pos['producer_nick'].' '.$pos['article_nick'];
+	if (!empty($pos['item_nick'])) $id .= ' '.$pos['item_nick'];
+	return $id;
+};
+Event::$classes['Showcase-group'] = function (&$group) {
+	return $group['group_nick'];
+};
+Event::$classes['Showcase-producer'] = function (&$prod) {
+	return $prod['producer_nick'];
+};
 
 class Showcase {
 	public static $conf;
@@ -68,6 +82,11 @@ class Showcase {
 		$ans['m'] = $ar['m'];
 		$ans['md'] = $ar['md'];
 		return $ar['md'];
+	}
+	public static function getValue($value_nick) {
+		return Once::func(function ($value_nick) {
+			return Data::fetch('SELECT value_id, value_nick, value FROM showcase_values WHERE value_nick = ?', [$value_nick]);	
+		},[$value_nick]);
 	}
 	public static function getProducer($producer_nick) {
 		return Once::func(function ($producer_nick){
@@ -360,6 +379,26 @@ class Showcase {
 		return $options;
 	}
 	public static $columns = array("images", "files", "texts","videos", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие-на-складе");
+	public static function getModelShow($producer_nick, $article_nick, $item_nick = '') {
+		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nick);
+		if (!$pos) return $pos;
+		
+		if (isset($pos['texts'])) {
+			foreach ($pos['texts'] as $i => $src) {
+				$pos['texts'][$i]  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение 
+			}
+		}
+		if (isset($pos['files'])) {
+			foreach ($pos['files'] as $i => $path) {
+				$fd = Load::pathinfo($path);
+				$fd['size'] = round(FS::filesize($path)/1000000, 2);
+				if (!$fd['size']) $fd['size'] = '0.01';
+				$pos['files'][$i] = $fd;
+			} 
+		}
+		Event::fire('Showcase-position.onshow', $pos);
+		return $pos;
+	}
 	public static function getModel($producer, $article, $item_nick = '') {
 		$data = Data::fetch('SELECT 
 			m.model_id, p.producer_nick, p.logo, g.icon,
@@ -448,6 +487,7 @@ class Showcase {
 		$g = Showcase::getGroup($data['group_nick']);
 		$data += $g;
 		unset($data['childs']);
+		Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
 		return $data;
 	}
 	public static function makeMore(&$data, $list) {
