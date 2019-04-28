@@ -69,6 +69,7 @@ class Data {
 			'justonevalue'=>[],
 			'columns'=>[],
 			'prices'=>[],
+			'props'=>[],
 			'filters'=>[],
 			'values'=>[]	
 		);
@@ -78,6 +79,7 @@ class Data {
 
 		return $opt;
 	}
+	
 	public static function getOptions($part = false){
 		$opt = Data::loadShowcaseConfig();
 		Data::prepareOptionPart($opt['catalog']);

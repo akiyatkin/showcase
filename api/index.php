@@ -18,8 +18,9 @@ return Rest::get( function () {
 	$ans['count'] = Data::col('SELECT count(*) as `count` from showcase_models');
 	echo Rest::parse('-showcase/api/index.tpl', $ans, 'API');
 }, 'groups', function ($name){
-	$data =  Load::loadJSON('-showcase/api/'.$name.'.php');
-	return Ans::ret($data);
+	return include(Path::theme('-showcase/api/'.$name.'.php'));
+}, 'filters', function ($name){
+	return include(Path::theme('-showcase/api/'.$name.'.php'));
 }, 'producers', [function (){
 	$ans = [];
 	$fd = Showcase::initMark($ans);

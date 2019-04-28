@@ -144,17 +144,12 @@ class Prices {
 			$r = false;
 			foreach ($props as $p) {
 				//Смотрим что установлено для нашей модели. Будет insert или update
-
-				if (!isset($pos[$p['prop']])) {
-					continue; //Нечего копировать, свойства то и нет
-				}
-
-				$val = $pos[$p['prop']];
+				
+				
 				
 				$oldorder = 0;
 				$t = 'm'.$p['type'].'s';	//mvalues
 				$mainprop = ($p['type'] == 'value') ?'value_id': $p['type'];
-
 				$row = Data::fetch('SELECT p.order from showcase_'.$t.' v
 					left join showcase_prices p on p.price_id = v.price_id
 					WHERE
@@ -171,6 +166,18 @@ class Prices {
 					}
 					Prices::deleteProp($model_id, $item_num, $p['prop_id']);
 				}
+
+				//Может пусто и записывать ничего не надо?
+				if (!isset($pos[$p['prop']])) continue;
+				if ($p['type'] == 'number') {
+					$pos[$p['prop']] = (float) $pos[$p['prop']];
+					if(!$pos[$p['prop']]) continue;
+				} else if ($pos[$p['prop']] == '') {
+					continue; //Нечего копировать, свойства то и нет
+				}
+
+
+				$val = $pos[$p['prop']];
 
 				$r = true;
 				$ar = ($p['type'] == 'text') ? [$val] : explode(',', $val);

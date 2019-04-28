@@ -7,12 +7,12 @@ use infrajs\each\Each;
 use infrajs\once\Once;
 use infrajs\excel\Xlsx;
 use infrajs\rubrics\Rubrics;
-use infrajs\sequence\Sequence;
 use infrajs\event\Event;
 use infrajs\db\Db;
 use infrajs\config\Config;
 use akiyatkin\showcase\Data;
 use infrajs\ans\Ans;
+use infrajs\sequence\Sequence as Seq;
 use infrajs\mark\Mark as Marker;
 
 
@@ -55,23 +55,29 @@ class Showcase {
 		$val = Ans::GET('val');
 		$val = Path::encode(Path::toutf(strip_tags($val)));
 		$art = Ans::GET('art');
+
+		
 		if ($val && !$art) {
-
-			$group = Showcase::getGroup($val);
-
 			if (!isset($_GET['m'])) $_GET['m'] = '';
-			if ($group) {
-				$_GET['m'].=':group::.'.$group['group_nick'].'=1';
+
+			if ($val == 'actions') {
+				$_GET['m'].=':more.Наличие-на-складе.Акция=1:more.Наличие-на-складе.Распродажа=1';
 			} else {
-				$producer = Showcase::getProducer($val);
-				if ($producer) {
-					$_GET['m'].=':producer::.'.$val.'=1';
+				$group = Showcase::getGroup($val);
+				if ($group) {
+					$_GET['m'].=':group::.'.$group['group_nick'].'=1';
 				} else {
-					$_GET['m'].=':search='.$val;
-				}
+					$producer = Showcase::getProducer($val);
+					if ($producer) {
+						$_GET['m'].=':producer::.'.$val.'=1';
+					} else {
+						$_GET['m'].=':search='.$val;
+					}
+				}	
 			}
 		}
-		$m = Path::toutf(Sequence::get($_GET, array('m')));
+		
+		$m = Path::toutf(Seq::get($_GET, array('m')));
 		$ar = Once::func( function ($m) {
 			$mark = Showcase::getDefaultMark();
 			$mark->setVal($m);
@@ -83,11 +89,28 @@ class Showcase {
 		$ans['md'] = $ar['md'];
 		return $ar['md'];
 	}
+	public static function getMean($prop_nick, $value_nick) {
+		$type = Data::checkType($prop_nick);
+		$row = ['type' => $type, 'mean' => $value_nick];
+		if ($type == 'value') {
+			$r = Showcase::getValue($value_nick);
+			if ($r) {
+				$row += $r;
+				$row['mean'] = $row['value'];
+			}
+		} else if ($type == 'number') {
+			$row['mean'] = (float) $value_nick;
+		} else if ($type == 'text') {
+			$row['mean'] = $value_nick;
+		}
+		return $row;
+	}
 	public static function getValue($value_nick) {
 		return Once::func(function ($value_nick) {
 			return Data::fetch('SELECT value_id, value_nick, value FROM showcase_values WHERE value_nick = ?', [$value_nick]);	
 		},[$value_nick]);
 	}
+	
 	public static function getProducer($producer_nick) {
 		return Once::func(function ($producer_nick){
 			return Data::col('SELECT producer_nick from showcase_producers where producer_nick = ?',[$producer_nick]);
@@ -163,13 +186,27 @@ class Showcase {
 
 		$join = [];
 		$no = [];
-	
+		
 		foreach ($md['more'] as $prop_nick => $vals) {
+			
+			$titles = [];
+			foreach ($vals as $v => $one) {
+				if ($v == 'no') {
+					if (sizeof($vals) > 1) continue;
+					$titles[] = 'Не указано';
+				} else if ($v == 'yes') $titles[] = 'Указано';
+				else {
+					$row = Showcase::getMean($prop_nick, $v);
+					if ($row) $titles[] = $row['mean'];
+				}
+			}
+			$titles = implode(' или ', $titles);
+
 			$prop = Data::fetch('SELECT * from showcase_props where prop_nick = ?',[$prop_nick]);
 			if (!$prop) {
 				$ans['filters'][] = array( 
 					'name' => 'more.'.$prop_nick,
-					'value' => implode(', ', array_keys($vals)),
+					'value' => $titles,
 					'title' => 'Нет свойства '.$prop_nick 
 				);
 				$no[] = 'and 1=0';
@@ -178,7 +215,7 @@ class Showcase {
 			$prop_id = $prop['prop_id'];
 			$ans['filters'][] = array( 
 				'name' => 'more.'.$prop_nick,
-				'value' => implode(', ',array_keys($vals)),
+				'value' => $titles,
 				'title' => $prop['prop']
 			);
 			$type = Data::checkType($prop_nick);
@@ -189,8 +226,20 @@ class Showcase {
 			if ($type == 'value') {
 				if (isset($vals['no'])) {
 					unset($vals['no']);
-					$no[] = 'and p'.$un.'.prop_id is null';
+					
 					$join[] = 'LEFT JOIN showcase_mvalues p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
+					if ($vals) {
+						$joinp = [];
+						foreach ($vals as $val => $one) {
+							$value_id = Data::initValue($val);
+							$joinp[] = 'p'.$un.'.value_id = '.$value_id;
+						}
+						$vals = [];
+						$joinp = implode(' OR ', $joinp);
+						$no[] = 'and (p'.$un.'.value_id is null OR ('.$joinp.'))';
+					} else {
+						$no[] = 'and p'.$un.'.value_id is null';
+					}
 				} else if (isset($vals['yes'])) {
 					unset($vals['yes']);
 					$join[] = 'INNER JOIN showcase_mvalues p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
@@ -198,14 +247,26 @@ class Showcase {
 			} else {
 				if (isset($vals['no'])) {
 					unset($vals['no']);
-					$no[] = 'and p'.$un.'.prop_id is null';
 					$join[] = 'LEFT JOIN showcase_mnumbers p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
+					if ($vals) {
+						$joinp = [];
+						foreach ($vals as $val => $one) {
+							$value_id = Data::initValue($val);
+							$joinp[] = 'p'.$un.'.value_id = '.$value_id;
+						}
+						$vals = [];
+						$joinp = implode(' OR ', $joinp);
+						$no[] = 'and (p'.$un.'.value_id is null OR ('.$joinp.'))';
+					} else {
+						$no[] = 'and p'.$un.'.value_id is null';
+					}
 				} else if (isset($vals['yes'])) {
 					unset($vals['yes']);
 					$join[] = 'INNER JOIN showcase_mnumbers p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
 				}
 			}
 			if ($vals) {
+				$un = $prop_id.'v';
 				if ($type == 'value') {
 					$joinp = [];
 					foreach ($vals as $val => $one) {
@@ -288,9 +349,11 @@ class Showcase {
 			limit '.$start.','.$count;
 		//echo '<pre>';
 		//echo $sql;
+		//print_r($md);
 
 		$models = Data::all($sql, [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id, 
-			':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3]);
+			':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3]
+		);
 		$size = Data::col('SELECT FOUND_ROWS()');
 		foreach ($models as $k=>$m) {
 			$models[$k] = Showcase::getModel($m['producer_nick'], $m['article_nick'], $m['item_nick']);
@@ -370,15 +433,24 @@ class Showcase {
 
 		$ans['numbers'] = Showcase::numbers($page, $pages, 11);
 	}
-	public static function getColumns(){
-		$options = Data::getOptions();
-		return array_merge(Showcase::$columns, $options['columns']);
+
+
+	public static $columns = array("images", "files", "texts","videos", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие-на-складе");
+	public static function getOption($right = [], $def = null) {
+		$options = Once::func( function (){
+			$options = Data::getOptions();
+			$options['columns'] = array_merge(Showcase::$columns, $options['columns']);
+			return $options;
+		});
+		$res = Seq::get($options, $right);
+		if (is_null($res)) return $def;
+		return $res;
 	}
 	public static function getOptions(){
 		$options = Data::getOptions();
 		return $options;
 	}
-	public static $columns = array("images", "files", "texts","videos", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие-на-складе");
+	
 	public static function getModelShow($producer_nick, $article_nick, $item_nick = '') {
 		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nick);
 		if (!$pos) return $pos;
@@ -493,7 +565,7 @@ class Showcase {
 	public static function makeMore(&$data, $list) {
 		$option = Data::getOptions();
 		$conf = Showcase::$conf;
-		$columns = Showcase::getColumns();
+		$columns = Showcase::getOption(['columns']);
 		
 		$more = array();
 		foreach ($list as $row) {

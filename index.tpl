@@ -9,6 +9,7 @@
 		<span class="float-right">Загрузить с Яндекс Диска
 		<a class="btn btn-outline-info btn-sm" href="/-showcase/tables?-ydisk=tables">Данные</a>
 		<a class="btn btn-outline-info btn-sm" href="/-showcase/prices?-ydisk=prices">Прайсы</a> 
+		<small><a href="/catalog">{View.getHost()}</a></small>
 		</span>
 	</div>
 	{res:res}
