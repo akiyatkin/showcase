@@ -431,7 +431,7 @@ class Showcase {
 		if ($pages < $page) $page = $pages;
 		$ans['count'] = (int) $size;
 
-		$ans['numbers'] = Showcase::numbers($page, $pages, 11);
+		$ans['numbers'] = Showcase::numbers($page, $pages, 6);
 	}
 
 
@@ -516,8 +516,8 @@ class Showcase {
 		$list = array_merge($list1, $list2, $list3);
 
 		usort($list, function($a, $b){
-			if ($a['order'] > $b['order']) return -1;
-			if ($a['order'] < $b['order']) return 1;
+			if ($a['order'] > $b['order']) return 1;
+			if ($a['order'] < $b['order']) return -1;
 		});
 		Showcase::makeMore($data, $list);
 		$data += $item;

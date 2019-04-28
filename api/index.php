@@ -42,9 +42,9 @@ return Rest::get( function () {
 	$ans['list'] = $list;
 
 	$conf = Showcase::$conf;
-	$ans['breadcrumbs'][] = array('main'=>true, 'href'=>'','title'=>'Главная','add'=>'group');
+	$ans['breadcrumbs'][] = array('main'=> true, 'href'=>'','title'=>'Главная','add'=>'group');
 	$ans['breadcrumbs'][] = array('href'=>'','title'=>$conf['title'],'add'=>'group');
-	$ans['breadcrumbs'][] = array('active'=>true, 'href'=>'producers','title'=>'Производители');
+	$ans['breadcrumbs'][] = array('active'=> true, 'href'=>'producers','title'=>'Производители');
 	return Ans::ret($ans);
 
 	},"seo", function(){
