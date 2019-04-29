@@ -203,7 +203,8 @@ class Showcase {
 					$r = explode('/', $one);
 					if (sizeof($r) == 2) {
 						if ($prop_nick == 'Цена') {
-							$titles[] = 'От '.Template::$scope['~cost']($r[0]).' до '.Template::$scope['~cost']($r[1]). ' руб.';	
+							$fncost = Template::$scope['~cost'];
+							$titles[] = 'От '.$fncost($r[0]).' до '.$fncost($r[1]). ' руб.';	
 						} else {
 							$titles[] = 'От '.$r[0].' до '.$r[1];
 						}
