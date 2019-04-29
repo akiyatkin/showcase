@@ -40,8 +40,10 @@ return Rest::get( function () {
 	$columns = Showcase::getOption(['columns']);
 
 	$groups = Showcase::getGroupsIn($md);
+	
 	if ($groups) $groups = 'INNER JOIN showcase_models m on (m.model_id = mv.model_id and m.group_id in ('.implode(',', $groups).'))';
 	else $groups = '';
+	
 	
 
 	foreach ($ar as $prop_nick) {
@@ -83,20 +85,51 @@ return Rest::get( function () {
 			];
 		} else if ($filtertype == 'range') {
 			if ($type == 'number') {	
+				
 				$row = Data::fetch('
 					SELECT mv.model_id, min(mv.number) as min, max(mv.number) as max 
 					FROM showcase_mnumbers mv
 					'.$groups.'
 					WHERE mv.prop_id = :prop_id
 				', [':prop_id' => $prop_id]);
-				$row['max'] = (float) $row['max'];
-				$row['min'] = (float) $row['min'];
+
+
+				$dif = round($row['max'] - $row['min']);
+				$len = strlen($dif);
+				if ($len < 2 ) {
+					$step = 1;
+				} else {
+					$step = pow(10, $len-2);
+				}
+
+
+				$row['min'] = floor($row['min']/$step)*$step;
+				$row['max'] = ceil($row['max']/$step)*$step;
+
+
+				
+				$row['step'] = $step;
+				$row['minval'] = $row['min'];
+				$row['maxval'] = $row['max'];
+				
+
+				if (isset($md['more'][$prop_nick]['minmax'])) {
+					$minmax = $md['more'][$prop_nick]['minmax'];
+					$r = explode('/',$minmax);
+					if (sizeof($r) == 2) {
+						$row['minval'] = floor($r[0]/$step)*$step;
+						$row['maxval'] = ceil($r[1]/$step)*$step;
+						if ($row['minval'] < $row['min']) $row['minval'] = $row['min'];
+						if ($row['maxval'] > $row['max']) $row['maxval'] = $row['max'];
+					}
+				}
 			} else {
 				continue;
 			}
 			if ($row['max'] == $row['min']) continue;
 			$params[$prop_nick] = $row;
 		}
+		
 		$params[$prop_nick] += array(
 			'prop_nick' => $prop_nick,
 			'prop' => $prop,

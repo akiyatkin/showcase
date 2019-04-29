@@ -100,15 +100,41 @@ Showcase::add('more', function () {
 		if (!is_array($v)) {
 			unset($val[$k]);
 		} else {
-			if (!empty($val[$k]['no']) && !empty($val[$k]['yes'])) { 
-				//что-то должно обедить или объединиться
-				//Выбрать все отмеченные и все не отмеченные сбрасывает выбор. 
-				//Становится выбрать всё по этому критерию.
-				unset($val[$k]); //критерий удаляется
-				continue;
-			} else if (!empty($val[$k]['yes'])) {
-				//если все указанные, остальные уточнения не имеют смысла и остаётся только yes
-				$val[$k] = [ 'yes' => 1 ];
+			$last = false;
+			foreach ($val[$k] as $key => $one) {
+				if ($one && in_array($key, ['no','yes','minmax'])) $last = $key;
+			}
+			if ($last) {
+				//Не противоречит no и minmax, yes и minmax
+				
+				if ($last == 'minmax') {
+					if (!empty($val['no'])) {
+						$val[$k] = [ 'no' => 1, 'minmax' => $val[$k]['minmax']];
+					} else if (!empty($val['yes'])) {
+						$val[$k] = [ 'yes' => 1, 'minmax' => $val[$k]['minmax']];	
+					} else {
+						$val[$k] = ['minmax' => $val[$k]['minmax']];
+					}
+				} else if ($last == 'yes') { //Показывать позиции с ценой
+					unset($val[$k]['no']);
+				} else if ($last == 'no') {
+					unset($val[$k]['yes']);
+				}
+				/*if (!empty($val[$k]['minmax'])) {
+					$new = ['minmax' => $val[$k]['minmax']];
+					if (!empty($new['no'])) $new['no'] = 1;
+					$val[$k] = $new;
+				} else if (!empty($val[$k]['no']) && !empty($val[$k]['yes'])) { 
+					//что-то должно обедить или объединиться
+					//Выбрать все отмеченные и все не отмеченные сбрасывает выбор. 
+					//Становится выбрать всё по этому критерию.
+					unset($val[$k]); //критерий удаляется
+					continue;
+				} else if (!empty($val[$k]['yes'])) {
+					//если все указанные, остальные уточнения не имеют смысла и остаётся только yes
+					$val[$k] = [ 'yes' => 1 ];
+				}*/
+				
 			} else {
 				foreach($v as $kk => $vv){
 					if (!$vv) unset($val[$k][$kk]);

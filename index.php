@@ -59,7 +59,7 @@ echo Rest::get( function () {
 		$opt = Catalog::getOptions($name);
 		$ans['res'] = [];
 		$ans['res']['Данные'] = Catalog::actionLoad($name, $src);
-		//$ans['res']['Файлы'] = Data::actionAddFiles($opt['producer']);
+		$ans['res']['Файлы'] = Data::actionAddFiles($opt['producer']);
 	}
 	if ($action == 'read') $ans['res'] = Catalog::actionRead($name, $src);
 	if ($action == 'remove') $ans['res'] = Catalog::actionRemove($name, $src);
@@ -75,7 +75,7 @@ echo Rest::get( function () {
 		Prices::init();
 		$ans['res']['Данные'] = Catalog::actionLoadAll();
 		$ans['res']['Прайсы'] = Prices::actionLoadAll();
-		//$ans['res']['Файлы'] = Data::actionAddFiles();
+		$ans['res']['Файлы'] = Data::actionAddFiles();
 
 	}
 	
@@ -111,7 +111,7 @@ echo Rest::get( function () {
 		$ans['res'] = [];
 		$ans['res']['Данные'] = Catalog::actionLoadAll();
 		$ans['res']['Прайсы'] = Prices::actionLoadAll();
-		//$ans['res']['Файлы'] = Data::actionAddFiles();
+		$ans['res']['Файлы'] = Data::actionAddFiles();
 	}
 	$list = Prices::getList();
 

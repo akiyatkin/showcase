@@ -10,6 +10,7 @@ use infrajs\rubrics\Rubrics;
 use infrajs\event\Event;
 use infrajs\db\Db;
 use infrajs\config\Config;
+use infrajs\template\Template;
 use akiyatkin\showcase\Data;
 use infrajs\ans\Ans;
 use infrajs\sequence\Sequence as Seq;
@@ -66,6 +67,7 @@ class Showcase {
 				$group = Showcase::getGroup($val);
 				if ($group) {
 					$_GET['m'].=':group::.'.$group['group_nick'].'=1';
+
 				} else {
 					$producer = Showcase::getProducer($val);
 					if ($producer) {
@@ -130,6 +132,7 @@ class Showcase {
 		return $groups;
 	}
 	public static function getGroupsIn($md) {
+		
 		$groups = [];
 		foreach ($md['group'] as $group => $one) {
 			$group_id = Data::col('SELECT group_id from showcase_groups where group_nick = ?',[$group]);
@@ -192,14 +195,28 @@ class Showcase {
 			$titles = [];
 			foreach ($vals as $v => $one) {
 				if ($v == 'no') {
-					if (sizeof($vals) > 1) continue;
+					//if (sizeof($vals) > 1) continue;
 					$titles[] = 'Не указано';
-				} else if ($v == 'yes') $titles[] = 'Указано';
-				else {
+				} else if ($v == 'yes') {
+					$titles[] = 'Указано';
+				} else if ($v == 'minmax') {
+					$r = explode('/', $one);
+					if (sizeof($r) == 2) {
+						if ($prop_nick == 'Цена') {
+							$titles[] = 'От '.Template::$scope['~cost']($r[0]).' до '.Template::$scope['~cost']($r[1]). ' руб.';	
+						} else {
+							$titles[] = 'От '.$r[0].' до '.$r[1];
+						}
+					} else {
+						$titles[] = $one;	
+					}
+					
+				} else {
 					$row = Showcase::getMean($prop_nick, $v);
 					if ($row) $titles[] = $row['mean'];
 				}
 			}
+			
 			$titles = implode(' или ', $titles);
 
 			$prop = Data::fetch('SELECT * from showcase_props where prop_nick = ?',[$prop_nick]);
@@ -244,27 +261,68 @@ class Showcase {
 					unset($vals['yes']);
 					$join[] = 'INNER JOIN showcase_mvalues p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
 				}
-			} else {
-				if (isset($vals['no'])) {
-					unset($vals['no']);
+			} else if ($type == 'number') {
+				if (!empty($vals['no']) || !empty($vals['minmax'])) {
+					
 					$join[] = 'LEFT JOIN showcase_mnumbers p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
+
+					/*if (empty($vals['minmax']) && !empty($vals['no'])) {
+						$no[] = 'and p'.$un.'.number is null';
+					}*/
+
+
+					$nn = !empty($vals['no']);
+					$mm = !empty($vals['minmax']);
+					//unset($vals['no']);
+					if ($mm) {
+						$r = explode('/',$vals['minmax']);
+						unset($vals['minmax']);
+						if (sizeof($r) == 2) {
+							$min = (float) $r[0];
+							$max = (float) $r[1];
+						}
+						unset($vals['no']);
+						unset($vals['minmax']);
+						if ($nn) {
+							if ($vals) {
+								$joinp = [];
+								foreach ($vals as $val => $one) {
+									$joinp[] = 'p'.$un.'.number = '.$val;
+								}
+
+								$vals = [];
+								$joinp = implode(' OR ', $joinp);
+								$no[] = 'and (p'.$un.'.number is null OR (p'.$un.'.number >= '.$min.' AND p'.$un.'.number <= '.$max.') OR ('.$joinp.'))';
+							} else {
+								$no[] = 'and (p'.$un.'.number is null OR (p'.$un.'.number >= '.$min.' AND p'.$un.'.number <= '.$max.'))';
+							}
+						} else {
+							$no[] = 'and (p'.$un.'.number >= '.$min.' AND p'.$un.'.number <= '.$max.')';
+						}
+						
+					}
+					
+					
 					if ($vals) {
 						$joinp = [];
 						foreach ($vals as $val => $one) {
-							$value_id = Data::initValue($val);
-							$joinp[] = 'p'.$un.'.value_id = '.$value_id;
+							$joinp[] = 'p'.$un.'.number = '.$val;
 						}
 						$vals = [];
 						$joinp = implode(' OR ', $joinp);
-						$no[] = 'and (p'.$un.'.value_id is null OR ('.$joinp.'))';
-					} else {
-						$no[] = 'and p'.$un.'.value_id is null';
+						$no[] = 'and (p'.$un.'.number is null OR ('.$joinp.'))';
 					}
+					
+
 				} else if (isset($vals['yes'])) {
 					unset($vals['yes']);
 					$join[] = 'INNER JOIN showcase_mnumbers p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
 				}
 			}
+			//echo '<pre>';
+			//print_r($join);
+			//print_r($no);
+			
 			if ($vals) {
 				$un = $prop_id.'v';
 				if ($type == 'value') {
@@ -276,11 +334,14 @@ class Showcase {
 					$joinp = implode(' OR ', $joinp);
 					$join[] = 'INNER JOIN showcase_mvalues p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.' and ('.$joinp.'))';
 				} else {
+					
 					$joinp = [];
 					foreach ($vals as $val => $one) {
 						$number = (float) $val;
-						$join[] = 'p'.$un.'.number = '.$number;
+						
+						$joinp[] = 'p'.$un.'.number = '.$number;
 					}
+					
 					$joinp = implode(' OR ', $joinp);
 					$join[] = 'INNER JOIN showcase_mnumbers p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.' and ('.$joinp.'))';
 				}

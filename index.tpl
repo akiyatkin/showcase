@@ -1,14 +1,15 @@
 {menu:}
 	<div class="mb-3">
-		( {(:/-showcase/tables):link}Данные{:/link} |
+		{(:/-showcase/tables):link}Данные{:/link} |
 		{(:/-showcase/prices):link}Прайсы{:/link} |
 		{(:/-showcase/groups):link}Группы{:/link} |
-		{(:/-showcase/producers):link}Производители{:/link} )
+		{(:/-showcase/producers):link}Производители{:/link} |
 		{(:/-showcase/models):link}Модели{:/link}  |
 		{(:/-showcase/api):link}API{:/link}
 		<span class="float-right">Загрузить с Яндекс Диска
 		<a class="btn btn-outline-info btn-sm" href="/-showcase/tables?-ydisk=tables">Данные</a>
-		<a class="btn btn-outline-info btn-sm" href="/-showcase/prices?-ydisk=prices">Прайсы</a> 
+		<a class="btn btn-outline-info btn-sm" href="/-showcase/prices?-ydisk=prices">Прайсы</a>
+		<a class="btn btn-outline-info btn-sm" href="/-showcase/prices?-ydisk=true">Всё</a> 
 		<small><a href="/catalog">{View.getHost()}</a></small>
 		</span>
 	</div>
@@ -112,7 +113,7 @@
 {actdel:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.tables}{file}')">Очистить</span>
 {actions:}
 		<div class="p-2 text-right" style="width:400px">
-			<span class="btn btn-secondary" onclick="Action('read','{name}','{conf.tables}{file}')">Разобрать</span>
+			<!--<span class="btn btn-secondary" onclick="Action('read','{name}','{conf.tables}{file}')">Разобрать</span>-->
 			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.tables}{file}')">Внести</span>
 			<span class="btn btn-info" onclick="Action('addFiles','{name}','{conf.tables}{file}')">Связать</span>
 			{isdata?:actdel}
@@ -123,7 +124,7 @@
 		<div>
 			<!--<a href="/-showcase/update" class="btn btn-primary">Внести все новые данные и прайсы</a>-->
 			<span class="btn btn-primary" onclick="Action('loadAll')">Внести все новые данные и прайсы</span>
-			<span class="btn btn-info" onclick="Action('addFilesAll')">Связать с файлами</span>
+			<span class="btn btn-info" onclick="Action('addFilesAll')">Связать все данные с файлами</span>
 			
 		</div>
 		<div>
