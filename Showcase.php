@@ -301,6 +301,10 @@ class Showcase {
 							$no[] = 'and (p'.$un.'.number >= '.$min.' AND p'.$un.'.number <= '.$max.')';
 						}
 						
+					} else {
+						$no[] = 'and (p'.$un.'.number is null)';
+						//Только no
+						unset($vals['no']);
 					}
 					
 					
@@ -493,7 +497,7 @@ class Showcase {
 		if ($pages < $page) $page = $pages;
 		$ans['count'] = (int) $size;
 
-		$ans['numbers'] = Showcase::numbers($page, $pages, 6);
+		$ans['numbers'] = Showcase::numbers($page, $pages, 7);
 	}
 
 

@@ -13,7 +13,7 @@ use akiyatkin\showcase\Showcase;
 
 Showcase::add('count', function () {
 	$conf = Showcase::$conf;
-	return 10;
+	return 12;
 }, function (&$val) {
 	$val = (int) $val;
 	if ($val < 1 || $val > 1000) return false;
