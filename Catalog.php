@@ -247,11 +247,11 @@ class Catalog {
 		$options = Data::loadShowcaseConfig();
 		$order = 0;
 		$r = false;
-
 		foreach ($item['more'] as $prop => $val) {
 			$type = Data::checkType($prop);
 			$prop_id = Data::initProp($prop, $type);
-			
+			$isprice = Data::col('SELECT price_id from `showcase_m'.$type.'s` where prop_id = ? and model_id = ?',[$prop_id, $model_id]);//Если этой свойство у модели установлено из прайса, пропускаем
+			if ($isprice) continue;
 			if ($type == 'text') {
 				$order++;
 				$r = true;
@@ -271,6 +271,7 @@ class Catalog {
 					if (isset($vals[$v])) continue; //Уже вставлен
 					$vals[$v] = true;
 					$r = true;
+					
 					Data::lastId('INSERT INTO `showcase_m'.$type.'s`(model_id, item_num, `prop_id`,'.$strid.',`order`) VALUES(?,?,?,?,?)',
 						[$model_id, $item_num, $prop_id, $v, $order]
 					);
@@ -319,10 +320,17 @@ class Catalog {
 		
 	}
 	public static function clearModel($model_id) {
-		Data::exec('DELETE FROM showcase_mvalues WHERE model_id = ?', [$model_id]);
-		Data::exec('DELETE FROM showcase_mnumbers WHERE model_id = ?', [$model_id]);
-		Data::exec('DELETE FROM showcase_mtexts WHERE model_id = ?', [$model_id]);
-		Data::exec('DELETE FROM showcase_items WHERE model_id = ?', [$model_id]);
+		$files = '("'.implode('","', Data::$files).'")'
+		;
+		$sql = 'DELETE t FROM showcase_mvalues t, showcase_props p
+			WHERE p.prop_id = t.prop_id 
+			AND p.prop_nick not in '.$files.' 
+			AND t.model_id = ? and t.price_id is null';
+		Data::exec($sql, [$model_id]);
+		Data::exec('DELETE t FROM showcase_mnumbers t WHERE t.model_id = ? and t.price_id is null', [$model_id]);
+		Data::exec('DELETE t FROM showcase_mtexts t WHERE t.model_id = ? and t.price_id is null', [$model_id]);
+		Data::exec('DELETE t FROM showcase_items t WHERE t.model_id = ?', [$model_id]);
+		//Может остаться свойство с айтемом которого нет
 	}
 	public static function initModel($name, $producer_id, $article_id, $catalog_id, $order, $time, $group_id) {
 		//$name только для кэша, чтобы модели-дубли заменяли друг друга.
@@ -337,7 +345,7 @@ class Catalog {
 				if ($catalog_id != $row['catalog_id']) { //Модель появилась из другого каталога
 					if ($order > $row['order']) return false;//Новый каталог в списке позже и не управляет этой позицией
 				}
-				Catalog::clearModel($model_id); //Нашли модель и удалили у неё свойства и items
+				Catalog::clearModel($model_id); //Нашли модель и удалили у неё свойства и items, кроме files и prices
 				Data::exec('UPDATE showcase_models SET time = from_unixtime(?), catalog_id = ?, group_id = ? WHERE model_id = ?',[$time, $catalog_id, $group_id, $model_id]);
 				return $model_id;
 			}

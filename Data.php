@@ -22,6 +22,7 @@ class Data {
 		echo $begin.'-'.$prev.' '.$msg.'<br>'."\n";
 	}
 	public static $types = ['number','text','value'];
+	public static $files = ['texts', 'images', 'files', 'videos'];
 	public static $images = ['png', 'gif', 'jpg', 'jpeg','svg'];
 	public static $texts = ['html', 'tpl', 'mht', 'docx'];
 	public static $videos = ['avi','ogv','mp4','swf'];
@@ -654,7 +655,6 @@ class Data {
 			}
 		}
 	}
-	public static $files = ['texts', 'images', 'files', 'videos'];
 	public static function getIndex($dir, $exts = false) {
 		if (!Path::theme($dir)) return array();
 		
