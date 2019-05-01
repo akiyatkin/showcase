@@ -4,7 +4,7 @@
 		{(:/-showcase/prices):link}Прайсы{:/link} |
 		{(:/-showcase/groups):link}Группы{:/link} |
 		{(:/-showcase/producers):link}Производители{:/link} |
-		{(:/-showcase/models):link}Модели{:/link}  |
+		<!--{(:/-showcase/models):link}Модели{:/link}  -->
 		{(:/-showcase/api):link}API{:/link}
 		<span class="float-right">Загрузить с Яндекс Диска
 		<a class="btn btn-outline-info btn-sm" href="/-showcase/tables?-ydisk=tables">Данные</a>
