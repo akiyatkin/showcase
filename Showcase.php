@@ -185,7 +185,7 @@ class Showcase {
 		}
 		$nal1 = Data::initValue("Акция");
 		$nal2 = Data::initValue("Распродажа");
-		$nal3 = Data::initValue("В-наличии");
+		$nal3 = Data::initValue("В наличии");
 
 		$join = [];
 		$no = [];

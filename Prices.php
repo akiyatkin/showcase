@@ -95,7 +95,8 @@ class Prices {
 	public static function getMyModels($type, $producer_id, $prop_id, $value) {
 		//Вообщедолжна быть одна модель. Прайс связываеся с этими моделями по prop_id и value
 		if ($type == 'value') {
-			$id = Data::initValue($value);
+			$row = Showcase::getValue($value);
+			$id = $row['value_id'];
 			$mainprop = 'value_id';
 			$t = 'mvalues'; 
 		} else if ($type == 'article') {
