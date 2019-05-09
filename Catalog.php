@@ -320,12 +320,11 @@ class Catalog {
 		
 	}
 	public static function clearModel($model_id) {
-		$files = '("'.implode('","', Data::$files).'")'
-		;
+		$files = '("'.implode('","', Data::$files).'")';
 		$sql = 'DELETE t FROM showcase_mvalues t, showcase_props p
 			WHERE p.prop_id = t.prop_id 
 			AND p.prop_nick not in '.$files.' 
-			AND t.model_id = ? and t.price_id is null';
+			AND t.model_id = ? AND t.price_id is null';
 		Data::exec($sql, [$model_id]);
 		Data::exec('DELETE t FROM showcase_mnumbers t WHERE t.model_id = ? and t.price_id is null', [$model_id]);
 		Data::exec('DELETE t FROM showcase_mtexts t WHERE t.model_id = ? and t.price_id is null', [$model_id]);
