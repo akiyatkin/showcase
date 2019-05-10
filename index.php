@@ -55,28 +55,17 @@ echo Rest::get( function () {
 
 	Catalog::init();
 	if ($action == 'clearAll') $ans['res'] = Data::actionClearAll();
-	if ($action == 'load') {
-		$opt = Catalog::getOptions($name);
-		$ans['res'] = [];
-		$ans['res']['Данные'] = Catalog::actionLoad($name, $src);
-		$ans['res']['Файлы'] = Data::actionAddFiles($opt['producer']);
-	}
+	if ($action == 'load') $ans['res'] = Catalog::actionLoad($name, $src);
 	if ($action == 'read') $ans['res'] = Catalog::actionRead($name, $src);
 	if ($action == 'remove') $ans['res'] = Catalog::actionRemove($name, $src);
-	if ($action == 'addFiles') {
-		$opt = Catalog::getOptions($name);
-		$ans['res'] = Data::actionAddFiles($opt['producer']);
-	}
-	if ($action == 'addFilesAll') {
-		$ans['res'] = Data::actionAddFiles();
-	}
+	if ($action == 'addFiles') $ans['res'] = Data::actionAddFiles($name);
+	if ($action == 'addFilesAll') $ans['res'] = Data::actionAddFiles();
 	if ($action == 'loadAll') {
 		$ans['res'] = [];
 		Prices::init();
 		$ans['res']['Данные'] = Catalog::actionLoadAll();
 		$ans['res']['Прайсы'] = Prices::actionLoadAll();
-		$ans['res']['Файлы'] = Data::actionAddFiles();
-
+		//$ans['res']['Файлы'] = Data::actionAddFiles();
 	}
 	
 
@@ -100,18 +89,16 @@ echo Rest::get( function () {
 	
 
 	if ($action == 'clearAll') $ans['res'] = Data::actionClearAll();
-	if ($action == 'addFiles') $ans['res'] = Data::actionAddFiles();
+	if ($action == 'addFiles') $ans['res'] = Data::actionAddFiles($name);
 	if ($action == 'load') $ans['res'] = Prices::actionLoad($name, $src);
 	if ($action == 'remove') $ans['res'] = Prices::actionRemove($name, $src);
-	if ($action == 'addFilesAll') {
-		$ans['res'] = Data::actionAddFiles();
-	}
+	if ($action == 'addFilesAll') $ans['res'] = Data::actionAddFiles();
 	if ($action == 'loadAll') {
 		Catalog::init();
 		$ans['res'] = [];
 		$ans['res']['Данные'] = Catalog::actionLoadAll();
 		$ans['res']['Прайсы'] = Prices::actionLoadAll();
-		$ans['res']['Файлы'] = Data::actionAddFiles();
+		//$ans['res']['Файлы'] = Data::actionAddFiles();
 	}
 	$list = Prices::getList();
 

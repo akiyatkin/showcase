@@ -291,7 +291,16 @@ class Data {
 		}
 		return sizeof($images);
 	}
-	public static function actionAddFiles($producer_nick = false){
+	public static function actionAddFiles($name = false){
+		$producer_nick = false;
+		if ($name) {
+			$options = Data::getOptions('catalog');
+			if (isset($options[$name]['producer'])) {
+				$producer_nick = $options[$name]['producer'];	
+			} else {
+				$producer_nick = $name;
+			}
+		}
 		/*Индексируем все файлы producer_nick - article, папки files, images, в том числе опцию Файлы
 		Очищаем в базе всю инфомацию о связях с файлами- значения пропов images, files, texts
 		Бежим и вносим новые связи
@@ -320,8 +329,12 @@ class Data {
 			}
 			$list = [];
 			Data::addFilesFaylov($list, $producer_nick); //Файлы
+
 			Data::addFilesFS($list, $producer_nick);
+
 			Data::addFilesSyns($list, $producer_nick); //Синонимы Фото и Файл
+
+		
 			$db = &Db::pdo();
 			$db->beginTransaction();
 			Data::removeFiles($producer_nick);
@@ -390,75 +403,76 @@ class Data {
 
 	}
 	public static function addFilesIcons() {
-		$images_id = Data::initProp('images');
-		$root = Data::getGroups();
-		$conf = Showcase::$conf;
-		Xlsx::runGroups($root, function &(&$group) use ($images_id){
-			//Ищим свою картинку
-			$group['icon'] = null;
-			$icon = Rubrics::find(Showcase::$conf['icons'], $group['group_nick'], Data::$images);
-			if ($icon) {
-				$group['icon'] = $icon;
-			} else {
-				//Ищим картинку своей позииции
-				$row = Data::fetch('SELECT g.group_nick, g.group, g.group_id, v.value as icon from showcase_groups g
-					inner join showcase_models m on (m.group_id = g.group_id)	
-					inner join showcase_mvalues mv on (mv.model_id = m.model_id and mv.prop_id = :images_id)
-					left join showcase_values v on (v.value_id = mv.value_id)
-					where g.group_nick = :group_nick
-					', [':images_id' => $images_id, ':group_nick' => $group['group_nick']]);
-				
-				if ($row) {
-					$group['icon'] = $row['icon'];
+		return Once::func(function(){
+			$images_id = Data::initProp('images');
+			$root = Data::getGroups();
+			$conf = Showcase::$conf;
+			Xlsx::runGroups($root, function &(&$group) use ($images_id){
+				//Ищим свою картинку
+				$group['icon'] = null;
+				$icon = Rubrics::find(Showcase::$conf['icons'], $group['group_nick'], Data::$images);
+				if ($icon) {
+					$group['icon'] = $icon;
 				} else {
-					//Ищим картинку ближайшей вложенной группы
-					if (isset($group['childs'])) {
-						foreach ($group['childs'] as $child) {
-							if ($child['icon']) {
-								$group['icon'] = $child['icon'];
-								break;
+					//Ищим картинку своей позииции
+					$row = Data::fetch('SELECT g.group_nick, g.group, g.group_id, v.value as icon from showcase_groups g
+						inner join showcase_models m on (m.group_id = g.group_id)	
+						inner join showcase_mvalues mv on (mv.model_id = m.model_id and mv.prop_id = :images_id)
+						left join showcase_values v on (v.value_id = mv.value_id)
+						where g.group_nick = :group_nick
+						', [':images_id' => $images_id, ':group_nick' => $group['group_nick']]);
+					
+					if ($row) {
+						$group['icon'] = $row['icon'];
+					} else {
+						//Ищим картинку ближайшей вложенной группы
+						if (isset($group['childs'])) {
+							foreach ($group['childs'] as $child) {
+								if ($child['icon']) {
+									$group['icon'] = $child['icon'];
+									break;
+								}
 							}
 						}
 					}
 				}
-			}
-			
-			Data::exec('UPDATE showcase_groups SET icon = ? WHERE group_nick = ?',
-				[$group['icon'], $group['group_nick']]
-			);
-			
-			$r = null;
-			return $r;
-		}, true);
+				
+				Data::exec('UPDATE showcase_groups SET icon = ? WHERE group_nick = ?',
+					[$group['icon'], $group['group_nick']]
+				);
+				
+				$r = null;
+				return $r;
+			}, true);
 
 
-		$list = Data::all('SELECT producer_nick FROM showcase_producers');
-		foreach ($list as $k => $prod) {
-			$list[$k]['logo'] = null;
-			//Посмотрели в иконках
-			$logo = Rubrics::find($conf['icons'], $prod['producer_nick'], Data::$images);
-			if ($logo) {
-				$list[$k]['logo'] = $logo;
-				continue;
-			} 
-			//Посмотрели в папках с файлами
-			$dir = Rubrics::find($conf['folders'], $prod['producer_nick'], 'dir');
-			$images = FS::scandir($dir, function ($file) use (&$conf, &$prod, $dir) {
-				$fd = Load::nameInfo($file);
-				if (!in_array($fd['ext'], Data::$images)) return true;
-				return false;
-			});
-			if ($images) {
-				$list[$k]['logo'] = $dir.$images[0];
-				continue;
+			$list = Data::all('SELECT producer_nick FROM showcase_producers');
+			foreach ($list as $k => $prod) {
+				$list[$k]['logo'] = null;
+				//Посмотрели в иконках
+				$logo = Rubrics::find($conf['icons'], $prod['producer_nick'], Data::$images);
+				if ($logo) {
+					$list[$k]['logo'] = $logo;
+					continue;
+				} 
+				//Посмотрели в папках с файлами
+				$dir = Rubrics::find($conf['folders'], $prod['producer_nick'], 'dir');
+				$images = FS::scandir($dir, function ($file) use (&$conf, &$prod, $dir) {
+					$fd = Load::nameInfo($file);
+					if (in_array($fd['ext'], Data::$images)) return true;
+					return false;
+				});
+				if ($images) {
+					$list[$k]['logo'] = $dir.$images[0];
+					continue;
+				}
 			}
-		}
-		foreach($list as $prod) {
-			Data::exec('UPDATE showcase_producers SET logo = ? WHERE producer_nick = ?',
-				[$prod['logo'], $prod['producer_nick']]
-			);
-		}
-		
+			foreach($list as $prod) {
+				Data::exec('UPDATE showcase_producers SET logo = ? WHERE producer_nick = ?',
+					[$prod['logo'], $prod['producer_nick']]
+				);
+			}
+		});
 	}
 	public static function initArticle($value) {
 		return Once::func( function ($value) {
@@ -504,25 +518,28 @@ class Data {
 		}
 	}
 	public static function addFilesFSproducer(&$list, $prod) {
-		$dir = Showcase::$conf['folders'];
-		if (!Path::theme($dir.'/')) return; //Подходят только папки
-		
-
 		if (in_array($prod,['articles','tables'])) return; //Относится к группам
+		$dir = Showcase::$conf['folders'].$prod.'/';
+		
+		if (!Path::theme($dir)) return; //Подходят только папки
 		if (!isset($list[$prod])) $list[$prod] = array();
-		FS::scandir($dir.'/', function ($fart) use ($dir, &$list, $prod) {
+
+		
+		FS::scandir($dir, function ($fart) use ($dir, &$list, $prod) {
 			$art = mb_strtolower($fart);
-			if (!Path::theme($dir.'/'.$art.'/')) return; //Подходят только папки
+			if (!Path::theme($dir.$art.'/')) return; //Подходят только папки
 			if (in_array($art, ['files','images','texts'])) return;
 				
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];//Data::$files;
-			FS::scandir($dir.'/'.$fart.'/', function ($file) use (&$list, $prod, $dir, $art, $fart) {
-				$src = $dir.'/'.$fart.'/'.$file;
+			FS::scandir($dir.$fart.'/', function ($file) use (&$list, $prod, $dir, $art, $fart) {
+				$src = $dir.$fart.'/'.$file;
 				$type = Data::fileType($src);
 				$list[$prod][$art][0][$src] = $type;
 			});	
 		});
-	
+		//echo '<pre>';
+		//print_r($list);
+		//exit;
 		$index = Data::getIndex($dir.'/images/',  Data::$images);
 		foreach ($index as $art => $images) {
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
