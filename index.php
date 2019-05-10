@@ -13,6 +13,23 @@ echo Rest::get( function () {
 	$ans = [];
 	$ans['count'] = Data::col('SELECT count(*) as `count` from showcase_models');
 	return Rest::parse('-showcase/index.tpl', $ans);
+}, 'drop', function () {
+	header('location: /-showcase/?-update=true');
+	
+	Data::exec('DROP TABLE showcase_prices');
+	Data::exec('DROP TABLE showcase_catalog');
+	Data::exec('DROP TABLE showcase_groups');
+	Data::exec('DROP TABLE showcase_producers');
+	Data::exec('DROP TABLE showcase_articles');
+	Data::exec('DROP TABLE showcase_props');
+	Data::exec('DROP TABLE showcase_values');
+	Data::exec('DROP TABLE showcase_items');
+	Data::exec('DROP TABLE showcase_models');
+	Data::exec('DROP TABLE showcase_mvalues');
+	Data::exec('DROP TABLE showcase_mnumbers');
+	Data::exec('DROP TABLE showcase_mtexts');
+	
+	exit;
 }, 'update', function () {
 	$ans = array();
 
@@ -60,13 +77,7 @@ echo Rest::get( function () {
 	if ($action == 'remove') $ans['res'] = Catalog::actionRemove($name, $src);
 	if ($action == 'addFiles') $ans['res'] = Data::actionAddFiles($name);
 	if ($action == 'addFilesAll') $ans['res'] = Data::actionAddFiles();
-	if ($action == 'loadAll') {
-		$ans['res'] = [];
-		Prices::init();
-		$ans['res']['Данные'] = Catalog::actionLoadAll();
-		$ans['res']['Прайсы'] = Prices::actionLoadAll();
-		//$ans['res']['Файлы'] = Data::actionAddFiles();
-	}
+	if ($action == 'loadAll') $ans['res'] = Catalog::actionLoadAll();
 	
 
 	$list = Catalog::getList();
@@ -93,13 +104,8 @@ echo Rest::get( function () {
 	if ($action == 'load') $ans['res'] = Prices::actionLoad($name, $src);
 	if ($action == 'remove') $ans['res'] = Prices::actionRemove($name, $src);
 	if ($action == 'addFilesAll') $ans['res'] = Data::actionAddFiles();
-	if ($action == 'loadAll') {
-		Catalog::init();
-		$ans['res'] = [];
-		$ans['res']['Данные'] = Catalog::actionLoadAll();
-		$ans['res']['Прайсы'] = Prices::actionLoadAll();
-		//$ans['res']['Файлы'] = Data::actionAddFiles();
-	}
+	if ($action == 'loadAll') $ans['res'] = Prices::actionLoadAll();
+	
 	$list = Prices::getList();
 
 	$ans['list'] = $list;

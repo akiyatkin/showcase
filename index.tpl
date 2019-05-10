@@ -57,11 +57,33 @@
 	{:menu}
 	<h1>Прайсы</h1>
 	{list::itemprice}
+	
+	<hr>
+	<div class="d-flex justify-content-between">
+		<div>
+			<span class="btn btn-primary" onclick="Action('loadAll')">Внести все прайсы</span>
+		</div>
+		<div>
+			<span class="btn btn-danger" onclick="Action('clearAll')">Очистить все данные и прайсы</span>
+		</div>
+	</div>
 	{:foot}
 {CATALOG:}
 	{:menu}
 	<h1>Данные</h1>
 	{list::itemcatalog}
+	
+	<hr>
+	<div class="d-flex justify-content-between">
+		<div>
+			<!--<a href="/-showcase/update" class="btn btn-primary">Внести все новые данные и прайсы</a>-->
+			<span class="btn btn-primary" onclick="Action('loadAll')">Внести все данные</span>
+			<span class="btn btn-info" onclick="Action('addFilesAll')">Связать все данные с файлами</span>
+		</div>
+		<div>
+			<span class="btn btn-danger" onclick="Action('clearAll')">Очистить все данные и прайсы</span>
+		</div>
+	</div>
 	{:foot}
 {time:}<b title="{~date(:H:i,.)}">{~date(:d.m,.)}</b>
 {size:}<b title="Примерно {durationrate} Кб в секунду = {~multi(.,durationfactor)} сек">{.}</b> Кб, 
@@ -119,18 +141,6 @@
 			{isdata?:actdel}
 		</div>
 {foot:}
-	<hr>
-	<div class="d-flex justify-content-between">
-		<div>
-			<!--<a href="/-showcase/update" class="btn btn-primary">Внести все новые данные и прайсы</a>-->
-			<span class="btn btn-primary" onclick="Action('loadAll')">Внести все новые данные и прайсы</span>
-			<span class="btn btn-info" onclick="Action('addFilesAll')">Связать все данные с файлами</span>
-			
-		</div>
-		<div>
-			<span class="btn btn-danger" onclick="Action('clearAll')">Очистить все данные и прайсы</span>
-		</div>
-	</div>
 	<hr>
 	<form id="form" method="POST">
 		<input id="formaction" type="hidden" name="action" value="">
