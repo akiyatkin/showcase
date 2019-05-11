@@ -196,7 +196,7 @@ class Showcase {
 			foreach ($vals as $v => $one) {
 				if ($v == 'no') {
 					//if (sizeof($vals) > 1) continue;
-					$titles[] = 'Не указано';
+					$titles[] = 'не указано';
 				} else if ($v == 'yes') {
 					$titles[] = 'Указано';
 				} else if ($v == 'minmax') {
