@@ -15,14 +15,25 @@ Event::$classes['Showcase-catalog'] = function (&$obj) {
 	return $obj['pos']['producer'].' '.$obj['pos']['article'].' '.$obj['name'];
 };
 class Catalog {
-	
+	public static function action($action, $name, $src) {
+		$res = null;
+		if ($action == 'clearAll') $res = Data::actionClearAll();
+		if ($action == 'load') $res = Catalog::actionLoad($name, $src);
+		if ($action == 'read') $res = Catalog::actionRead($name, $src);
+		if ($action == 'remove') $res = Catalog::actionRemove($name, $src);
+		if ($action == 'addFiles') $res = Data::actionAddFiles($name);
+		if ($action == 'addFilesAll') $res = Data::actionAddFiles();
+		if ($action == 'loadAll') $res = Catalog::actionLoadAll();
+		return $res;
+	}
 	public static function getList() {
 		$options = Catalog::getOptions();
 
 		$savedlist = Data::fetchto('SELECT c.name, count(*) as icount from showcase_catalog c 
 		RIGHT JOIN showcase_models m on m.catalog_id = c.catalog_id
-		LEFT JOIN showcase_items i on i.model_id = m.model_id
+		RIGHT JOIN showcase_items i on i.model_id = m.model_id
     	GROUP BY c.name','name');
+
 		foreach ($savedlist as $name => $row) {
 			$options[$name] = $options[$name] + $row;
 		}
@@ -178,7 +189,7 @@ class Catalog {
 
 		$ans['Принято моделей'] = 0;
 		$ans['Принято позиций'] = 0;
-
+		$ans['Пропущено из-за конфликта с другими данными'] = 0;
 		$db = &Db::pdo();
 		$db->beginTransaction();
 		
@@ -197,7 +208,10 @@ class Catalog {
 			
 			$model_id = Catalog::initModel($name, $producer_id, $article_id, $catalog_id, $order, $time, $group_id); //У существующей модели указывается time
 
-			if (!$model_id) return; //Каталог не может управлять данной моделью, так как есть более приоритетный источник
+			if (!$model_id) {
+				$ans['Пропущено из-за конфликта с другими данными']++;
+				return; //Каталог не может управлять данной моделью, так как есть более приоритетный источник
+			}
 			Catalog::initItem($model_id, 0, '');
 			
 			if (isset($pos['items'])) { //1 item уже в модели надо его вынести в отдельный items и удалить из модели
@@ -221,17 +235,18 @@ class Catalog {
 			//Срабатывает только для моделей. МОжно добавить недостающие свойства. 
 			//Сгенерировать id для items
 
-			if ($r) $ans['Принято моделей']++;
+			$ans['Принято моделей']++;
+			$ans['Принято позиций']++;
 			if (isset($pos['items'])) {
 				$item_num = 0;
 				foreach ($pos['items'] as $item) {
 					$item_num++;
 					Catalog::initItem($model_id, $item_num, $item['id']); //itemrows и id
 					$r = Catalog::writeProps($model_id, $item, $item_num);
-					if ($r) $ans['Принято позиций']++;
+					$ans['Принято позиций']++;
 				}
 				
-				$ans['Принято позиций']--;
+				//$ans['Принято позиций']--;
 			}
 		});
 		Catalog::removeOldModels($time, $catalog_id);

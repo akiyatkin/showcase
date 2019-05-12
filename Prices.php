@@ -15,6 +15,74 @@ Event::$classes['Showcase-prices'] = function (&$obj) {
 };
 
 class Prices {
+	public static function action($action, $name, $src) {
+		$res = null;
+		if ($action == 'clearAll') $res = Data::actionClearAll();
+		if ($action == 'addFiles') $res = Data::actionAddFiles($name);
+		if ($action == 'load') $res = Prices::actionLoad($name, $src);
+		if ($action == 'remove') $res = Prices::actionRemove($name, $src);
+		if ($action == 'addFilesAll') $res = Data::actionAddFiles();
+		if ($action == 'loadAll') $res = Prices::actionLoadAll();
+		return $res;
+	}
+	public static function getPrice($name) {
+		$option = Prices::getOptions($name);
+		$data = Prices::readPrice($name, Showcase::$conf['prices'].$option['file']);
+
+		if ($option['producer']) {
+			$producer_id = Data::col('SELECT producer_id from showcase_producers where producer_nick = ?', [$option['producer']]);
+		} else {
+			$producer_id = false;
+		}
+
+		$priceprop = $option['priceprop'];
+		$catalogprop = $option['catalogprop'];
+		$catalogprop_nick = Path::encode($catalogprop);
+		$catalogprop_type = Data::checkType($catalogprop_nick);
+		$catalogprop_id = Data::col('SELECT prop_id from showcase_props where prop_nick = ?',[$catalogprop_nick]);
+		if (!$catalogprop_id && $catalogprop_type != 'article') return $option;
+		
+		
+		
+		$list = [];
+		Xlsx::runPoss($data, function(&$pos) use ($option, $name, &$list, $priceprop, $producer_id, $catalogprop_id, $catalogprop_type) {
+			Prices::checkSynonyms($pos, $option);
+			$r = null;
+			$obj = [
+				'option' => $option,
+				'name' => $name,
+				'pos' => &$pos
+			];
+			Event::tik('Showcase-prices.onload');
+			$res = Event::fire('Showcase-prices.onload', $obj); //В событии дописываем нужное свойство которое уже есть в props
+			if ($res === false) return $r;
+			if (empty($pos[$priceprop])) return $r;
+			$value = $pos[$priceprop];
+			$items = Prices::getMyItems($catalogprop_type, $producer_id, $catalogprop_id, $value);	
+			if ($items) return $r;
+			$list[] = $pos;
+		});
+		$option['missdata'] = $list;
+		
+
+		//$catalogprop_type
+		//$catalogprop_id //Должен быть установлен у всех позиций данного производителя
+		//if ($catalogprop_type == 'number') {
+
+		$rows = Data::all('select * from (SELECT p.producer_nick, a.article_nick, i.item_nick, max(mv.price_id) as price_id FROM showcase_items i
+			INNER JOIN showcase_models m on m.model_id = i.model_id and m.producer_id = :producer_id
+			LEFT JOIN showcase_producers p on m.producer_id = p.producer_id
+			LEFT JOIN showcase_articles a on a.article_id = m.article_id
+			LEFT JOIN showcase_mnumbers mv on (mv.model_id = i.model_id and mv.item_num = i.item_num and mv.price_id = :price_id)
+			GROUP BY i.model_id, i.item_num) t WHERE t.price_id is null
+			', [':producer_id'=> $producer_id, ':price_id' => $option['price_id']]);
+		//}
+		foreach($rows as $i=>$row) {
+			$rows[$i] = Showcase::getModel($row['producer_nick'],$row['article_nick'], $row['item_nick']);
+		}
+		$option['missprice'] = $rows;
+		return $option;
+	}
 	public static function getList() {
 		$options = Prices::getOptions();
 	
@@ -37,10 +105,12 @@ class Prices {
 			RIGHT JOIN showcase_prices ps ON ps.price_id = t.price_id
 			GROUP BY ps.name
     	','name');
+
 		foreach ($savedlist as $name => $row) {
 			$row['ans'] = Load::json_decode($row['ans'],true);
 			if ($name) $options[$name] += $row;
 		}
+
 		return $options;
 	}
 	public static function actionLoadAll() {
@@ -92,7 +162,7 @@ class Prices {
 		}
 		return $row['price_id'];
 	}
-	public static function getMyModels($type, $producer_id, $prop_id, $value) {
+	public static function getMyItems($type, $producer_id, $prop_id, $value) {
 		//Вообщедолжна быть одна модель. Прайс связываеся с этими моделями по prop_id и value
 		if ($type == 'value') {
 			$row = Showcase::getValue($value);
@@ -135,9 +205,13 @@ class Prices {
 		return $list;
 	}
 	public static function updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value) {
-		$list = Prices::getMyModels($type, $producer_id, $prop_id, $value);
+		$list = Prices::getMyItems($type, $producer_id, $prop_id, $value);
 		
 		$modified = 0;
+		$misorder = 0;
+		$misvalue = 0;
+		$miszero = 0;
+		$misempty = 0;
 		foreach ($list as $i => $find) {
 			$model_id = $find['model_id'];
 			$item_num = $find['item_num'];
@@ -162,6 +236,7 @@ class Prices {
 					if ($row['order']){
 						$oldorder = $row['order'];
 						if ($oldorder < $order) {
+							$misorder++;
 							continue; //Свойство установлено из более приоритетного прайса
 						}
 					}
@@ -169,11 +244,18 @@ class Prices {
 				}
 
 				//Может пусто и записывать ничего не надо?
-				if (!isset($pos[$p['prop']])) continue;
+				if (!isset($pos[$p['prop']])) {
+					$misvalue++;
+					continue;
+				}
 				if ($p['type'] == 'number') {
 					$pos[$p['prop']] = (float) $pos[$p['prop']];
-					if(!$pos[$p['prop']]) continue;
+					if (!$pos[$p['prop']]) {
+						$miszero++;
+						continue;
+					}
 				} else if ($pos[$p['prop']] == '') {
+					$misempty++;
 					continue; //Нечего копировать, свойства то и нет
 				}
 
@@ -194,6 +276,13 @@ class Prices {
 		}
 		return [sizeof($list), $modified];
 	}
+	public static function listen($pricename, $callback) {
+		Event::handler('Showcase-prices.onload', function ($obj) use ($pricename, $callback){
+			$name = $obj['name'];
+			if ($name != $pricename) return;
+			return $callback($obj['pos'], $obj['option']);
+		});
+	}
 	public static function actionLoad($name, $src) {
 		$time = time();
 		$ans = array();
@@ -204,17 +293,19 @@ class Prices {
 		$count = 0;
 		$data = Prices::readPrice($name, $src);
 		$option = Prices::getOptions($name);
+		$ans['Прайс'] = $name;
 		$ans['Внесение параметров'] = implode(', ',$option['props']);
-		$ans['Ключ соответствия'] = '<b>'.$option['priceprop'].'</b> в прайсе и <b>'.$option['catalogprop'].'</b> в каталоге';
-		
+		$ans['Ключ прайса'] = $option['priceprop'];
+		$ans['Ключ каталога'] = $option['catalogprop'];
 		if ($option['isaccurate']) {
 			$type = Data::checkType($option['catalogprop']);
 			if ($type == 'text') die('Нельзя настраивать связь данных с прайсом по ключу указанному как свободный текст');
 			$prop_id = Data::initProp($option['catalogprop'], $type);
-			foreach ($option['props'] as $k => $prop) {
+			$props = $option['props'];
+			foreach ($props as $k => $prop) {
 				$t = Data::checkType($prop);
 				$pid = Data::initProp($prop, $t);
-				$option['props'][$k] = [
+				$props[$k] = [
 					'prop_id' => $pid,
 					'prop' => $prop,
 					'type' => $t
@@ -232,13 +323,14 @@ class Prices {
 
 		
 		$ans['Количество строк'] = 0;
-		$ans['Позиций с ключём'] = 0; //Позиций в прайсе
-		$ans['Изменение позиций'] = 0; //изменённых моделей
-		$ans['Пропущено из-за отсутствия параметров в прайсе или конфликта с другим прайсом'] = 0;
-		$ans['Дубли по ключу в данных'] = 0;
-		$ans['Не найдено в каталоге'] = 0;
-		$ans['Принято'] = 0;
+		$ans['Количество подходящих строк'] = 0; //Позиций в прайсе
+		$ans['Изменено позиций'] = 0;
+		$ans['Пропущено в прайсе'] = 0;
+		$ans['Пропущено из-за отсутствия параметра в прайсе или конфликта с другим прайсом или пустых значений'] = 0;
+		$ans['Дубли по ключу прайса в данных'] = 0;
+		$ans['Не найдено соответствий'] = 0;
 		$ans['Синонимы'] = $option['synonyms'];
+		$ans['Принимаемые параметры'] = $option['props'];
 		
 		$heads = [];
 		Xlsx::runGroups($data, function &($group) use (&$heads) {
@@ -251,7 +343,7 @@ class Prices {
 		$ans['Колонки на листах'] = $heads;
 
 		if ($option['isaccurate']) {
-			Xlsx::runPoss( $data, function &(&$pos) use ($name, &$ans, &$option, $prop_id, $type, $producer_id, $order, $price_id){
+			Xlsx::runPoss( $data, function &(&$pos) use ($props, $name, &$ans, &$option, $prop_id, $type, $producer_id, $order, $price_id){
 				$r = null;
 				
 				Prices::checkSynonyms($pos, $option);
@@ -262,26 +354,37 @@ class Prices {
 					'name' => $name,
 					'pos' => &$pos
 				];
-				Event::tik('Showcase-prices.onload');
-				Event::fire('Showcase-prices.onload', $obj); //В событии дописываем нужное свойство которое уже есть в props
 				
 				$ans['Количество строк']++; //Записей с ключём прайса
+				Event::tik('Showcase-prices.onload');
+				$res = Event::fire('Showcase-prices.onload', $obj); //В событии дописываем нужное свойство которое уже есть в props
+				if ($res === false) return $r;
+				
 				if (!isset($pos[$option['priceprop']])) return $r;
-				$ans['Позиций с ключём']++; //Записей с ключём прайса
+				$ans['Количество подходящих строк']++; //Записей с ключём прайса
 
 				$value = $pos[$option['priceprop']];
-				list($c, $modified) = Prices::updateProps($type, $option['props'], $pos, $price_id, $order, $producer_id, $prop_id, $value);
-				if ($c == 0) $ans['Не найдено в каталоге']++;
-				if ($c > 1) $ans['Дубли по ключу в данных'] += $c;
-				$ans['Изменение позиций'] += $c;
-				$ans['Пропущено из-за отсутствия параметров в прайсе или конфликта с другим прайсом'] += ($c-$modified);
-				$ans['Принято'] += $modified;
+				list($c, $modified) = Prices::updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value);
+				if ($c == 0) {
+					$ans['Не найдено соответствий']++;
+					return $r;
+				}
+				if ($c > 1) $ans['Дубли по ключу прайса в данных'] += $c-1;
+				$ans['Пропущено из-за отсутствия параметра в прайсе или конфликта с другим прайсом или пустых значений'] += ($c-$modified);
+				$ans['Изменено позиций'] += $modified; //Включая дубли по ключу
 				return $r;
 			});
 		}
+		$ans['Пропущено в прайсе'] = Data::col('select count(*) from (SELECT p.producer_nick, a.article_nick, i.item_nick, max(mv.price_id) as price_id FROM showcase_items i
+			INNER JOIN showcase_models m on m.model_id = i.model_id and m.producer_id = :producer_id
+			LEFT JOIN showcase_producers p on m.producer_id = p.producer_id
+			LEFT JOIN showcase_articles a on a.article_id = m.article_id
+			LEFT JOIN showcase_mnumbers mv on (mv.model_id = i.model_id and mv.item_num = i.item_num and mv.price_id = :price_id)
+			GROUP BY i.model_id, i.item_num) t WHERE t.price_id is null
+			', [':producer_id'=> $producer_id, ':price_id' => $option['price_id']]);
 		$duration = (time() - $time);
 		$jsonans = Load::json_encode($ans);
-		$r = Data::exec('UPDATE showcase_prices SET `time` = from_unixtime(?), `duration` = ?, `count` = ?, ans = ? WHERE price_id = ?', [$time, $duration, $ans['Позиций с ключём'], $jsonans, $price_id]);
+		$r = Data::exec('UPDATE showcase_prices SET `time` = from_unixtime(?), `duration` = ?, `count` = ?, ans = ? WHERE price_id = ?', [$time, $duration, null, $jsonans, $price_id]);
 		$db->commit();
 		return $ans;
 	}
@@ -305,7 +408,6 @@ class Prices {
 	}
 	public static function getOptions($filename = false) {//3 пересечения Опциии, Файлы, БазаДанных
 		$list = Data::getOptions('prices');
-		
 		$filelist = Data::getFileList(Showcase::$conf['pricessrc']);
 		
 		foreach ($filelist as $name => $val) { // По файлам
@@ -314,13 +416,15 @@ class Prices {
 			$list[$name]['isfile'] = true;
 		}
 
-		$savedlist = Data::fetchto('SELECT unix_timestamp(time) as time, `order`, duration, name, `count` 
+		$savedlist = Data::fetchto('SELECT price_id, unix_timestamp(time) as time, `order`, ans, duration, name, `count` 
 			FROM showcase_prices','name');
 		foreach ($savedlist as $name => $val) { // По файлам
 			if (!isset($list[$name])) $list[$name] = array();
 			$list[$name] += $savedlist[$name];
 			if (!$savedlist[$name]['time']) continue;// Данные ещё не вносились
 			$list[$name]['isdata'] = true;
+
+			$list[$name]['ans'] = Load::json_decode($val['ans'], true);
 		}
 
 		foreach ($list as $name => $opt) { // По опциям

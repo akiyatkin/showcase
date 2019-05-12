@@ -22,6 +22,11 @@
 			Всего в каталоге <b>{count} {~words(count,:модель,:модели,:моделей)}</b>.<br>
 		</div>
 	</div>
+
+	<hr class="mt-5">
+	<h1>Технические команды</h1>
+	<a class="btn btn-secondary" href="/-showcase/drop">Удалить данные и пересоздать базу данных</a>
+	<hr>
 {res:}<div class="mt-2 alert alert-success">{~print(.)}</div>
 {MODELS:}
 	{:menu}
@@ -34,11 +39,18 @@
 		</div>
 	{pic:} <small class="a" onclick="$(this).addClass('float-right').removeClass('a').html('<img src=\'/-imager/?src={.}&w=100\'>&nbsp;')">image</small>
 	{cost:}{~cost(Цена)} руб.
+{PRODUCER:}
+	{:menu}
+	<h1>{producer}</h1>
+	{icon:pic}
+	{:prodinfo} <br>
+	<!--Данные: {catalog}.xlsx<br>-->
+	{prodinfo:}Моделей: <b><a href="/catalog/{producer}">{count}</a></b>, без цены: <b><a href="/catalog/{producer}?m=:more.Цена.no=1">{Без цены}</a></b>, без картинки: <b><a href="/catalog/{producer}?m=:more.images.no=1">{Без картинки}</a></b>, {catalog}.xlsx {icon:pic}
 {PRODUCERS:}
 	{:menu}
 	<h1>Производители</h1>
 	{list::producer}
-	{producer:}{producer} <small><b>{count}</b> {catalog}.xlsx {icon:pic}</small><br>
+	{producer:}<a href="/-showcase/producers/{producer}">{producer}</a> <small>{:prodinfo}</small><br>
 {GROUPS:}
 	{:menu}
 	<h1>Группы</h1>
@@ -53,6 +65,22 @@
 		<div class="ml-4 sub" style="display:none">{childs::groups}</div>
 		{justgroup:}
 		<div>{group}</span> <small> ({group_nick}) {catalog}.xlsx</small> <b>{count}</b>{icon:pic}</div>
+{PRICE:}
+	{:menu}
+	<h1>{file}</h1>
+	{:itemprice}
+	<hr>
+	<h2>Не найдено в данных</h2>
+	{missdata::missdata}
+	<h2>Пропущено в прайсе</h2>
+	{missprice::misspirce}
+	{:foot}
+	{missdata:}
+	<span class="a" data-toggle="collapse" data-target="#collapsedata{~key}">{.[priceprop]}</span><br>
+	<div class="collapse" id="collapsedata{~key}">{~print(.)}</div>
+	{misspirce:}
+	<span class="a" data-toggle="collapse" data-target="#collapseprice{~key}">{article}</span><br>
+	<div class="collapse" id="collapseprice{~key}">{~print(.)}</div>
 {PRICES:}
 	{:menu}
 	<h1>Прайсы</h1>
@@ -64,7 +92,7 @@
 			<span class="btn btn-primary" onclick="Action('loadAll')">Внести все прайсы</span>
 		</div>
 		<div>
-			<span class="btn btn-danger" onclick="Action('clearAll')">Очистить все данные и прайсы</span>
+			<span class="btn btn-danger" onclick="Action('clearAll')">Очистить всё</span>
 		</div>
 	</div>
 	{:foot}
@@ -78,34 +106,37 @@
 		<div>
 			<!--<a href="/-showcase/update" class="btn btn-primary">Внести все новые данные и прайсы</a>-->
 			<span class="btn btn-primary" onclick="Action('loadAll')">Внести все данные</span>
-			<span class="btn btn-info" onclick="Action('addFilesAll')">Связать все данные с файлами</span>
+			<span class="btn btn-info" onclick="Action('addFilesAll')">Связать всё с файлами</span>
 		</div>
 		<div>
-			<span class="btn btn-danger" onclick="Action('clearAll')">Очистить все данные и прайсы</span>
+			<span class="btn btn-danger" onclick="Action('clearAll')">Очистить всё</span>
 		</div>
 	</div>
 	{:foot}
 {time:}<b title="{~date(:H:i,.)}">{~date(:d.m,.)}</b>
-{size:}<b title="Примерно {durationrate} Кб в секунду = {~multi(.,durationfactor)} сек">{.}</b> Кб, 
-{duration:}Обработка <b>{.}</b> сек,
-{icount:}Принято <b>{icount}</b> {~words(icount,:позиций,:позиции,:позиций)}.<br>
+{size:}<b>{.}</b> Кб, 
+{duration:}Время <b>{.}</b> сек,
+{icount:}
+	Всего: <b>{ans.Количество подходящих строк}</b>, не найдено: <b>{ans.Не найдено соответствий}</b>, пропущено: <b>{ans.Пропущено в прайсе}</b><br>
+{ptitle:}{producer?:linkproducer?(:Общий прайс для всех производителей):com}
+{ctitle:}{producer?:linkproducer?(:Общие данные для всех производителей):com}
+{linkproducer:}Производитель: <a href="/-showcase/producers/{producer}">{producer}</a>
+{itemname:}<b><a href="/-showcase/prices/{name}">{file|:Нет файла}</a></b><br>
 {itemprice:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">
 		<div class="p-2" style="width:300px">
-			<big>{producer|(:Общий прайс для всех производителей):com}</big><br>
-			<i>{file|:Нет файла}</i><br>{size:size} {mtime:time}
+			{list?:itemname}
+			{:ptitle}
+			<i></i><br>{size:size} {mtime:time}
 		</div>
 		<div class="p-2 flex-grow-1">
 			{isdata?:icount}
-			{count?:price-count}<br>
-			{duration:duration} {time:time}<br>
-			{isopt?:showopt?:Нет опций}  {ans:ans}
+			{duration:duration} {time:time} {ans:ans}
 		</div>
 		<div class="p-2 text-right" style="width:300px">
 			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.prices}{file}')">Внести</span>
 			{isdata?:actdelprice}
 		</div>
-		
 	</div>
 	{showopt:}
 	<span class="a" onclick="$(this).next().slideToggle()">Есть опции</span>
@@ -114,23 +145,24 @@
 	<b>Параметры</b> {~print(props)}
 	</div>
 	{com:}<b class="text-danger">{.}</b>
-	{price-count:}В документе <b>{count}</b> {~words(count,:строка,:строки,:строк)} с ключём прайса <b>{priceprop}</b>.
+	{price-count:}Обработано <b>{count}</b> {~words(count,:строка,:строки,:строк)} с ключём <b>{priceprop}</b>.
 {itemcatalog:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">
 		<div class="p-2" style="width:300px">
-			<big>{producer|(:Общие данные для всех производителей):com}</big><br>
-			<i>{file|:Нет файла}</i><br>{size:size} {mtime:time}
+			<b>{file|:Нет файла}</b><br>
+			{:ctitle}<br>
+			{size:size} {mtime:time}
 		</div>
 		<div class="p-2 flex-grow-1">
-			{isdata?:icount}
-			{count?:catalog-count}<br>
-			{duration:duration} {time:time}<br>
-			{isopt?:Есть опции?:Нет опций} {ans:ans}
+			{isdata?:catcount}
+			{duration:duration} {time:time} {ans:ans}
 		</div>
 		{actions?:actions}
 	</div>
-	{ans:}<span class="a" onclick="$(this).next().slideToggle()">Ответ</span><div style="display:none" class="alert alert-success">{~print(.)}</div>
-	{catalog-count:}В документе <b>{count}</b> {~words(count,:строка,:строки,:строк)} с Артикулом.
+	{ans:}
+	<span class="a" onclick="$(this).next().slideToggle()">Ответ</span>
+	<div style="display:none" class="alert alert-success">{~print(.)}</div>
+	{catcount:}Принято: <b>{icount}</b> {~words(icount,:позиция,:позиции,:позиций)}<br>
 {actdelprice:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.prices}{file}')">Очистить</span>
 {actdel:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.tables}{file}')">Очистить</span>
 {actions:}

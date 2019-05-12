@@ -537,7 +537,7 @@ class Showcase {
 		Event::fire('Showcase-position.onshow', $pos);
 		return $pos;
 	}
-	public static function getModel($producer, $article, $item_nick = '') {
+	public static function getModel($producer_nick, $article_nick, $item_nick = '') {
 		$data = Data::fetch('SELECT 
 			m.model_id, p.producer_nick, p.logo, g.icon,
 			p.producer, a.article_nick, 
@@ -547,7 +547,7 @@ class Showcase {
 			LEFT JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = :producer)
 			LEFT JOIN showcase_groups g on (g.group_id = m.group_id)
 			order by m.article_id
-			', [':article'=>$article,':producer'=>$producer]);
+			', [':article'=>$article_nick,':producer'=>$producer_nick]);
 		if (!$data) return false;
 		
 		$item = Data::fetch('SELECT item_num, item, item_nick from showcase_items where model_id = ? and item_nick = ?',[$data['model_id'], $item_nick]);

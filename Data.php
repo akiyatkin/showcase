@@ -756,14 +756,70 @@ class Data {
 		}
 		return $root;
 	}
-	public static function getProducers() {
+	public static function getProducers($producer_nick = false) {
+		$cost_id = Data::initProp("Цена");
+		$image_id = Data::initProp("images");
+		if ($producer_nick) {
+			$list = Data::fetch('SELECT p.producer, p.logo, p.producer_nick, count(*) as `count`, c.name as catalog from showcase_models m
+				INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = :producer_nick)
+				INNER JOIN showcase_catalog c on c.catalog_id = m.catalog_id
+				LEFT JOIN showcase_mnumbers n on (m.model_id = n.model_id and n.prop_id = :cost_id)
+				GROUP BY producer
+				order by m.producer_id',[':producer_nick'=>$producer_nick,':cost_id'=>$cost_id]);
 		
-		$list = Data::all('SELECT p.producer, p.logo, p.producer_nick, count(*) as `count`, c.name as catalog from showcase_models m
-			INNER JOIN showcase_producers p on p.producer_id = m.producer_id
-			INNER JOIN showcase_catalog c on c.catalog_id = m.catalog_id
-			GROUP BY producer
-			order by m.producer_id');
-		return $list;
+
+			$costs = Data::col('SELECT count(DISTINCT m.model_id) FROM showcase_models m 
+				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)
+				inner join showcase_mnumbers n on (n.model_id = m.model_id and n.prop_id = :cost_id)
+				',[':cost_id'=>$cost_id,':producer_nick'=>$producer_nick]);
+			$list['Без цены'] = $list['count'] - $costs;
+
+
+			$images = Data::col('SELECT count(DISTINCT m.model_id) FROM showcase_models m
+				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)
+				inner join showcase_mvalues n on (n.model_id = m.model_id and n.prop_id = :image_id)
+				',[':image_id'=>$image_id,':producer_nick'=>$producer_nick]);
+			$list['Без картинки'] = $list['count'] - $images;
+
+			return $list;
+			
+		} else {
+			$list = Data::all('SELECT p.producer, p.logo, p.producer_nick, count(*) as `count`, c.name as catalog 
+				from showcase_models m
+				INNER JOIN showcase_producers p on p.producer_id = m.producer_id
+				INNER JOIN showcase_catalog c on c.catalog_id = m.catalog_id
+				LEFT JOIN showcase_mnumbers n on m.model_id = n.model_id and n.prop_id = :cost_id
+				GROUP BY producer
+				order by m.producer_id',[':cost_id'=>$cost_id]);
+			
+			$costs = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
+				inner join showcase_producers pr on (m.producer_id = pr.producer_id)
+				inner join showcase_mnumbers n on (n.model_id = m.model_id and n.prop_id = :cost_id)
+				GROUP BY m.producer_id
+				','producer_nick', [':cost_id'=>$cost_id]);
+			foreach($list as $i => $row) {
+				if(isset($costs[$row['producer_nick']])) {
+					$list[$i]['Без цены'] = $row['count'] - $costs[$row['producer_nick']]['count'];	
+				} else {
+					$list[$i]['Без цены'] = $row['count'];
+				}
+			}
+			$images = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
+				inner join showcase_producers pr on (m.producer_id = pr.producer_id)
+				inner join showcase_mvalues n on (n.model_id = m.model_id and n.prop_id = :image_id)
+				GROUP BY m.producer_id
+				','producer_nick', [':image_id'=>$image_id]);
+			foreach($list as $i => $row) {
+				if(isset($images[$row['producer_nick']])) {
+					$list[$i]['Без картинки'] = $row['count'] - $images[$row['producer_nick']]['count'];	
+				} else {
+					$list[$i]['Без картинки'] = $row['count'];
+				}
+			}
+
+			return $list;
+		}
+		
 	}
 	public static function getModels() {
 		
