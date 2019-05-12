@@ -766,7 +766,7 @@ class Data {
 				LEFT JOIN showcase_mnumbers n on (m.model_id = n.model_id and n.prop_id = :cost_id)
 				GROUP BY producer
 				order by m.producer_id',[':producer_nick'=>$producer_nick,':cost_id'=>$cost_id]);
-		
+			if (!$list) $list['count'] = 0;
 
 			$costs = Data::col('SELECT count(DISTINCT m.model_id) FROM showcase_models m 
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)

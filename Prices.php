@@ -53,10 +53,11 @@ class Prices {
 				'name' => $name,
 				'pos' => &$pos
 			];
-			Event::tik('Showcase-prices.onload');
-			$res = Event::fire('Showcase-prices.onload', $obj); //В событии дописываем нужное свойство которое уже есть в props
+			if (empty($pos[$option['priceprop']])) return $r;
+			Event::tik('Showcase-prices.oncheck');
+			$res = Event::fire('Showcase-prices.oncheck', $obj); //В событии дописываем нужное свойство которое уже есть в props
 			if ($res === false) return $r;
-			if (empty($pos[$priceprop])) return $r;
+			
 			$value = $pos[$priceprop];
 			$items = Prices::getMyItems($catalogprop_type, $producer_id, $catalogprop_id, $value);	
 			if ($items) return $r;
@@ -276,10 +277,15 @@ class Prices {
 		}
 		return [sizeof($list), $modified];
 	}
-	public static function listen($pricename, $callback) {
+	public static function onload($pricename, $callback) {
 		Event::handler('Showcase-prices.onload', function ($obj) use ($pricename, $callback){
-			$name = $obj['name'];
-			if ($name != $pricename) return;
+			if ($obj['name'] != $pricename) return;
+			return $callback($obj['pos'], $obj['option']);
+		});
+	}
+	public static function oncheck($pricename, $callback) {
+		Event::handler('Showcase-prices.oncheck', function ($obj) use ($pricename, $callback){
+			if ($obj['name'] != $pricename) return;
 			return $callback($obj['pos'], $obj['option']);
 		});
 	}
@@ -354,13 +360,18 @@ class Prices {
 					'name' => $name,
 					'pos' => &$pos
 				];
-				
-				$ans['Количество строк']++; //Записей с ключём прайса
-				Event::tik('Showcase-prices.onload');
-				$res = Event::fire('Showcase-prices.onload', $obj); //В событии дописываем нужное свойство которое уже есть в props
+
+				$ans['Количество строк']++;
+				if (empty($pos[$option['priceprop']])) return $r;
+
+				Event::tik('Showcase-prices.oncheck');
+				$res = Event::fire('Showcase-prices.oncheck', $obj); //В событии дописываем нужное свойство которое уже есть в props
 				if ($res === false) return $r;
+
+				Event::tik('Showcase-prices.onload');
+				Event::fire('Showcase-prices.onload', $obj); //В событии дописываем нужное свойство которое уже есть в props
+
 				
-				if (!isset($pos[$option['priceprop']])) return $r;
 				$ans['Количество подходящих строк']++; //Записей с ключём прайса
 
 				$value = $pos[$option['priceprop']];
