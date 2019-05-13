@@ -45,12 +45,12 @@
 	{icon:pic}
 	{:prodinfo} <br>
 	<!--Данные: {catalog}.xlsx<br>-->
-	{prodinfo:}Моделей: <b><a href="/catalog/{producer}">{count}</a></b>, без цены: <b><a href="/catalog/{producer}?m=:more.Цена.no=1">{Без цены}</a></b>, без картинки: <b><a href="/catalog/{producer}?m=:more.images.no=1">{Без картинки}</a></b>, {catalog}.xlsx {icon:pic}
+	{prodinfo:}Моделей: <b><a href="/catalog/{producer_nick}">{count}</a></b>, без цены: <b><a href="/catalog/{producer_nick}?m=:more.Цена.no=1">{Без цены}</a></b>, без картинки: <b><a href="/catalog/{producer_nick}?m=:more.images.no=1">{Без картинки}</a></b>, {catalog}.xlsx {icon:pic}
 {PRODUCERS:}
 	{:menu}
 	<h1>Производители</h1>
 	{list::producer}
-	{producer:}<a href="/-showcase/producers/{producer}">{producer}</a> <small>{:prodinfo}</small><br>
+	{producer:}<a href="/-showcase/producers/{producer_nick}">{producer}</a> <small>{:prodinfo}</small><br>
 {GROUPS:}
 	{:menu}
 	<h1>Группы</h1>
@@ -120,7 +120,7 @@
 	Всего: <b>{ans.Количество подходящих строк}</b>, не найдено: <b>{ans.Не найдено соответствий}</b>, пропущено: <b>{ans.Пропущено в прайсе}</b><br>
 {ptitle:}{producer?:linkproducer?(:Общий прайс для всех производителей):com}
 {ctitle:}{producer?:linkproducer?(:Общие данные для всех производителей):com}
-{linkproducer:}Производитель: <a href="/-showcase/producers/{producer}">{producer}</a>
+{linkproducer:}Производитель: <a href="/-showcase/producers/{producer_nick}">{producer}</a>
 {itemname:}<b><a href="/-showcase/prices/{name}">{file|:Нет файла}</a></b><br>
 {itemprice:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">

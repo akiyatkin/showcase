@@ -110,12 +110,12 @@ class Catalog {
 		$order = 0;
 		foreach ($list as $filename => $val) {
 			$order++;	
-			$producer = $filename;
+			$producer_nick = $filename;
 
 			if (isset($options[$filename]['producer'])) {
-				$producer = $options[$filename]['producer'];
+				$producer_nick = $options[$filename]['producer'];
 			}
-			Catalog::loadMeta($filename, $producer, $order);
+			Catalog::loadMeta($filename, $producer_nick, $order);
 		}
 	}
 	
@@ -374,8 +374,8 @@ class Catalog {
 		return $model_id;
 	}
 	
-	public static function loadMeta($name, $producer, $order) {
-		$producer_id = Data::initProducer($producer);
+	public static function loadMeta($name, $producer_nick, $order) {
+		$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$producer_nick]);
 		
 		$row = Data::fetch('SELECT catalog_id, `order`, producer_id from showcase_catalog WHERE name = ?', 
 			[$name]);		

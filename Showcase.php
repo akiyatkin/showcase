@@ -167,19 +167,18 @@ class Showcase {
 		$prquery = '';
 		$prods = [];
 		foreach ($md['producer'] as $prod => $one) {
-			$producer_id = Data::col('SELECT producer_id from showcase_producers where producer_nick = ?',[$prod]);
-			if ($producer_id) {
-				$prods[] = $producer_id;
-			}
+			$prod = Data::fetch('SELECT producer_id, producer, producer_nick from showcase_producers where producer_nick = ?',[$prod]);
+			if ($prod) $prods[] = $prod;
 		}
 		if ($prods) { //Если есть группа надо достать все вложенные группы
+			$prods = array_unique($prods);
 			$ans['filters'][] = array( 
 				'name' => 'producer',
-				'value' => implode(', ',array_keys($md['producer'])),
+				'value' => implode(', ',array_column($prods,'producer')),
 				'title' => 'Производитель'
 			);
 
-			$prods = array_unique($prods);
+			$prods = array_column($prods,'producer_id');
 			$prquery = implode(',', $prods);
 			$prquery = 'and m.producer_id in ('.$prquery.')';
 		}
@@ -766,19 +765,27 @@ class Showcase {
 	    ];*/
 	    $conf = Config::get('showcase');
 		if (!$md['group'] && $md['producer'] && sizeof($md['producer'])  ==  1) { //ПРОИЗВОДИТЕЛЬ
-			if ($md['producer']) foreach ($md['producer'] as $producer  =>  $v) break;
-			else $producer = false;
+			foreach ($md['producer'] as $producer_nick  =>  $v) break;
+			
 			//is!, descr!, text!, name!, breadcrumbs!
 			$ans['is'] = 'producer';
-			$name = Showcase::getProducer($producer);
-			$ans['name'] = $name;
-			$ans['title'] = $name;
+			//$name = Showcase::getProducer($producer);
+			$prod =  Data::fetch('SELECT producer, producer_nick from showcase_producers where producer_nick = ?',[$producer_nick]);
+			if ($prod) {
+				$name = $prod['producer'];
+				$ans['name'] = $prod['producer'];
+				$ans['title'] = $prod['producer_nick'];	
+			} else {
+				$ans['name'] = 'Производитель не найден';
+				$ans['title'] = $prod['producer_nick'];	
+			}
+			
 
 			
 			$ans['breadcrumbs'][] = array('title' => $conf['title'], 'add' => 'producer:');
 			
 			$ans['breadcrumbs'][] = array('href' => 'producers','title' => 'Производители');
-			$ans['breadcrumbs'][] = array('href' => $name, 'title' => $name);
+			$ans['breadcrumbs'][] = array('href' => $ans['title'], 'title' => $ans['name']);
 			$ans['breadcrumbs'][sizeof($ans['breadcrumbs'])-1]['active']  =  true;
 
 		} else if (!$md['group'] && $md['search']) {

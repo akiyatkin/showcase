@@ -244,14 +244,13 @@ class Data {
 		if (in_array($fd['ext'], Data::$videos)) return 'videos';
 		return 'files';
 	}
-	public static function removeFiles($producer){
-		if ($producer) {
-			$producer_id = Data::initProducer($producer);
+	public static function removeFiles($producer_nick){
+		if ($producer_nick) {
 			foreach (Data::$files as $type) {
 				$prop_id = Data::initProp($type, 'value'); //Удаляем все параметры связаные с файлами images, files, texts
-				$r = Data::exec('DELETE mv FROM showcase_mvalues mv, showcase_models m
-					WHERE m.model_id = mv.model_id and m.producer_id = ?
-					and mv.prop_id = ?', [$producer_id, $prop_id]);	
+				$r = Data::exec('DELETE mv FROM showcase_mvalues mv, showcase_models m, showcase_producers pr
+					WHERE m.model_id = mv.model_id and m.producer_id = pr.producer_id and pr.producer_nick = ?
+					and mv.prop_id = ?', [$producer_nick, $prop_id]);	
 			}
 		} else {
 			foreach (Data::$files as $type) {
@@ -261,16 +260,15 @@ class Data {
 		}
 		
 	}
-	public static function applyIllustracii($producer) {
+	public static function applyIllustracii($producer_nick) {
 		$prop_id = Data::initProp('Иллюстрации','value');
-		if ($producer) {
-			$producer_id = Data::initProducer($producer);
+		if ($producer_nick) {
 			$images = Data::all('SELECT v.value_id, v.value, mv.model_id, mv.item_num FROM showcase_mvalues mv
-				RIGHT JOIN showcase_props p on mv.prop_id = p.prop_id
-				RIGHT JOIN showcase_models m on m.model_id = mv.model_id and m.producer_id = ?
+				RIGHT JOIN showcase_models m on (m.model_id = mv.model_id)
+				RIGHT JOIN showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = ?)
+				RIGHT JOIN showcase_props p on (mv.prop_id = p.prop_id and p.prop_id = ?)
 				RIGHT JOIN showcase_values v on v.value_id = mv.value_id
-				where p.prop_id = ?
-			',[$producer_id, $prop_id]);
+			',[$producer_nick, $prop_id]);
 		} else {
 			$images = Data::all('SELECT v.value_id, v.value, mv.model_id, mv.item_num FROM showcase_mvalues mv
 				RIGHT JOIN showcase_props p on mv.prop_id = p.prop_id
@@ -278,10 +276,6 @@ class Data {
 				where p.prop_id = ?
 			',[$prop_id]);
 		}
-		
-		
-		
-
 		$prop_id = Data::initProp('images','value');
 		foreach ($images as $pos) {
 			Data::exec(
@@ -348,7 +342,8 @@ class Data {
 			$ans['Моделей с иллюстрациями'] = 0;
 			$ans['Прочих файлов на сервере'] = 0;
 			foreach ($list as $prod => $arts) {
-				$producer_id = Data::initProducer($prod);
+				//$producer_id = Data::initProducer($prod);
+				$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$prod]);
 				foreach ($arts as $art => $items) {
 					
 
