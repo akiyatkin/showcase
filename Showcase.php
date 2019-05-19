@@ -193,12 +193,12 @@ class Showcase {
 			
 			$titles = [];
 			foreach ($vals as $v => $one) {
-				if ($v == 'no') {
+				if ($v === 'no') {
 					//if (sizeof($vals) > 1) continue;
 					$titles[] = 'не указано';
-				} else if ($v == 'yes') {
+				} else if ($v === 'yes') {
 					$titles[] = 'Указано';
-				} else if ($v == 'minmax') {
+				} else if ($v === 'minmax') {
 					$r = explode('/', $one);
 					if (sizeof($r) == 2) {
 						if ($prop_nick == 'Цена') {
@@ -216,7 +216,6 @@ class Showcase {
 					if ($row) $titles[] = $row['mean'];
 				}
 			}
-			
 			$titles = implode(' или ', $titles);
 
 			$prop = Data::fetch('SELECT * from showcase_props where prop_nick = ?',[$prop_nick]);
@@ -237,8 +236,6 @@ class Showcase {
 			);
 			$type = Data::checkType($prop_nick);
 
-
-			
 			$un = $prop_id;
 			if ($type == 'value') {
 				if (isset($vals['no'])) {
@@ -261,6 +258,7 @@ class Showcase {
 					unset($vals['yes']);
 					$join[] = 'INNER JOIN showcase_mvalues p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
 				}
+				
 			} else if ($type == 'number') {
 				if (!empty($vals['no']) || !empty($vals['minmax'])) {
 					

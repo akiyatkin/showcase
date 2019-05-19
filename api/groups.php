@@ -18,7 +18,13 @@ if (!$isempty) {
 		return $r;
 	}, true);
 }
-
+Xlsx::runGroups($ans['root'], function &(&$group, $i, &$parent) {
+	$r = null;
+	if(empty($group['childs'])) return $r;
+	$group['childs'] = array_values($group['childs']);
+	
+	return $r;
+});
 $group = false;
 foreach ($md['group'] as $group => $one) break;
 if ($group) {
