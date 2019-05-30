@@ -68,6 +68,8 @@ class Data {
 		$opt = $opt + array(
 			'catalog'=>[],
 			'justonevalue'=>[],
+			'numbers'=>[],
+			'texts'=>[],
 			'columns'=>[],
 			'prices'=>[],
 			'props'=>[],
@@ -75,8 +77,12 @@ class Data {
 			'values'=>[]	
 		);
 		
-		if (empty($opt['numbers'])) $opt['numbers'] = ['Цена'];
-		if (empty($opt['texts'])) $opt['texts'] = ["Описание","Наименование"];
+		$opt['numbers'][] = 'Цена';
+		$opt['numbers'] = array_unique($opt['numbers']);
+		
+		$opt['texts'][] = 'Описание';
+		$opt['texts'][] = 'Наименование';
+		$opt['texts'] = array_unique($opt['texts']);
 
 		return $opt;
 	}
@@ -90,7 +96,12 @@ class Data {
 		return $opt;
 	}
 	public static function prepareOptionPart(&$list){
-		foreach ($list as $name => $val) $list[$name]['isopt'] = true;
+		foreach ($list as $name => $val) {
+			if ($list[$name]['producer']) {
+				$list[$name]['producer_nick'] = Path::encode($list[$name]['producer']);
+			}
+			$list[$name]['isopt'] = true;
+		}
 	}
 	/**
 	 * Массив поставщиков в формает fd (nameInfo) с необработанными данными из Excel (data)
@@ -263,16 +274,16 @@ class Data {
 	public static function applyIllustracii($producer_nick) {
 		$prop_id = Data::initProp('Иллюстрации','value');
 		if ($producer_nick) {
-			$images = Data::all('SELECT v.value_id, v.value, mv.model_id, mv.item_num FROM showcase_mvalues mv
-				RIGHT JOIN showcase_models m on (m.model_id = mv.model_id)
-				RIGHT JOIN showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = ?)
-				RIGHT JOIN showcase_props p on (mv.prop_id = p.prop_id and p.prop_id = ?)
-				RIGHT JOIN showcase_values v on v.value_id = mv.value_id
+			$images = Data::all('SELECT p.prop, v.value_id, v.value, mv.model_id, mv.item_num FROM showcase_mvalues mv
+				INNER JOIN showcase_models m on (m.model_id = mv.model_id)
+				INNER JOIN showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = ?)
+				INNER JOIN showcase_props p on (mv.prop_id = p.prop_id and p.prop_id = ?)
+				INNER JOIN showcase_values v on v.value_id = mv.value_id
 			',[$producer_nick, $prop_id]);
 		} else {
 			$images = Data::all('SELECT v.value_id, v.value, mv.model_id, mv.item_num FROM showcase_mvalues mv
-				RIGHT JOIN showcase_props p on mv.prop_id = p.prop_id
-				RIGHT JOIN showcase_values v on v.value_id = mv.value_id
+				INNER JOIN showcase_props p on mv.prop_id = p.prop_id
+				INNER JOIN showcase_values v on v.value_id = mv.value_id
 				where p.prop_id = ?
 			',[$prop_id]);
 		}
@@ -338,39 +349,43 @@ class Data {
 
 			$ans['Иллюстраций с прямым адресом'] = Data::applyIllustracii($producer_nick);
 			$ans['Иллюстраций на сервере'] = 0;
-			$ans['Бесхозных файлов'] = 0;
-			$ans['Моделей с иллюстрациями'] = 0;
+			$ans['Моделей с файлами'] = 0;
 			$ans['Прочих файлов на сервере'] = 0;
+			$ans['Свободные файлы'] = array_reduce($list, function ($ak, $arts){
+				return array_reduce($arts, function ($ak, $items) {
+					return array_reduce($items, function ($ak, $items) {
+						return array_merge($ak, $items);
+					},$ak);		
+				},$ak);
+			}, []);
 			foreach ($list as $prod => $arts) {
 				//$producer_id = Data::initProducer($prod);
 				$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$prod]);
 				foreach ($arts as $art => $items) {
 					
+					$altart = str_ireplace($prod, '', $art); //Удалили из артикула продусера
+					$altart = Path::encode($altart);
 
-					$article_id = Data::col('SELECT article_id from showcase_articles where article_nick = ?', [$art]);
-					
+					$article_id = Data::col('SELECT article_id 
+						from showcase_articles 
+						where article_nick = ? or article_nick = ?', [$art, $altart]);
+
 					if (!$article_id) {
-						$altart = str_ireplace($prod, '', $art); //Удалили из артикула продусера
-						$altart = Path::encode($altart);
-						$article_id = Data::col('SELECT article_id from showcase_articles where article_nick = ?', [$altart]);
-
-						if (!$article_id) {
-							$ans['Бесхозных файлов']++;
-							continue;//Имя файла как артикул не зарегистрировано, даже если удалить производителя
-						}
+						continue;//Имя файла как артикул не зарегистрировано, даже если удалить производителя
 					}
+
 					$model_id = Data::col('SELECT model_id from showcase_models where producer_id = ? and article_id = ?',
 						[$producer_id, $article_id]);
 					if (!$model_id) {
-						$ans['Бесхозных файлов']++;
 						continue; //Арт есть, но видимо у другова производителя. Модель не найдена
 					}
 
-					$ans['Моделей с иллюстрациями']++;
+					$ans['Моделей с файлами']++;
 					$values = [];
 					foreach ($items as $item_num => $files) {
 						foreach ($files as $src => $type) {
 							$value_id = Data::initValue($src);
+							unset($ans['Свободные файлы'][$src]);
 							if (isset($values[$value_id])) continue; //Дубли одного пути или похоже пути из-за Path encode путь может давайть одинаковый value_nick
 							$values[$value_id] = true;
 							$prop_id = $pid[$type];
@@ -388,6 +403,7 @@ class Data {
 					}
 				}
 			}
+			$ans['Свободные файлы'] = array_keys($ans['Свободные файлы']);
 			Data::addFilesIcons();
 			
 
@@ -633,7 +649,7 @@ class Data {
 				foreach ($list[$prod][$syn][0] as $src => $type) { //По синониму может быть несколько файлов
 					foreach ($syns as $row) { //Один синоним может быть для нескольких позиций и каждый файл записываем в каждую позицию
 						if ($type !== 'images') continue;
-						$art = $art = mb_strtolower($row['article']);
+						$art = mb_strtolower($row['article']);
 						if (!isset($list[$prod][$art][$row['item_num']])) $list[$prod][$art][$row['item_num']] = [];
 						$list[$prod][$art][$row['item_num']][$src] = $type;
 					}
@@ -653,8 +669,9 @@ class Data {
 		foreach ($rows as $row) {
 			if (!isset($fayls[$row['producer']])) $fayls[$row['producer']] = [];
 			if (!isset($fayls[$row['producer']][$row['value']])) $fayls[$row['producer']][$row['value']] = [];
-			$fayls[$row['producer']][$row['value']][] = $row;
+			$fayls[$row['producer']][mb_strtolower($row['value'])][] = $row;
 		}
+		
 		foreach ($fayls as $prod => $artsyns) {
 			foreach ($artsyns as $syn => $syns) {
 				if (!isset($list[$prod][$syn][0])) continue;

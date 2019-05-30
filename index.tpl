@@ -113,15 +113,18 @@
 		</div>
 	</div>
 	{:foot}
-{time:}<b title="{~date(:H:i,.)}">{~date(:d.m,.)}</b>
+{time:}<b title="{~date(:H:i,.)}">{~date(:d.m,.)}</b>, 
 {size:}<b>{.}</b> Кб, 
-{duration:}Время <b>{.}</b> сек,
+{duration:}Загрузка за <b title="{.}">{.<:1?:1?.}</b> сек,
 {icount:}
 	Всего: <b>{ans.Количество подходящих строк}</b>, не найдено: <b>{ans.Не найдено соответствий}</b>, пропущено: <b>{ans.Пропущено в прайсе}</b><br>
 {ptitle:}{producer?:linkproducer?(:Общий прайс для всех производителей):com}
 {ctitle:}{producer?:linkproducer?(:Общие данные для всех производителей):com}
 {linkproducer:}Производитель: <a href="/-showcase/producers/{producer_nick}">{producer}</a>
 {itemname:}<b><a href="/-showcase/prices/{name}">{file|:Нет файла}</a></b><br>
+{notime:}файл не внесён,
+{noans:}раньше не вносился.
+{noduration:}Время загрузки не известно,
 {itemprice:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">
 		<div class="p-2" style="width:300px">
@@ -131,7 +134,7 @@
 		</div>
 		<div class="p-2 flex-grow-1">
 			{isdata?:icount}
-			{duration:duration} {time:time} {ans:ans}
+			{duration?duration:duration?:noduration} {time?time:time?:notime} {ans?ans:ans?:noans}
 		</div>
 		<div class="p-2 text-right" style="width:300px">
 			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.prices}{file}')">Внести</span>
@@ -154,24 +157,30 @@
 			{size:size} {mtime:time}
 		</div>
 		<div class="p-2 flex-grow-1">
-			{isdata?:catcount}
-			{duration:duration} {time:time} {ans:ans}
+			{time?:catcount}
+			{duration?duration:duration?:noduration} {time?time:time?:notime} {ans?ans:ans?:noans}
 		</div>
 		{actions?:actions}
 	</div>
 	{ans:}
-	<span class="a" onclick="$(this).next().slideToggle()">Ответ</span>
+	<span class="a" onclick="$(this).next().slideToggle()">{..time??:прошлый }ответ</span>.
 	<div style="display:none" class="alert alert-success">{~print(.)}</div>
 	{catcount:}Принято: <b>{icount}</b> {~words(icount,:позиция,:позиции,:позиций)}<br>
 {actdelprice:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.prices}{file}')">Очистить</span>
-{actdel:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.tables}{file}')">Очистить</span>
+
 {actions:}
 		<div class="p-2 text-right" style="width:400px">
+			
 			<!--<span class="btn btn-secondary" onclick="Action('read','{name}','{conf.tables}{file}')">Разобрать</span>-->
-			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.tables}{file}')">Внести</span>
-			<span class="btn btn-info" onclick="Action('addFiles','{name}','{conf.tables}{file}')">Связать</span>
-			{isdata?:actdel}
+			{file?:actfile}
+			{time?:actbunch}
+			{time?:actdel}
 		</div>
+	{actbunch:}
+		<span class="btn btn-info" onclick="Action('addFiles','{name}','{conf.tables}{file}')">Связать</span>
+	{actfile:}
+		<span class="btn btn-primary" onclick="Action('load','{name}','{conf.tables}{file}')">Внести</span>
+	{actdel:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.tables}{file}')">Очистить</span>
 {foot:}
 	<hr>
 	<form id="form" method="POST">

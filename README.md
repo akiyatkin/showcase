@@ -1,21 +1,22 @@
+# Showcase
 
 
 
-
-showcase_prices 		*price_id, [name], producer_id, time, order, count, duration, ans
-showcase_catalog 		*catalog_id, [name], producer_id, time, order, count, duration, ans
+showcase_prices 		price_id, [name], producer_id, time, order, count, duration, ans
+showcase_catalog 		catalog_id, [name], producer_id, time, order, count, duration, ans
 ===
-showcase_groups			*group_id, group, [group_nick], parent_id, icon
-showcase_producers 		*producer_id, producer, [producer_nick], icon
-showcase_articles 		*article_id, article, [article_nick]
+showcase_groups			group_id, group, [group_nick], parent_id, icon
+showcase_producers 		producer_id, producer, [producer_nick], icon
+showcase_articles 		article_id, article, [article_nick]
 
 
-showcase_props 			*prop_id, prop, [prop_nick], type (1 value, 2 number, 3 text) - number и text считаются только те свойство которые указаны в конфиге
-showcase_values 		*value_id, value, [value_nick] - value_nick создаётся для тех свойств которые есть в фильтрах конфига
+showcase_props 			prop_id, prop, [prop_nick], type (1 value, 2 number, 3 text) - number и text считаются только те свойство которые указаны в конфиге
+showcase_values 		value_id, value, [value_nick] - value_nick создаётся для тех свойств которые есть в фильтрах конфига
+
 ====
 
 showcase_items 			(model_id, item_num), item, [item_nick]
-showcase_models			*model_id, catalog_id, [producer_id, article_id], group_id, time (1 актив, 2 удалена - для сохранения ид)
+showcase_models			model_id, catalog_id, [producer_id, article_id], group_id, time (1 актив, 2 удалена - для сохранения ид)
 
 showcase_mvalues		[model_id, item_num, prop_id, value_id], price_id, order
 showcase_mnumbers		[model_id, item_num, prop_id, number], price_id, order
@@ -26,7 +27,7 @@ showcase_mtexts			[model_id, item_num, prop_id], text, price_id, order
 
 Нужно точно знать какие свойства относятся к mitem а какие к model. 
 
-Конфиг прайса	(producer, isglob, isaccurate, catalogkeytpl, pricekeytpl, price_prop, catalog_prop в конфиге)
+Конфиг прайса	(producer, isglob, isaccurate, catalogkeytpl, pricekeytpl, priceprop, catalogprop в конфиге)
 	true, false		- pricekey_value глобальный, 
 	true, true 		- pricekey_id по priceprop_id, catalogprop_id, глобальный поиск
 	false, false 	- pricekey_value уникальный для producer
@@ -53,6 +54,7 @@ asdf.xlsx 	date/date 		применить
 asdf.xlsx 	date/date 		применить
 
 Конфиг ~prices.json
+```
 <pre>
 
 showcase: {
@@ -66,17 +68,14 @@ showcase: {
 			"producer":"RPM",
 			"price_key":"....",
 			"catalog_key":"..."
-			"price_prop":"Артикул",
-			"catalog_prop":"Код"
+			"priceprop":"Артикул",
+			"catalogprop":"Код"
 		}
 	}
 }
 </pre>
+```
 
--showcase/:post?action=do-catalog&src=src
-	do catalog = load, files, apply prices
--showcase/:post?action=do-price&src=src
-	do price = load, apply
 
 -showcase/search
 -showcase/pos/producer/article
@@ -128,10 +127,11 @@ numbers и values по умолчанию сплитятся по запятым
 				"Опт":["опт"],
 				"Розница":["розница","Розничная цена, руб"]
 			},
+			"patterns":["article"],
 			"props":["Артикул","Производитель"],
 			"producer":false,
-			"price_prop":"Код",
-			"catalog_prop":"Код"
+			"priceprop":"Код",
+			"catalogprop":"Код"
 		},
 		"Amatek": {
 			"start":4,

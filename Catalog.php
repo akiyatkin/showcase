@@ -78,7 +78,6 @@ class Catalog {
 			if (!isset($list[$name])) $list[$name] = array();
 			$list[$name] += $savedlist[$name];
 			if (!$savedlist[$name]['time']) continue;// Данные ещё не вносились
-			$list[$name]['isdata'] = true;
 		}
 		foreach ($list as $name => $opt) { // По опциям
 			$list[$name] += array(
@@ -89,7 +88,11 @@ class Catalog {
 				'order' => 0,
 				'producer' => $name
 			);
+			
 			$list[$name]['isglob'] = !!$list[$name]['producer'];
+			//if (empty($opt['isfile']) && empty($opt['time'])) {
+			//	unset($list[$name]);
+			//}
 		}
 		
 		if ($filename) return $list[$filename];
@@ -117,10 +120,17 @@ class Catalog {
 			}
 			Catalog::loadMeta($filename, $producer_nick, $order);
 		}
+		$savedlist = Data::fetchto('SELECT unix_timestamp(time) as time, catalog_id, name, `count` from showcase_catalog','name');
+		foreach ($savedlist as $name => $row) {
+			if (isset($list[$name])) continue; // Если нет файла
+			if (!empty($row['time'])) continue; // Если нет даты внесения, то и данных нет
+			Data::exec('DELETE from showcase_catalog where catalog_id = ?',[$row['catalog_id']]);
+		}
 	}
 	
 	public static function readCatalog($name, $src) {
 		$conf = Showcase::$conf;
+		$opt = Catalog::getOptions($name);
 		$data = Xlsx::init($src, array(
 			'root' => $conf['title'],
 			'more' => true,
@@ -130,6 +140,12 @@ class Catalog {
 			'listreverse' => false,
 			'Известные колонки' => array("Артикул","Производитель")
 		));
+		if (!empty($opt['producer'])) {
+			Xlsx::runPoss($data, function (&$pos) use (&$opt) {
+				$pos['Производитель'] = $opt['producer'];
+				$pos['producer'] = $opt['producer_nick'];
+			});
+		}
 		return $data;
 	}
 	
@@ -137,7 +153,8 @@ class Catalog {
 	
 	public static function actionRemove($name, $src = false) {
 		//Удаляются ключи model_id, mitem_id
-		$r = Data::exec('DELETE m, i, mv, mn, mt
+
+		Data::exec('DELETE m, i, mv, mn, mt
 			FROM showcase_catalog c 
 			LEFT JOIN showcase_models m ON m.catalog_id = c.catalog_id
 			LEFT JOIN showcase_items i ON i.model_id = m.model_id
@@ -145,13 +162,18 @@ class Catalog {
 			LEFT JOIN showcase_mnumbers mn ON mn.model_id = m.model_id
 			LEFT JOIN showcase_mtexts mt ON mt.model_id = m.model_id
 			WHERE c.name = ?', [$name]);	
+
+		//Можно удалить группы, которые созданы этими данными и которые пустые, точней те группы у которых нет существующего catalog_id, так как мы его только что удалили.
+		Data::exec('DELETE g from showcase_groups g
+			RIGHT JOIN showcase_catalog c ON (c.catalog_id = g.catalog_id and c.catalog_id is null)
+			RIGHT JOIN (select *, count(model_id) as count from showcase_models group by group_id) m ON (m.group_id = g.group_id and m.count = 0)');
+
 		if ($src && FS::is_file($src)) { //ФАйл есть запись остаётся
 			Data::exec('UPDATE showcase_catalog SET time = null WHERE name = ?', [$name]);
 		} else {
 			Data::exec('DELETE FROM showcase_catalog WHERE name = ?', [$name]);
 		}
 		
-		return $r;
 	}
 	public static function actionRead($name, $src)
 	{
