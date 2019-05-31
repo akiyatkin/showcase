@@ -86,7 +86,8 @@ class Catalog {
 				'isopt' => false,
 				'isdata' => false,
 				'order' => 0,
-				'producer' => $name
+				'producer' => $name,
+				'producer_nick' => Path::encode($name)
 			);
 			
 			$list[$name]['isglob'] = !!$list[$name]['producer'];
