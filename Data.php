@@ -342,6 +342,7 @@ class Data {
 			Data::addFilesFaylov($list, $producer_nick); //Файлы
 
 			Data::addFilesFS($list, $producer_nick);
+			
 
 			Data::addFilesSyns($list, $producer_nick); //Синонимы Фото и Файл
 
@@ -526,7 +527,7 @@ class Data {
 	}
 	public static function addFilesFSimages(&$list, $prod) {
 		$dir = Showcase::$conf['images'].$prod.'/';
-		if (!Path::theme($dir.'/')) return; //Подходят только папки
+		if (!Path::theme($dir)) return; //Подходят только папки
 		$index = Data::getIndex($dir,  Data::$images);
 		foreach ($index as $art => $images) {
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
@@ -541,7 +542,7 @@ class Data {
 		if (!Path::theme($dir)) return; //Подходят только папки
 		if (!isset($list[$prod])) $list[$prod] = array();
 
-		
+
 		FS::scandir($dir, function ($fart) use ($dir, &$list, $prod) {
 			$art = mb_strtolower($fart);
 			if (!Path::theme($dir.$art.'/')) return; //Подходят только папки
@@ -557,13 +558,13 @@ class Data {
 		//echo '<pre>';
 		//print_r($list);
 		//exit;
-		$index = Data::getIndex($dir.'/images/',  Data::$images);
+		$index = Data::getIndex($dir.'images/',  Data::$images);
 		foreach ($index as $art => $images) {
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
 			$images = array_fill_keys($images,'images');
 			$list[$prod][$art][0] += $images;
 		}
-		$index = Data::getIndex($dir.'/files/');
+		$index = Data::getIndex($dir.'files/');
 		foreach ($index as $art => $files) {
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
 			foreach ($files as $src) {
