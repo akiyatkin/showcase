@@ -77,6 +77,9 @@ class Data {
 			'values'=>[]	
 		);
 		
+		$opt['justonevalue'][] = 'Цена';
+		$opt['justonevalue'] = array_unique($opt['justonevalue']);
+
 		$opt['numbers'][] = 'Цена';
 		$opt['numbers'] = array_unique($opt['numbers']);
 		

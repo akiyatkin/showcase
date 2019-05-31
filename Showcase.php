@@ -517,7 +517,6 @@ class Showcase {
 	public static function getModelShow($producer_nick, $article_nick, $item_nick = '') {
 		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nick);
 		if (!$pos) return $pos;
-		
 		if (isset($pos['texts'])) {
 			foreach ($pos['texts'] as $i => $src) {
 				$pos['texts'][$i]  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение 

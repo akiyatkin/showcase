@@ -20,6 +20,7 @@
 	"catalogsrc":"~catalog/tables/",
 	"grouparticles":"~catalog/articles/",
 	"groupimages":"~catalog/images/",
+	"showemptygroups":false,
 
 	"hiddenarticle":false,
 	"Группы уникальны":true,
