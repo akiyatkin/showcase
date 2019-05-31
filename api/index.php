@@ -178,6 +178,7 @@ return Rest::get( function () {
 			$producer_nick = Path::toutf(strip_tags($producer_nick));
 			$article_nick = Path::toutf(strip_tags($article_nick));
 			$ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick, $item_nick);
+			if ($item_nick && !$ans['pos']) $ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick);
 			
 			$active = $article_nick;
 			if (Showcase::$conf['hiddenarticle']) {

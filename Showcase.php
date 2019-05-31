@@ -584,7 +584,7 @@ class Showcase {
 		Showcase::makeMore($data, $list);
 		$data += $item;
 		
-		if ($item_nick) {
+		//if ($item_nick) {
 			$its = Data::all('
 					SELECT i.item_nick, ps.prop, ps.prop_nick, v.value as val from showcase_mvalues mv
 					left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
@@ -606,18 +606,34 @@ class Showcase {
 			
 			$items = [];
 			foreach ($its as $i) {
-				$item_nick = $i['item_nick'];
-				if (!isset($items[$item_nick])) $items[$item_nick] = ['item_nick'=>$item_nick, 'list'=>[]];
-				$items[$item_nick]['list'][] = $i;
+				$itemn = $i['item_nick'];
+				if (!isset($items[$itemn])) $items[$itemn] = ['item_nick'=>$itemn, 'list'=>[]];
+				$items[$itemn]['list'][] = $i;
 			}
-			unset($items[$data['item_nick']]);
-			foreach ($items as $k=>$item) {
-				$list = $item['list'];
-				unset($items[$k]['list']);
-				Showcase::makeMore($items[$k], $list);
+			if ($items) {
+				if ($item_nick) {
+					//unset($items[$data['item_nick']]);
+					foreach ($items as $k=>$item) {
+						$list = $item['list'];
+						unset($items[$k]['list']);
+						Showcase::makeMore($items[$k], $list);
+					}
+				} else {
+					foreach ($items as $k=>$item) break;
+					
+					$data['item_nick'] = $item['item_nick'];
+					Showcase::makeMore($data, $item['list']);
+					foreach ($items as $k=>$item) {
+						$list = $item['list'];
+						unset($items[$k]['list']);
+						Showcase::makeMore($items[$k], $list);
+					}
+				}
+				$data['items'] = array_values($items);
 			}
-			$data['items'] = array_values($items);
-		}
+			
+
+		//}
 		$g = Showcase::getGroup($data['group_nick']);
 		$data += $g;
 		unset($data['childs']);
