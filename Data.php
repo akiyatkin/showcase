@@ -104,7 +104,7 @@ class Data {
 			if (!empty($list[$name]['producer'])) {
 				$list[$name]['producer_nick'] = Path::encode($list[$name]['producer']);
 			} else {
-				$list[$name]['producer'] = false;
+				//$list[$name]['producer'] = false;
 			}
 			$list[$name]['isopt'] = true;
 		}
