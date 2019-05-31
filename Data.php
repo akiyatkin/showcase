@@ -101,10 +101,10 @@ class Data {
 	public static function prepareOptionPart(&$list){
 		foreach ($list as $name => $val) {
 			$list[$name]['producer_nick'] = false;
-			if (!empty($list[$name]['producer'])) {
+			if (isset($list[$name]['producer'])) {
 				$list[$name]['producer_nick'] = Path::encode($list[$name]['producer']);
 			} else {
-				//$list[$name]['producer'] = false;
+				$list[$name]['producer'] = $name;
 			}
 			$list[$name]['isopt'] = true;
 		}

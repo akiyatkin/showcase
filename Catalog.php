@@ -137,17 +137,18 @@ class Catalog {
 			'more' => true,
 			'Не идентифицирующие колонки' => ["Файл","Файлы","Фото","Иллюстрации"],
 			'Группы уникальны' => $conf['Группы уникальны'],
-			'Имя файла' => "Производитель",
+			'Игнорировать имена файлов' => true,
+			'Производитель по умолчанию' => $opt['producer'],
 			'Игнорировать имена листов' => $conf['ignorelistname'],
 			'listreverse' => false,
 			'Известные колонки' => array("Артикул","Производитель")
 		));
-		if (!empty($opt['producer'])) {
+		/*if (!empty($opt['producer'])) {
 			Xlsx::runPoss($data, function (&$pos) use (&$opt) {
 				$pos['Производитель'] = $opt['producer'];
 				$pos['producer'] = $opt['producer_nick'];
 			});
-		}
+		}*/
 		return $data;
 	}
 	
@@ -217,7 +218,7 @@ class Catalog {
 		$db = &Db::pdo();
 		$db->beginTransaction();
 		
-		
+
 		$prop_id = Data::initProp('Иллюстрации','value'); //Для событий в цикле
 		Xlsx::runPoss( $data, function (&$pos) use ($name, &$ans, &$filters, &$devcolumns, &$props, $catalog_id, $order, $time, &$count) {
 			$count++;
@@ -229,13 +230,13 @@ class Catalog {
 			$group_nick = $pos['gid'];
 			$group_id = Data::col('SELECT group_id FROM showcase_groups WHERE group_nick = ?',[$group_nick]);
 
-			
 			$model_id = Catalog::initModel($name, $producer_id, $article_id, $catalog_id, $order, $time, $group_id); //У существующей модели указывается time
 
 			if (!$model_id) {
 				$ans['Пропущено из-за конфликта с другими данными']++;
 				return; //Каталог не может управлять данной моделью, так как есть более приоритетный источник
 			}
+
 			Catalog::initItem($model_id, 0, '');
 			
 			if (isset($pos['items'])) { //1 item уже в модели надо его вынести в отдельный items и удалить из модели
