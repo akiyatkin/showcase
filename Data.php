@@ -356,6 +356,7 @@ class Data {
 
 			Data::applyIllustracii($producer_nick);
 			$ans['Файлов'] = 0;
+			$ans['Связанные файлы'] = [];
 			$ans['Свободные файлы'] = array_reduce($list, function ($ak, $arts){
 				return array_reduce($arts, function ($ak, $items) {
 					return array_reduce($items, function ($ak, $items) {
@@ -381,6 +382,7 @@ class Data {
 					foreach ($items as $item_num => $files) {
 						foreach ($files as $src => $type) { //Все эти файлы относятся к найденной модели
 							$value_id = Data::initValue($src);
+							$ans['Связанные файлы'][$src] = true;
 							unset($ans['Свободные файлы'][$src]);
 							if (isset($values[$value_id])) {
 								continue; //Дубли одного пути или похоже пути из-за Path encode путь может давайть одинаковый value_nick в этом случае похожий путь будет проигнорирован
@@ -399,6 +401,7 @@ class Data {
 				}
 			}
 			$ans['Свободные файлы'] = array_keys($ans['Свободные файлы']);
+			$ans['Связанные файлы'] = array_keys($ans['Связанные файлы']);
 			Data::addFilesIcons();
 			
 
