@@ -354,10 +354,8 @@ class Data {
 			$pid = [];
 			foreach (Data::$files as $type) $pid[$type] = Data::initProp($type, 'value');
 
-			$ans['Иллюстраций с прямым адресом'] = Data::applyIllustracii($producer_nick);
-			$ans['Иллюстраций на сервере'] = 0;
-			$ans['Моделей с файлами'] = 0;
-			$ans['Прочих файлов на сервере'] = 0;
+			Data::applyIllustracii($producer_nick);
+			$ans['Файлов'] = 0;
 			$ans['Свободные файлы'] = array_reduce($list, function ($ak, $arts){
 				return array_reduce($arts, function ($ak, $items) {
 					return array_reduce($items, function ($ak, $items) {
@@ -365,6 +363,7 @@ class Data {
 					},$ak);		
 				},$ak);
 			}, []);
+			$ans['Файлов'] = sizeof($ans['Свободные файлы']);
 			foreach ($list as $prod => $arts) {
 				//$producer_id = Data::initProducer($prod);
 				$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$prod]);
@@ -373,32 +372,21 @@ class Data {
 					$altart = str_ireplace($prod, '', $art); //Удалили из артикула продусера
 					$altart = Path::encode($altart);
 
-					$article_id = Data::col('SELECT article_id 
-						from showcase_articles 
-						where article_nick = ? or article_nick = ?', [$art, $altart]);
-
-					if (!$article_id) {
-						continue;//Имя файла как артикул не зарегистрировано, даже если удалить производителя
-					}
-
-					$model_id = Data::col('SELECT model_id from showcase_models where producer_id = ? and article_id = ?',
-						[$producer_id, $article_id]);
-					if (!$model_id) {
-						continue; //Арт есть, но видимо у другова производителя. Модель не найдена
-					}
-
-					$ans['Моделей с файлами']++;
+					$model_id = Data::col('SELECT m.model_id
+						FROM showcase_models m
+						INNER JOIN showcase_articles a on (m.article_id = a.article_id and (a.article_nick = ? or a.article_nick = ?))
+						where m.producer_id = ?', [$art, $altart, $producer_id]);
+					if (!$model_id) continue;//Имя файла как артикул не зарегистрировано, даже если удалить производителя из артикула
 					$values = [];
 					foreach ($items as $item_num => $files) {
-						foreach ($files as $src => $type) {
+						foreach ($files as $src => $type) { //Все эти файлы относятся к найденной модели
 							$value_id = Data::initValue($src);
 							unset($ans['Свободные файлы'][$src]);
-							if (isset($values[$value_id])) continue; //Дубли одного пути или похоже пути из-за Path encode путь может давайть одинаковый value_nick
+							if (isset($values[$value_id])) {
+								continue; //Дубли одного пути или похоже пути из-за Path encode путь может давайть одинаковый value_nick в этом случае похожий путь будет проигнорирован
+							}
 							$values[$value_id] = true;
 							$prop_id = $pid[$type];
-							if ($type == 'images') $ans['Иллюстраций на сервере']++;
-							else $ans['Прочих файлов на сервере']++;
-
 							Data::exec(
 								'INSERT INTO showcase_mvalues (model_id, item_num, prop_id, value_id) VALUES(?,?,?,?)',
 								[$model_id, $item_num, $prop_id, $value_id]
