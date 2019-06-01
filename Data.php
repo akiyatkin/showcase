@@ -364,7 +364,7 @@ class Data {
 					},$ak);		
 				},$ak);
 			}, []);
-			$ans['Файлов'] = sizeof($ans['Свободные файлы']);
+			$ans['Файлов'] = sizeof($ans['Бесхозные файлы']);
 			foreach ($list as $prod => $arts) {
 				//$producer_id = Data::initProducer($prod);
 				$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$prod]);
