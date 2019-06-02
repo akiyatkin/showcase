@@ -793,7 +793,7 @@ class Data {
 				LEFT JOIN showcase_prices pp on (n.price_id = pp.price_id)
 				GROUP BY producer',[':producer_nick'=>$producer_nick,':cost_id'=>$cost_id]);
 			if (!$list) $list['count'] = 0;
-
+			
 			$costs = Data::col('SELECT count(DISTINCT m.model_id) FROM showcase_models m 
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)
 				inner join showcase_mnumbers n on (n.model_id = m.model_id and n.prop_id = :cost_id)
@@ -811,6 +811,7 @@ class Data {
 			if (isset($opt['producers'][$producer_nick])) {
 				$list += $opt['producers'][$producer_nick];
 			}
+
 			Data::checkCls($list);
 			return $list;
 			

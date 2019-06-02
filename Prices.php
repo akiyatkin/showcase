@@ -86,7 +86,7 @@ class Prices {
 	}
 	public static function getList() {
 		$options = Prices::getOptions();
-	
+
 		$savedlist = Data::fetchto('
 			SELECT ps.name, ps.ans, count(DISTINCT t.model_id, t.item_num) as icount FROM (
 				SELECT p.price_id, v.model_id, v.item_num
@@ -108,10 +108,10 @@ class Prices {
     	','name');
 
 		foreach ($savedlist as $name => $row) {
-			$row['ans'] = Load::json_decode($row['ans'],true);
+			$row['ans'] = Load::json_decode($row['ans'], true);
 			if ($name) $options[$name] += $row;
 		}
-
+		
 		return $options;
 	}
 	public static function actionLoadAll() {
@@ -472,6 +472,7 @@ class Prices {
 	}
 	public static function getOptions($filename = false) {//3 пересечения Опциии, Файлы, БазаДанных
 		$list = Data::getOptions('prices');
+	
 		$filelist = Data::getFileList(Showcase::$conf['pricessrc']);
 		
 		foreach ($filelist as $name => $val) { // По файлам
@@ -485,12 +486,13 @@ class Prices {
 		foreach ($savedlist as $name => $val) { // По файлам
 			if (!isset($list[$name])) $list[$name] = array();
 			$list[$name] += $savedlist[$name];
+			if (isset($list[$name]['ans'])) $list[$name]['ans'] = Load::json_decode($val['ans'], true);
 			if (!$savedlist[$name]['time']) continue;// Данные ещё не вносились
 			$list[$name]['isdata'] = true;
 
-			$list[$name]['ans'] = Load::json_decode($val['ans'], true);
+			
 		}
-
+		
 		foreach ($list as $name => $opt) { // По опциям
 			$list[$name] += array(
 				'start' => 0,

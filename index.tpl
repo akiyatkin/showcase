@@ -149,6 +149,7 @@
 		</div>
 		<div class="p-2 flex-grow-1">
 			{duration?duration:duration?:noduration} {time?time:time?:notime} {ans?ans:res?:noans}
+			
 		</div>
 		
 		{:pactions}

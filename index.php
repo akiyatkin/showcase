@@ -118,6 +118,7 @@ echo Rest::get( function () {
 }, 'producers',[function() {
 	$ans = array();
 	$ans['list'] = Data::getProducers();
+
 	return Rest::parse('-showcase/index.tpl', $ans, 'PRODUCERS');
 		}, function ($a, $producer_nick){
 		Prices::init();
@@ -133,12 +134,16 @@ echo Rest::get( function () {
 
 		$ans += Data::getProducers($producer_nick);
 
-		
-		
-	
-		
-		$clist = array_flip(explode(', ',$ans['catalog']));
-		$plist = array_flip(explode(', ',$ans['price']));
+		if (isset($ans['catalog'])) {
+			$clist = array_flip(explode(', ',$ans['catalog']));
+		} else {
+			$clist = array();
+		}
+		if(isset($ans['price'])) {
+			$plist = array_flip(explode(', ',$ans['price']));
+		} else {
+			$plist = [];
+		}
 
 		$options = Prices::getList();
 		foreach($options as $name => $p) {
@@ -147,11 +152,13 @@ echo Rest::get( function () {
 		$ans['plist'] = $options;
 
 		$options = Catalog::getList();
+		
 		foreach($options as $name => $p) {
 			if ($p['producer_nick'] != $producer_nick && !isset($clist[$name])) unset($options[$name]);
 		}
 		$ans['conf'] = Showcase::$conf;
 		$ans['clist'] = $options;
+		
 		return Rest::parse('-showcase/index.tpl', $ans, 'PRODUCER');
 }], 'models', function() {
 	$ans = array();
