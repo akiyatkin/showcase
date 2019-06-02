@@ -15,11 +15,18 @@ Event::$classes['Showcase-catalog'] = function (&$obj) {
 	return $obj['pos']['producer'].' '.$obj['pos']['article'].' '.$obj['name'];
 };
 class Catalog {
-	public static function action($action, $name, $src) {
+	public static function action($action, $name, $src, $type = 'table') {
 		$res = null;
 		if ($action == 'clearAll') $res = Data::actionClearAll();
-		if ($action == 'load') $res = Catalog::actionLoad($name, $src);
-		if ($action == 'read') $res = Catalog::actionRead($name, $src);
+
+		if ($type == 'table') {
+			if ($action == 'load') $res = Catalog::actionLoad($name, $src);
+			if ($action == 'read') $res = Catalog::actionRead($name, $src);
+		} else if ($type == 'price') {
+			if ($action == 'load') $res = Prices::actionLoad($name, $src);
+			if ($action == 'read') $res = Prices::actionRead($name, $src);
+		}
+		
 		if ($action == 'remove') $res = Catalog::actionRemove($name, $src);
 		if ($action == 'addFiles') $res = Data::actionAddFiles($name);
 		if ($action == 'addFilesAll') $res = Data::actionAddFiles();

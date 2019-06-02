@@ -65,17 +65,17 @@ echo Rest::get( function () {
 	exit;
 }, 'tables', function () {
 	$ans = array();
-	$ans['actions'] = true;
+
 	$action = Ans::REQ('action');
 	$name = Ans::REQ('name');
 	$src = Ans::REQ('src');
+	$type = Ans::REQ('type');
 
 	$ans['post'] = $_POST;
 	$ans['conf'] = Showcase::$conf;
 
 	Catalog::init();
-	$ans['res'] = Catalog::action($action, $name, $src);
-	
+	$ans['res'] = Catalog::action($action, $name, $src, $type);
 
 	$list = Catalog::getList();
 	$ans['list'] = $list;
@@ -87,6 +87,7 @@ echo Rest::get( function () {
 	$action = Ans::REQ('action');
 	$name = Ans::REQ('name');
 	$src = Ans::REQ('src');
+	$type = Ans::REQ('type');
 
 	$ans['post'] = $_POST;
 	$ans['conf'] = Showcase::$conf;
@@ -118,10 +119,39 @@ echo Rest::get( function () {
 	$ans = array();
 	$ans['list'] = Data::getProducers();
 	return Rest::parse('-showcase/index.tpl', $ans, 'PRODUCERS');
-		}, function ($a, $producer){
-		$ans = Data::getProducers($producer);
-		//$cost_id = Data::initProp("Цена");
+		}, function ($a, $producer_nick){
+		Prices::init();
+		Catalog::init();
 
+		$action = Ans::REQ('action');
+		$name = Ans::REQ('name');
+		$src = Ans::REQ('src');
+		$type = Ans::REQ('type');
+		$ans = [];
+
+		$ans['res'] = Catalog::action($action, $name, $src, $type);
+
+		$ans += Data::getProducers($producer_nick);
+
+		
+		
+	
+		
+		$clist = array_flip(explode(', ',$ans['catalog']));
+		$plist = array_flip(explode(', ',$ans['price']));
+
+		$options = Prices::getList();
+		foreach($options as $name => $p) {
+			if ($p['producer_nick'] != $producer_nick && !isset($plist[$name])) unset($options[$name]);
+		}
+		$ans['plist'] = $options;
+
+		$options = Catalog::getList();
+		foreach($options as $name => $p) {
+			if ($p['producer_nick'] != $producer_nick && !isset($clist[$name])) unset($options[$name]);
+		}
+		$ans['conf'] = Showcase::$conf;
+		$ans['clist'] = $options;
 		return Rest::parse('-showcase/index.tpl', $ans, 'PRODUCER');
 }], 'models', function() {
 	$ans = array();

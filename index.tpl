@@ -4,7 +4,7 @@
 		{(:/-showcase/prices):link}Прайсы{:/link} |
 		{(:/-showcase/groups):link}Группы{:/link} |
 		{(:/-showcase/producers):link}Производители{:/link} |
-		<!--{(:/-showcase/models):link}Модели{:/link}  -->
+		{(:/-showcase/models):link}Модели{:/link} |
 		{(:/-showcase/api):link}API{:/link}
 		<span class="float-right">Загрузить с Яндекс Диска
 		<a class="btn btn-outline-info btn-sm" href="/-showcase/tables?-ydisk=tables">Данные</a>
@@ -27,7 +27,10 @@
 	<h1>Технические команды</h1>
 	<a class="btn btn-secondary" href="/-showcase/drop">Удалить данные и пересоздать базу данных</a>
 	<hr>
-{res:}<div class="mt-2 alert alert-success">{~print(.)}</div>
+{res:}<div style="font-size:80%" class="mt-2 alert alert-success">{::reskeys}</div>
+	{reskeys:}{~typeof(.)=:object?:resobj?:resstr}
+	{resstr:}<b>{~key}</b>: {.}<br>
+	{resobj:}<div onclick="$(this).next().slideToggle()"><span class="a">{~key}</span>: {~length(.)}</div><div style="display: none">{~print(.)}</div>
 {MODELS:}
 	{:menu}
 	<h1>Модели</h1>
@@ -35,22 +38,32 @@
 	{model:}
 		<div class="mb-2" style="clear:both">
 			<a title="Позиций {count}" href="/-showcase/api/pos/{producer_nick}/{article_nick}">{producer_nick} {article_nick}</a>{img:pic}
-			<div><small>{Цена?:cost} <i>{group}</i> {catalog}.xlsx</small></div>
+			<div><small>{Цена?:cost} <i>{group}</i> Данные: {catalog}</small></div>
 		</div>
 	{pic:} <small class="a" onclick="$(this).addClass('float-right').removeClass('a').html('<img src=\'/-imager/?src={.}&w=100\'>&nbsp;')">image</small>
 	{cost:}{~cost(Цена)} руб.
 {PRODUCER:}
-	{:menu}
-	<h1>{producer}</h1>
-	{icon:pic}
-	{:prodinfo} <br>
-	<!--Данные: {catalog}.xlsx<br>-->
-	{prodinfo:}Моделей: <b><a href="/catalog/{producer_nick}">{count}</a></b>, без цены: <b><a href="/catalog/{producer_nick}?m=:more.Цена.no=1">{Без цены}</a></b>, без картинки: <b><a href="/catalog/{producer_nick}?m=:more.images.no=1">{Без картинки}</a></b>, {catalog}.xlsx {icon:pic}
+		{:menu}
+		<img class="float-right" src='/-imager/?src={logo}&w=100'>
+		<h1>{producer}</h1>
+		<div class="alert alert-{cls}">{:prodinfo}</div>
+		
+		<div class="mt-2 text-right" style="clear:both">{:actbunch}</div>
+		<h2>Данные</h2>
+		{clist::itemcatalog}
+		<h2>Прайсы</h2>
+		{plist::itemprice}
+		
+		{:foot}
+	{skip:}
+	<span class="a" onclick="$(this).next().slideToggle()">skip</span>.
+	<div style="display:none">{~print(.)}</div>
+	{prodinfo:}Моделей: <b><a href="/catalog/{producer_nick}">{count}</a></b>, без цен: <b><a href="/catalog/{producer_nick}?m=:more.Цена.no=1">{Без цен}</a></b>, без картинок: <b><a href="/catalog/{producer_nick}?m=:more.images.no=1">{Без картинок}</a></b>, {skip:skip}
 {PRODUCERS:}
-	{:menu}
-	<h1>Производители</h1>
-	{list::producer}
-	{producer:}<a href="/-showcase/producers/{producer_nick}">{producer}</a> <small>{:prodinfo}</small><br>
+		{:menu}
+		<h1>Производители</h1>
+		{list::producer}
+	{producer:}<div class="alert alert-{cls}"><a href="/-showcase/producers/{producer_nick}">{producer}</a> <div class="float-right">{logo:pic}</div> {:prodinfo}</div>
 {GROUPS:}
 	{:menu}
 	<h1>Группы</h1>
@@ -66,15 +79,16 @@
 		{justgroup:}
 		<div>{group}</span> <small> ({group_nick}) {catalog}.xlsx</small> <b>{count}</b>{icon:pic}</div>
 {PRICE:}
-	{:menu}
-	<h1>{file}</h1>
-	{:itemprice}
-	<hr>
-	<h2>Не найдено в данных</h2>
-	{missdata::missdata}
-	<h2>Пропущено в прайсе</h2>
-	{missprice::misspirce}
-	{:foot}
+		{:menu}
+		<h1>{file}</h1>
+		{:itemprice}
+		{PRICEhide:}
+		<hr>
+		<h2>Не найдено в данных</h2>
+		{missdata::missdata}
+		<h2>Пропущено в прайсе</h2>
+		{missprice::misspirce}
+		{:foot}
 	{missdata:}
 	<span class="a" data-toggle="collapse" data-target="#collapsedata{~key}">{.[priceprop]}</span><br>
 	<div class="collapse" id="collapsedata{~key}">{~print(.)}</div>
@@ -82,65 +96,65 @@
 	<span class="a" data-toggle="collapse" data-target="#collapseprice{~key}">{article}</span><br>
 	<div class="collapse" id="collapseprice{~key}">{~print(.)}</div>
 {PRICES:}
-	{:menu}
-	<h1>Прайсы</h1>
-	{list::itemprice}
-	
-	<hr>
-	<div class="d-flex justify-content-between">
-		<div>
-			<span class="btn btn-primary" onclick="Action('loadAll')">Внести все прайсы</span>
+		{:menu}
+		<h1>Прайсы</h1>
+		{list::itemprice}
+		
+		<hr>
+		<div class="d-flex justify-content-between">
+			<div>
+				<span class="btn btn-primary" onclick="ActionPrice('loadAll')">Внести все прайсы</span>
+			</div>
+			<div>
+				<span class="btn btn-danger" onclick="ActionPrice('clearAll')">Очистить всё</span>
+			</div>
 		</div>
-		<div>
-			<span class="btn btn-danger" onclick="Action('clearAll')">Очистить всё</span>
-		</div>
-	</div>
-	{:foot}
+		{:foot}
 {CATALOG:}
-	{:menu}
-	<h1>Данные</h1>
-	{list::itemcatalog}
-	
-	<hr>
-	<div class="d-flex justify-content-between">
-		<div>
-			<!--<a href="/-showcase/update" class="btn btn-primary">Внести все новые данные и прайсы</a>-->
-			<span class="btn btn-primary" onclick="Action('loadAll')">Внести все данные</span>
-			<span class="btn btn-info" onclick="Action('addFilesAll')">Связать всё с файлами</span>
+		{:menu}
+		<h1>Данные</h1>
+		{list::itemcatalog}
+		
+		<hr>
+		<div class="d-flex justify-content-between">
+			<div>
+				<!--<a href="/-showcase/update" class="btn btn-primary">Внести все новые данные и прайсы</a>-->
+				<span class="btn btn-primary" onclick="ActionTable('loadAll')">Внести все данные</span>
+				<span class="btn btn-info" onclick="ActionTable('addFilesAll')">Связать всё с файлами</span>
+			</div>
+			<div>
+				<span class="btn btn-danger" onclick="ActionTable('clearAll')">Очистить всё</span>
+			</div>
 		</div>
-		<div>
-			<span class="btn btn-danger" onclick="Action('clearAll')">Очистить всё</span>
-		</div>
-	</div>
-	{:foot}
-{time:}<b title="{~date(:H:i,.)}">{~date(:d.m,.)}</b>, 
-{size:}<b>{.}</b> Кб, 
-{duration:}Загрузка за <b title="{.}">{.<:1?:1?.}</b> сек,
-{icount:}
-	Всего: <b>{ans.Количество подходящих строк}</b>, не найдено: <b>{ans.Не найдено соответствий}</b>, пропущено: <b>{ans.Пропущено в прайсе}</b><br>
-{ptitle:}{producer?:linkproducer?(:Общий прайс для всех производителей):com}
-{ctitle:}{producer?:linkproducer?(:Общие данные для всех производителей):com}
-{linkproducer:}Производитель: <a href="/-showcase/producers/{producer_nick}">{producer}</a>
-{itemname:}<b><a href="/-showcase/prices/{name}">{file|:Нет файла}</a></b><br>
-{notime:}файл не внесён,
-{noans:}раньше не вносился.
-{noduration:}Время загрузки не известно,
+		{:foot}
+	{time:}<b title="{~date(:H:i,.)}">{~date(:d.m,.)}</b>, 
+	{size:}<b>{.}</b> Кб, 
+	{duration:}Загрузка за <b title="{.}">{.<:1?:1?.}</b> сек,
+	{icount:}
+		Всего: <b>{ans.Количество позиций в прайсе}</b>, не найдено: <b>{~length(ans.Не найдено соответствий)}</b>, пропущено: <b>{~length(ans.У позиции в прайсе не указан ключ)}</b><br>
+	{ptitle:}{producer?:linkproducer?(:Общий прайс для всех производителей):com}
+	{ctitle:}{producer?:linkproducer?(:Общие данные для всех производителей):com}
+	{linkproducer:}Производитель: <a href="/-showcase/producers/{producer_nick}">{producer}</a>
+	{itemname:}<b><a href="/-showcase/prices/{name}">{file|:Нет файла}</a></b><br>
+	{itemname:}<b>{file|:Нет файла}</b><br>
+	{notime:}файл не внесён,
+	{noans:}раньше не вносился.
+	{noduration:}Время загрузки не известно,
 {itemprice:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">
-		<div class="p-2" style="width:300px">
-			{list?:itemname}
+		<div class="p-2" style="width:220px">
+			{:itemname}
 			{:ptitle}
 			<i></i><br>{size:size} {mtime:time}
 		</div>
 		<div class="p-2 flex-grow-1">
-			{isdata?:icount}
-			{duration?duration:duration?:noduration} {time?time:time?:notime} {ans?ans:ans?:noans}
+			{duration?duration:duration?:noduration} {time?time:time?:notime} {ans?ans:res?:noans}
 		</div>
-		<div class="p-2 text-right" style="width:300px">
-			<span class="btn btn-primary" onclick="Action('load','{name}','{conf.prices}{file}')">Внести</span>
-			{isdata?:actdelprice}
-		</div>
+		
+		{:pactions}
+		
 	</div>
+	
 	{showopt:}
 	<span class="a" onclick="$(this).next().slideToggle()">Есть опции</span>
 	<div style="display:none">
@@ -151,47 +165,65 @@
 	{price-count:}Обработано <b>{count}</b> {~words(count,:строка,:строки,:строк)} с ключём <b>{priceprop}</b>.
 {itemcatalog:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">
-		<div class="p-2" style="width:300px">
+		<div class="p-2" style="width:220px">
 			<b>{file|:Нет файла}</b><br>
 			{:ctitle}<br>
 			{size:size} {mtime:time}
 		</div>
 		<div class="p-2 flex-grow-1">
-			{time?:catcount}
-			{duration?duration:duration?:noduration} {time?time:time?:notime} {ans?ans:ans?:noans}
+			{duration?duration:duration?:noduration} {time?time:time?:notime} {ans?ans:res?:noans}
 		</div>
-		{actions?:actions}
+		{:cactions}
 	</div>
+
 	{ans:}
 	<span class="a" onclick="$(this).next().slideToggle()">{..time??:прошлый }ответ</span>.
 	<div style="display:none" class="alert alert-success">{~print(.)}</div>
 	{catcount:}Принято: <b>{icount}</b> {~words(icount,:позиция,:позиции,:позиций)}<br>
-{actdelprice:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.prices}{file}')">Очистить</span>
-
-{actions:}
+	
+{pactions:}
+		<div class="p-2 text-right" style="width:240px">
+			{file?:actpload}
+			{isdata?:actdelprice}
+		</div>
+	{actpload:}<span class="btn btn-primary" onclick="ActionPrice('load','{name}','{conf.prices}{file}')">Внести</span>
+	{actdelprice:}<span class="btn btn-danger" onclick="ActionPrice('remove','{name}','{conf.prices}{file}')">Очистить</span>
+{cactions:}
 		<div class="p-2 text-right" style="width:400px">
-			
-			<!--<span class="btn btn-secondary" onclick="Action('read','{name}','{conf.tables}{file}')">Разобрать</span>-->
 			{file?:actfile}
-			{time?:actbunch}
+			{plist??(time?:actbunch)}
 			{time?:actdel}
 		</div>
-	{actbunch:}
-		<span class="btn btn-info" onclick="Action('addFiles','{name}','{conf.tables}{file}')">Связать</span>
-	{actfile:}
-		<span class="btn btn-primary" onclick="Action('load','{name}','{conf.tables}{file}')">Внести</span>
-	{actdel:}<span class="btn btn-danger" onclick="Action('remove','{name}','{conf.tables}{file}')">Очистить</span>
+	{actbunch:}<span class="btn btn-info" onclick="Action('addFiles','{producer_nick}')">Связать с файлами</span>
+	{actfile:}<span class="btn btn-primary" onclick="ActionTable('load','{name}','{conf.tables}{file}')">Внести</span>
+	{actdel:}<span class="btn btn-danger" onclick="ActionTable('remove','{name}','{conf.tables}{file}')">Очистить</span>
 {foot:}
 	<hr>
 	<form id="form" method="POST">
 		<input id="formaction" type="hidden" name="action" value="">
 		<input id="formsrc" type="hidden" name="src" value="">
+		<input id="formtype" type="hidden" name="type" value="">
 		<input id="formname" type="hidden" name="name" value="">
 	</form>
 	<script>
-		Action = function(action, name, src) {
+		Action = function(action, name, src, type) {
 			if (src) formsrc.value = src;
 			if (name) formname.value = name;
+			if (type) formtype.value = type;
+			formaction.value = action;
+			form.submit();
+		}
+		ActionPrice = function(action, name, src) {
+			if (src) formsrc.value = src;
+			if (name) formname.value = name;
+			formtype.value = 'price';
+			formaction.value = action;
+			form.submit();
+		}
+		ActionTable = function(action, name, src) {
+			if (src) formsrc.value = src;
+			if (name) formname.value = name;
+			formtype.value = 'table';
 			formaction.value = action;
 			form.submit();
 		}

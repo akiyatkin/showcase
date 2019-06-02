@@ -101,11 +101,10 @@ class Data {
 	public static function prepareOptionPart(&$list){
 		foreach ($list as $name => $val) {
 			$list[$name]['producer_nick'] = false;
-			if (isset($list[$name]['producer'])) {
-				$list[$name]['producer_nick'] = Path::encode($list[$name]['producer']);
-			} else {
+			if (!isset($list[$name]['producer'])) {
 				$list[$name]['producer'] = $name;
 			}
+			$list[$name]['producer_nick'] = Path::encode($list[$name]['producer']);
 			$list[$name]['isopt'] = true;
 		}
 	}
@@ -302,8 +301,8 @@ class Data {
 		}
 		return sizeof($images);
 	}
-	public static function actionAddFiles($name = false){
-		$producer_nick = false;
+	public static function actionAddFiles($producer_nick = false){
+		/*$producer_nick = false;
 		if ($name) {
 			$options = Data::getOptions('catalog');
 			if (isset($options[$name]['producer'])) {
@@ -311,7 +310,7 @@ class Data {
 			} else {
 				$producer_nick = $name;
 			}
-		}
+		}*/
 		/*Индексируем все файлы producer_nick - article, папки files, images, в том числе опцию Файлы
 		Очищаем в базе всю инфомацию о связях с файлами- значения пропов images, files, texts
 		Бежим и вносим новые связи
@@ -766,41 +765,66 @@ class Data {
 		}
 		return $root;
 	}
+	public static function checkCls(&$prod) {
+		$prod['cls'] = 'danger';
+
+		if (empty($prod['skip'])) $skip = [];
+		else $skip = $prod['skip'];
+		if (empty($skip['Пояснения'])) $skip['Пояснения'] = ['Сообщение и сколько позиций оно затрагивает'=>1];
+		if(empty($skip['Без картинок'])) $skip['Без картинок'] = 0;
+		if(empty($skip['Без цен'])) $skip['Без цен'] = 0;
+		$costs = $prod['Без картинок'] - $skip['Без картинок'];
+		$images = $prod['Без цен'] - $skip['Без цен'];
+		if (!$costs || !$images) $prod['cls'] = 'warning';
+		if (!$costs && !$images) $prod['cls'] = 'success';
+	}
 	public static function getProducers($producer_nick = false) {
 		$cost_id = Data::initProp("Цена");
 		$image_id = Data::initProp("images");
+		$opt = Data::getOptions();
 		if ($producer_nick) {
-			$list = Data::fetch('SELECT p.producer, p.logo, p.producer_nick, count(*) as `count`, c.name as catalog from showcase_models m
+			$list = Data::fetch('SELECT p.producer, p.logo, p.producer_nick, count(*) as `count`, 
+				GROUP_CONCAT(DISTINCT c.name SEPARATOR \', \') as catalog, 
+				GROUP_CONCAT(DISTINCT pp.name SEPARATOR \', \') as price
+				from showcase_models m
 				INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = :producer_nick)
 				INNER JOIN showcase_catalog c on c.catalog_id = m.catalog_id
 				LEFT JOIN showcase_mnumbers n on (m.model_id = n.model_id and n.prop_id = :cost_id)
-				GROUP BY producer
-				order by m.producer_id',[':producer_nick'=>$producer_nick,':cost_id'=>$cost_id]);
+				LEFT JOIN showcase_prices pp on (n.price_id = pp.price_id)
+				GROUP BY producer',[':producer_nick'=>$producer_nick,':cost_id'=>$cost_id]);
 			if (!$list) $list['count'] = 0;
 
 			$costs = Data::col('SELECT count(DISTINCT m.model_id) FROM showcase_models m 
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)
 				inner join showcase_mnumbers n on (n.model_id = m.model_id and n.prop_id = :cost_id)
 				',[':cost_id'=>$cost_id,':producer_nick'=>$producer_nick]);
-			$list['Без цены'] = $list['count'] - $costs;
+			$list['Без цен'] = $list['count'] - $costs;
 
 
 			$images = Data::col('SELECT count(DISTINCT m.model_id) FROM showcase_models m
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)
 				inner join showcase_mvalues n on (n.model_id = m.model_id and n.prop_id = :image_id)
 				',[':image_id'=>$image_id,':producer_nick'=>$producer_nick]);
-			$list['Без картинки'] = $list['count'] - $images;
+			$list['Без картинок'] = $list['count'] - $images;
 
+			
+			if (isset($opt['producers'][$producer_nick])) {
+				$list += $opt['producers'][$producer_nick];
+			}
+			Data::checkCls($list);
 			return $list;
 			
 		} else {
-			$list = Data::all('SELECT p.producer, p.logo, p.producer_nick, count(*) as `count`, c.name as catalog 
+			$list = Data::all('SELECT p.producer, p.logo, p.producer_nick, count(*) as `count`, 
+				GROUP_CONCAT(DISTINCT c.name SEPARATOR \', \') as catalog, 
+				GROUP_CONCAT(DISTINCT pp.name SEPARATOR \', \') as price
 				from showcase_models m
 				INNER JOIN showcase_producers p on p.producer_id = m.producer_id
 				INNER JOIN showcase_catalog c on c.catalog_id = m.catalog_id
 				LEFT JOIN showcase_mnumbers n on m.model_id = n.model_id and n.prop_id = :cost_id
+				LEFT JOIN showcase_prices pp on (n.price_id = pp.price_id)
 				GROUP BY producer
-				order by m.producer_id',[':cost_id'=>$cost_id]);
+				order by count DESC',[':cost_id'=>$cost_id]);
 			
 			$costs = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id)
@@ -809,9 +833,9 @@ class Data {
 				','producer_nick', [':cost_id'=>$cost_id]);
 			foreach($list as $i => $row) {
 				if(isset($costs[$row['producer_nick']])) {
-					$list[$i]['Без цены'] = $row['count'] - $costs[$row['producer_nick']]['count'];	
+					$list[$i]['Без цен'] = $row['count'] - $costs[$row['producer_nick']]['count'];	
 				} else {
-					$list[$i]['Без цены'] = $row['count'];
+					$list[$i]['Без цен'] = $row['count'];
 				}
 			}
 			$images = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
@@ -820,11 +844,15 @@ class Data {
 				GROUP BY m.producer_id
 				','producer_nick', [':image_id'=>$image_id]);
 			foreach($list as $i => $row) {
-				if(isset($images[$row['producer_nick']])) {
-					$list[$i]['Без картинки'] = $row['count'] - $images[$row['producer_nick']]['count'];	
+				if (isset($images[$row['producer_nick']])) {
+					$list[$i]['Без картинок'] = $row['count'] - $images[$row['producer_nick']]['count'];	
 				} else {
-					$list[$i]['Без картинки'] = $row['count'];
+					$list[$i]['Без картинок'] = $row['count'];
 				}
+				if (isset($opt['producers'][$row['producer_nick']])) {
+					$list[$i] += $opt['producers'][$row['producer_nick']];
+				}
+				Data::checkCls($list[$i]);
 			}
 
 			return $list;
