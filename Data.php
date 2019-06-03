@@ -771,12 +771,17 @@ class Data {
 		if (empty($prod['skip'])) $skip = [];
 		else $skip = $prod['skip'];
 		if (empty($skip['Пояснения'])) $skip['Пояснения'] = ['Сообщение и сколько позиций оно затрагивает'=>1];
-		if(empty($skip['Без картинок'])) $skip['Без картинок'] = 0;
-		if(empty($skip['Без цен'])) $skip['Без цен'] = 0;
+		if (empty($skip['Без картинок'])) $skip['Без картинок'] = 0;
+		if (empty($skip['Без цен'])) $skip['Без цен'] = 0;
+		if (empty($skip['Ошибки прайсов'])) $skip['Ошибки прайсов'] = 0;
 		$costs = $prod['Без картинок'] - $skip['Без картинок'];
 		$images = $prod['Без цен'] - $skip['Без цен'];
-		if (!$costs || !$images) $prod['cls'] = 'warning';
-		if (!$costs && !$images) $prod['cls'] = 'success';
+		$prices = $prod['Ошибки прайсов'] - $skip['Ошибки прайсов'];
+		$errs = ($prices?1:0) + ($images?1:0) + ($costs?1:0);
+		if ($errs === 0)  $prod['cls'] = 'success';
+		if ($errs === 1)  $prod['cls'] = 'info';
+		if ($errs === 2)  $prod['cls'] = 'warning';
+		if ($errs === 3)  $prod['cls'] = 'danger';
 	}
 	public static function getProducers($producer_nick = false) {
 		$cost_id = Data::initProp("Цена");
@@ -812,7 +817,15 @@ class Data {
 				$list += $opt['producers'][$producer_nick];
 			}
 
+			$options = Prices::getList();
+			$list['Ошибки прайсов'] = 0;
+			foreach($options as $name => $p) {
+				if ($p['producer_nick'] == $producer_nick) {
+					$list['Ошибки прайсов'] += sizeof($p['ans']['Ошибки прайса']);
+				}
+			}
 			Data::checkCls($list);
+
 			return $list;
 			
 		} else {
@@ -844,6 +857,8 @@ class Data {
 				inner join showcase_mvalues n on (n.model_id = m.model_id and n.prop_id = :image_id)
 				GROUP BY m.producer_id
 				','producer_nick', [':image_id'=>$image_id]);
+
+			$options = Prices::getList();
 			foreach($list as $i => $row) {
 				if (isset($images[$row['producer_nick']])) {
 					$list[$i]['Без картинок'] = $row['count'] - $images[$row['producer_nick']]['count'];	
@@ -852,6 +867,13 @@ class Data {
 				}
 				if (isset($opt['producers'][$row['producer_nick']])) {
 					$list[$i] += $opt['producers'][$row['producer_nick']];
+				}
+				
+				$list[$i]['Ошибки прайсов'] = 0;
+				foreach($options as $name => $p) {
+					if ($p['producer_nick'] == $row['producer_nick']) {
+						$list[$i]['Ошибки прайсов'] += sizeof($p['ans']['Ошибки прайса']);
+					}
 				}
 				Data::checkCls($list[$i]);
 			}

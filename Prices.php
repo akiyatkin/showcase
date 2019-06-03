@@ -294,13 +294,13 @@ class Prices {
 	public static function onload($pricename, $callback) {
 		Event::handler('Showcase-prices.onload', function ($obj) use ($pricename, $callback){
 			if ($obj['name'] != $pricename) return;
-			return $callback($obj['pos'], $obj['option']);
+			return $callback($obj['pos'], $obj['option'], $obj['group']);
 		});
 	}
 	public static function oncheck($pricename, $callback) {
 		Event::handler('Showcase-prices.oncheck', function ($obj) use ($pricename, $callback){
 			if ($obj['name'] != $pricename) return;
-			return $callback($obj['pos'], $obj['option']);
+			return $callback($obj['pos'], $obj['option'], $obj['group']);
 		});
 	}
 	public static function actionLoad($name, $src) {
@@ -349,7 +349,7 @@ class Prices {
 		$ans['У позиции в прайсе не указан ключ'] = [];
 		$ans['Позиции в прайсе игнорируется в результате обработки'] = [];
 		$ans['Дубли позиций по ключу прайса в каталоге'] = [];
-		$ans['Не найдено соответствий'] = [];
+		$ans['Ошибки прайса'] = [];
 		$ans['Найдено соответствий'] = [];
 		$ans['Количество позиций в каталоге'] = 0;
 		$ans['Изменено позиций в каталоге'] = [];
@@ -368,7 +368,7 @@ class Prices {
 		$ans['Колонки на листах'] = $heads;
 
 		if ($option['isaccurate']) {
-			Xlsx::runPoss( $data, function &(&$pos) use ($props, $name, &$ans, &$option, $prop_id, $type, $producer_id, $order, $price_id){
+			Xlsx::runPoss( $data, function &(&$pos, $i, &$group) use ($props, $name, &$ans, &$option, $prop_id, $type, $producer_id, $order, $price_id){
 				$r = null;
 				
 				Prices::checkSynonyms($pos, $option);
@@ -377,7 +377,8 @@ class Prices {
 				$obj = [
 					'option' => $option,
 					'name' => $name,
-					'pos' => &$pos
+					'pos' => &$pos,
+					'group' => $group
 				];
 
 				$ans['Количество позиций в прайсе']++;
@@ -394,15 +395,21 @@ class Prices {
 					return $r;
 				}
 
+
+
 				Event::tik('Showcase-prices.onload');
 				Event::fire('Showcase-prices.onload', $obj); //В событии дописываем нужное свойство которое уже есть в props
 
 				$value = $pos[$option['priceprop']];
 				
 
+				if (!empty($option['cleararticle']) && $option['producer_nick']) {
+					$value = str_ireplace($option['producer_nick'], '', $value); //Удалили из кода продусера
+				}
+
 				list($c, $modified, $mposs) = Prices::updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value);
 				if ($c == 0) {
-					$ans['Не найдено соответствий'][] = $value;
+					$ans['Ошибки прайса'][] = $value;
 					return $r;
 				} else {
 					$ans['Найдено соответствий'][] = $value;
@@ -603,7 +610,7 @@ class Prices {
 				foreach ($vals as $syn) {
 					if (empty($pos[$syn])) continue;
 					$pos[$val] = $pos[$syn];
-					break; //Приоритетней первое совпадение
+					break; //Приоритетней первое совпадение (розн, опт)
 				};
 			}
 		}
