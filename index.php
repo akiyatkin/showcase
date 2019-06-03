@@ -78,6 +78,9 @@ echo Rest::get( function () {
 	$ans['res'] = Catalog::action($action, $name, $src, $type);
 
 	$list = Catalog::getList();
+	foreach($list as $i => $row) {
+		unset($list[$i]['ans']);
+	}
 	$ans['list'] = $list;
 	
 	return Rest::parse('-showcase/index.tpl', $ans, 'CATALOG');
@@ -96,6 +99,9 @@ echo Rest::get( function () {
 	$ans['res'] = Prices::action($action, $name, $src);
 	
 	$list = Prices::getList();
+	foreach($list as $i => $row) {
+		unset($list[$i]['ans']);
+	}
 	$ans['list'] = $list;
 	
 	return Rest::parse('-showcase/index.tpl', $ans, 'PRICES');
