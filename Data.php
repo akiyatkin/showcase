@@ -821,6 +821,7 @@ class Data {
 			$list['Ошибки прайсов'] = 0;
 			foreach($options as $name => $p) {
 				if ($p['producer_nick'] == $producer_nick) {
+					if (empty($p['ans']['Ошибки прайса'])) continue;
 					$list['Ошибки прайсов'] += sizeof($p['ans']['Ошибки прайса']);
 				}
 			}
@@ -871,6 +872,7 @@ class Data {
 				
 				$list[$i]['Ошибки прайсов'] = 0;
 				foreach($options as $name => $p) {
+					if (empty($p['ans']['Ошибки прайса'])) continue;
 					if ($p['producer_nick'] == $row['producer_nick']) {
 						$list[$i]['Ошибки прайсов'] += sizeof($p['ans']['Ошибки прайса']);
 					}
