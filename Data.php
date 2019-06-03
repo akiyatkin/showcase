@@ -405,7 +405,9 @@ class Data {
 			
 
 			$db->commit();
-			
+			foreach($ans as $i=>$val){
+				if(sizeof($ans[$i]) > 1000) $ans[$i] = sizeof($ans[$i]);
+			}
 			return $ans;
 		},[$producer_nick]);
 
