@@ -339,7 +339,7 @@ class Prices {
 
 		$db = &Db::pdo();
 		$db->beginTransaction();
-		
+		Prices::actionRemove($name, $src);
 		$producer_id = $option['producer'] ? Data::initProducer($option['producer']) : false;
 		
 		$ans['Синонимы'] = $option['synonyms'];
@@ -448,6 +448,7 @@ class Prices {
 			$ak[] = $str;
 			return $ak;
 		},[]);
+		
 		$duration = (time() - $time);
 		
 		foreach($ans as $i=>$val){
@@ -460,6 +461,13 @@ class Prices {
 		$db->commit();
 		return $ans;
 	}
+	/*public static function removePrice($price_id) {
+		Data::exec('DELETE mv, mn, mt
+			FROM showcase_mvalues mv
+			LEFT JOIN showcase_mnumbers mn ON mv.price_id = mn.price_id
+			LEFT JOIN showcase_mtexts mt ON mv.model_id = mt.price_id
+			WHERE mv.price_id = ?',[$price_id]);
+	}*/
 	public static function deleteProp($model_id, $item_num, $prop_id) {
 		foreach (Data::$types as $type) {
 			Data::exec('DELETE FROM showcase_m'.$type.'s WHERE model_id = ? and item_num = ? and prop_id =?', 
