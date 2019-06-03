@@ -110,6 +110,7 @@ class Prices {
 		foreach ($savedlist as $name => $row) {
 			$row['ans'] = Load::json_decode($row['ans'], true);
 			if ($name) $options[$name] += $row;
+			
 		}
 		
 		return $options;

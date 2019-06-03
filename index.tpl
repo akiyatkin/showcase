@@ -103,7 +103,7 @@
 		<hr>
 		<div class="d-flex justify-content-between">
 			<div>
-				<span class="btn btn-primary" onclick="ActionPrice('loadAll')">Внести все прайсы</span>
+				<span class="btn btn-primary" onclick="ActionPrice('loadAll')">Внести все новые прайсы</span>
 			</div>
 			<div>
 				<span class="btn btn-danger" onclick="ActionPrice('clearAll')">Очистить всё</span>
@@ -119,7 +119,7 @@
 		<div class="d-flex justify-content-between">
 			<div>
 				<!--<a href="/-showcase/update" class="btn btn-primary">Внести все новые данные и прайсы</a>-->
-				<span class="btn btn-primary" onclick="ActionTable('loadAll')">Внести все данные</span>
+				<span class="btn btn-primary" onclick="ActionTable('loadAll')">Внести все новые данные</span>
 				<span class="btn btn-info" onclick="ActionTable('addFilesAll')">Связать всё с файлами</span>
 			</div>
 			<div>
