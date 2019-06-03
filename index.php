@@ -155,7 +155,7 @@ echo Rest::get( function () {
 		}
 
 		$options = Prices::getList();
-		$ans['Ошибки прайса'] = 0;
+		
 		foreach($options as $name => $p) {
 			if ($p['producer_nick'] != $producer_nick && !isset($plist[$name])) unset($options[$name]);
 		}

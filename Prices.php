@@ -167,7 +167,9 @@ class Prices {
 	public static function getMyItems($type, $producer_id, $prop_id, $value) {
 		//Вообщедолжна быть одна модель. Прайс связываеся с этими моделями по prop_id и value
 		if ($type == 'value') {
-			$row = Showcase::getValue($value);
+			$value_nick = Path::encode($value);
+			$row = Showcase::getValue($value_nick);
+
 			$id = $row['value_id'];
 			$mainprop = 'value_id';
 			$t = 'mvalues'; 
@@ -207,6 +209,7 @@ class Prices {
 		return $list;
 	}
 	public static function updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value) {
+
 		$list = Prices::getMyItems($type, $producer_id, $prop_id, $value);
 		
 		$modified = 0;
@@ -354,7 +357,7 @@ class Prices {
 		$ans['Найдено соответствий'] = [];
 		$ans['Количество позиций в каталоге'] = 0;
 		$ans['Изменено позиций в каталоге'] = [];
-		$ans['Пропущено позиций в каталоге'] = [];
+		$ans['Ошибки каталога'] = [];
 		
 		
 		
@@ -424,16 +427,17 @@ class Prices {
 		if ($producer_id) {
 			$ans['Количество позиций в каталоге'] = Data::col('SELECT count(*) from showcase_items i
 					INNER JOIN showcase_models m on m.model_id = i.model_id and m.producer_id=:producer_id',[':producer_id'=>$producer_id]);
-			$ans['Пропущено позиций в каталоге'] = Data::all('SELECT * from (SELECT p.producer, a.article, i.item, max(mv.price_id) as price_id FROM showcase_items i
-			INNER JOIN showcase_models m on (m.model_id = i.model_id and m.producer_id = :producer_id)
+
+			$ans['Ошибки каталога'] = Data::all('SELECT * from (SELECT p.producer, a.article, max(mv.price_id) as price_id FROM showcase_models m
 			LEFT JOIN showcase_producers p on m.producer_id = p.producer_id
 			LEFT JOIN showcase_articles a on a.article_id = m.article_id
-			LEFT JOIN showcase_mnumbers mv on (mv.model_id = i.model_id and mv.item_num = i.item_num and mv.price_id = :price_id)
-			GROUP BY i.model_id, i.item_num) t WHERE t.price_id is null
+			LEFT JOIN showcase_mnumbers mv on (mv.model_id = m.model_id and mv.price_id = :price_id)
+			where m.producer_id = :producer_id
+			GROUP BY m.model_id) t WHERE t.price_id is null
 			', [':producer_id'=> $producer_id, ':price_id' => $option['price_id']]);
 		} else {
 			$ans['Количество позиций в каталоге'] = Data::col('SELECT count(*) from showcase_items i');
-			$ans['Пропущено позиций в каталоге'] = Data::all('SELECT * from (SELECT p.producer, a.article, i.item, max(mv.price_id) as price_id FROM showcase_items i
+			$ans['Ошибки каталога'] = Data::all('SELECT * from (SELECT p.producer, a.article, i.item, max(mv.price_id) as price_id FROM showcase_items i
 			INNER JOIN showcase_models m on m.model_id = i.model_id
 			LEFT JOIN showcase_producers p on m.producer_id = p.producer_id
 			LEFT JOIN showcase_articles a on a.article_id = m.article_id
@@ -442,9 +446,8 @@ class Prices {
 			', [':price_id' => $option['price_id']]);
 		}
 		
-		$ans['Пропущено позиций в каталоге'] = array_reduce($ans['Пропущено позиций в каталоге'], function ($ak, $row){
+		$ans['Ошибки каталога'] = array_reduce($ans['Ошибки каталога'], function ($ak, $row){
 			$str = $row['producer'].' '.$row['article'];
-			if ($row['item']) $str .= ' '.$row['item'];
 			$ak[] = $str;
 			return $ak;
 		},[]);

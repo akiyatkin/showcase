@@ -775,22 +775,27 @@ class Data {
 		if (empty($skip['Пояснения'])) $skip['Пояснения'] = ['Сообщение и сколько позиций оно затрагивает'=>1];
 		if (empty($skip['Без картинок'])) $skip['Без картинок'] = 0;
 		if (empty($skip['Без цен'])) $skip['Без цен'] = 0;
-		if (empty($skip['Ошибки прайсов'])) $skip['Ошибки прайсов'] = 0;
+		if (empty($skip['Ошибки прайса'])) $skip['Ошибки прайса'] = 0;
+		if (empty($skip['Ошибки каталога'])) $skip['Ошибки каталога'] = 0;
+
 		$costs = $prod['Без картинок'] - $skip['Без картинок'];
 		$images = $prod['Без цен'] - $skip['Без цен'];
-		$prices = $prod['Ошибки прайсов'] - $skip['Ошибки прайсов'];
-		$errs = ($prices?1:0) + ($images?1:0) + ($costs?1:0);
+		$prices = $prod['Ошибки прайса'] - $skip['Ошибки прайса'];
+		$tables = $prod['Ошибки каталога'] - $skip['Ошибки каталога'];
+
+		$errs = ($prices!=0?1:0) + ($images!=0?1:0) + ($costs!=0?1:0) + ($tables!=0?1:0);
 		if ($errs === 0)  $prod['cls'] = 'success';
 		if ($errs === 1)  $prod['cls'] = 'info';
-		if ($errs === 2)  $prod['cls'] = 'warning';
-		if ($errs === 3)  $prod['cls'] = 'danger';
+		if ($errs === 2)  $prod['cls'] = 'primary';
+		if ($errs === 3)  $prod['cls'] = 'warning';
+		if ($errs === 4)  $prod['cls'] = 'danger';
 	}
 	public static function getProducers($producer_nick = false) {
 		$cost_id = Data::initProp("Цена");
 		$image_id = Data::initProp("images");
 		$opt = Data::getOptions();
 		if ($producer_nick) {
-			$list = Data::fetch('SELECT p.producer, p.logo, p.producer_nick, count(*) as `count`, 
+			$list = Data::fetch('SELECT p.producer, p.logo, p.producer_nick, 
 				GROUP_CONCAT(DISTINCT c.name SEPARATOR \', \') as catalog, 
 				GROUP_CONCAT(DISTINCT pp.name SEPARATOR \', \') as price
 				from showcase_models m
@@ -799,8 +804,13 @@ class Data {
 				LEFT JOIN showcase_mnumbers n on (m.model_id = n.model_id and n.prop_id = :cost_id)
 				LEFT JOIN showcase_prices pp on (n.price_id = pp.price_id)
 				GROUP BY producer',[':producer_nick'=>$producer_nick,':cost_id'=>$cost_id]);
-			if (!$list) $list['count'] = 0;
+			if (!$list) $list = [];
 			
+			$list['count'] = Data::col('SELECT count(*) FROM showcase_models m
+				INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = ?)
+				',[$producer_nick]);
+
+
 			$costs = Data::col('SELECT count(DISTINCT m.model_id) FROM showcase_models m 
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)
 				inner join showcase_mnumbers n on (n.model_id = m.model_id and n.prop_id = :cost_id)
@@ -820,11 +830,18 @@ class Data {
 			}
 
 			$options = Prices::getList();
-			$list['Ошибки прайсов'] = 0;
+			$list['Ошибки прайса'] = 0;
 			foreach($options as $name => $p) {
 				if ($p['producer_nick'] == $producer_nick) {
 					if (empty($p['ans']['Ошибки прайса'])) continue;
-					$list['Ошибки прайсов'] += sizeof($p['ans']['Ошибки прайса']);
+					$list['Ошибки прайса'] += sizeof($p['ans']['Ошибки прайса']);
+				}
+			}
+			$list['Ошибки каталога'] = 0;
+			foreach($options as $name => $p) {
+				if ($p['producer_nick'] == $producer_nick) {
+					if (empty($p['ans']['Ошибки каталога'])) continue;
+					$list['Ошибки каталога'] += sizeof($p['ans']['Ошибки каталога']);
 				}
 			}
 			Data::checkCls($list);
@@ -872,11 +889,18 @@ class Data {
 					$list[$i] += $opt['producers'][$row['producer_nick']];
 				}
 				
-				$list[$i]['Ошибки прайсов'] = 0;
+				$list[$i]['Ошибки прайса'] = 0;
 				foreach($options as $name => $p) {
 					if (empty($p['ans']['Ошибки прайса'])) continue;
 					if ($p['producer_nick'] == $row['producer_nick']) {
-						$list[$i]['Ошибки прайсов'] += sizeof($p['ans']['Ошибки прайса']);
+						$list[$i]['Ошибки прайса'] += sizeof($p['ans']['Ошибки прайса']);
+					}
+				}
+				$list[$i]['Ошибки каталога'] = 0;
+				foreach($options as $name => $p) {
+					if (empty($p['ans']['Ошибки каталога'])) continue;
+					if ($p['producer_nick'] == $row['producer_nick']) {
+						$list[$i]['Ошибки каталога'] += sizeof($p['ans']['Ошибки каталога']);
 					}
 				}
 				Data::checkCls($list[$i]);

@@ -22,12 +22,14 @@ class Catalog {
 		if ($type == 'table') {
 			if ($action == 'load') $res = Catalog::actionLoad($name, $src);
 			if ($action == 'read') $res = Catalog::actionRead($name, $src);
+			if ($action == 'remove') $res = Catalog::actionRemove($name, $src);
 		} else if ($type == 'price') {
 			if ($action == 'load') $res = Prices::actionLoad($name, $src);
 			if ($action == 'read') $res = Prices::actionRead($name, $src);
+			if ($action == 'remove') $res = Prices::actionRemove($name, $src);
 		}
 		
-		if ($action == 'remove') $res = Catalog::actionRemove($name, $src);
+		
 		if ($action == 'addFiles') $res = Data::actionAddFiles($name);
 		if ($action == 'addFilesAll') $res = Data::actionAddFiles();
 		if ($action == 'loadAll') $res = Catalog::actionLoadAll();
@@ -142,7 +144,7 @@ class Catalog {
 		$data = Xlsx::init($src, array(
 			'root' => $conf['title'],
 			'more' => true,
-			'Не идентифицирующие колонки' => ["Файл","Файлы","Фото","Иллюстрации"],
+			//'Не идентифицирующие колонки' => ["Файл","Файлы","Фото","Иллюстрации","Описание"],
 			'Группы уникальны' => $conf['Группы уникальны'],
 			'Игнорировать имена файлов' => true,
 			'Производитель по умолчанию' => $opt['producer'],
@@ -214,7 +216,7 @@ class Catalog {
 		$ans = array('Файл'=>$src);
 
 		$data = Catalog::readCatalog($name, $src);
-		
+			
 		$groups = Catalog::applyGroups($data, $catalog_id, $order, $ans);
 		$props = array();
 		$count = 0;
@@ -232,7 +234,7 @@ class Catalog {
 			if (isset($pos['items'])) $count += sizeof($pos['items']); //Считаем с позициями. В items одного items нет - он уже в описании модели.
 			$article_id = Data::initArticle($pos['Артикул']);
 			$producer_id = Data::initProducer($pos['Производитель']);
-			
+
 			//Длинное имя группы, например: "Автомобильные регистраторы #avtoreg" берётся из Наименования в descr. Id encod(всё) title то что до решётки. Из title нельзя получить id.
 			$group_nick = $pos['gid'];
 			$group_id = Data::col('SELECT group_id FROM showcase_groups WHERE group_nick = ?',[$group_nick]);
@@ -243,9 +245,9 @@ class Catalog {
 				$ans['Пропущено из-за конфликта с другими данными']++;
 				return; //Каталог не может управлять данной моделью, так как есть более приоритетный источник
 			}
-
+		
 			Catalog::initItem($model_id, 0, '');
-			
+
 			if (isset($pos['items'])) { //1 item уже в модели надо его вынести в отдельный items и удалить из модели
 				$item = array();
 				$item['id'] = $pos['id'];
@@ -256,7 +258,7 @@ class Catalog {
 				}
 				array_unshift($pos['items'], $item);
 			}
-
+				
 			$r = Catalog::writeProps($model_id, $pos, 0);
 			$obj = [
 				'model_id' => $model_id, 
@@ -294,11 +296,14 @@ class Catalog {
 		$options = Data::loadShowcaseConfig();
 		$order = 0;
 		$r = false;
+		
 		foreach ($item['more'] as $prop => $val) {
 			$type = Data::checkType($prop);
 			$prop_id = Data::initProp($prop, $type);
+
 			$isprice = Data::col('SELECT price_id from `showcase_m'.$type.'s` where prop_id = ? and model_id = ?',[$prop_id, $model_id]);//Если этой свойство у модели установлено из прайса, пропускаем
 			if ($isprice) continue;
+
 			if ($type == 'text') {
 				$order++;
 				$r = true;

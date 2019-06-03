@@ -352,7 +352,8 @@ class Showcase {
 			
 		}
 		if (!empty($md['search'])) {
-			$v = preg_split("/[\s\-]+/", mb_strtolower($md['search']));
+			$search = Path::encode($md['search']);
+			$v = preg_split("/[\s\-]+/", mb_strtolower($search));
 			$str = '';
 			foreach ($v as $i => $s) {
 				$v[$i] = preg_replace("/ы$/","",$s);
@@ -516,6 +517,7 @@ class Showcase {
 	
 	public static function getModelShow($producer_nick, $article_nick, $item_nick = '') {
 		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nick);
+		
 		if (!$pos) return $pos;
 		if (isset($pos['texts'])) {
 			foreach ($pos['texts'] as $i => $src) {
@@ -550,7 +552,7 @@ class Showcase {
 		if ($item === false) return false;
 		$item_num = $item['item_num'];
 		//exit;
-
+		
 		$list1 = Data::all('SELECT p.prop, p.prop_nick, v.value as val, smv.order
 			FROM showcase_mvalues smv, showcase_values v, showcase_props p
 			WHERE smv.value_id = v.value_id
@@ -586,18 +588,18 @@ class Showcase {
 		
 		//if ($item_nick) {
 			$its = Data::all('
-					SELECT i.item_nick, ps.prop, ps.prop_nick, v.value as val from showcase_mvalues mv
+					SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, v.value as val from showcase_mvalues mv
 					left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
 					left join showcase_props ps on ps.prop_id = mv.prop_id
 					left join showcase_values v on v.value_id = mv.value_id
 					where mv.model_id = ? and mv.item_num > 0 
 					UNION ALL
-					SELECT i.item_nick, ps.prop, ps.prop_nick, mv.number as val from showcase_mnumbers mv
+					SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, mv.number as val from showcase_mnumbers mv
 					left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
 					left join showcase_props ps on ps.prop_id = mv.prop_id
 					WHERE mv.model_id = ? and mv.item_num > 0 
 					UNION ALL
-					SELECT i.item_nick, ps.prop, ps.prop_nick, mv.text as val from showcase_mtexts mv
+					SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, mv.text as val from showcase_mtexts mv
 					left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
 					left join showcase_props ps on ps.prop_id = mv.prop_id
 					where mv.model_id = ? and mv.item_num > 0 
@@ -607,7 +609,7 @@ class Showcase {
 			$items = [];
 			foreach ($its as $i) {
 				$itemn = $i['item_nick'];
-				if (!isset($items[$itemn])) $items[$itemn] = ['item_nick'=>$itemn, 'list'=>[]];
+				if (!isset($items[$itemn])) $items[$itemn] = ['item'=>$i['item'], 'item_nick'=>$itemn, 'list'=>[]];
 				$items[$itemn]['list'][] = $i;
 			}
 			if ($items) {
@@ -620,7 +622,7 @@ class Showcase {
 					}
 				} else {
 					foreach ($items as $k=>$item) break;
-					
+					$data['item'] = $item['item'];
 					$data['item_nick'] = $item['item_nick'];
 					Showcase::makeMore($data, $item['list']);
 					foreach ($items as $k=>$item) {
