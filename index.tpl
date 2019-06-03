@@ -127,7 +127,7 @@
 			</div>
 		</div>
 		{:foot}
-	{time:}<b title="{~date(:H:i,.)}">{~date(:d.m,.)}</b>, 
+	{time:}<b title="{~date(:H:i,.)}">{~date(:d.m,.)}</b>.
 	{size:}<b>{.}</b> Кб, 
 	{duration:}Загрузка за <b title="{.}">{.<:1?:1?.}</b> сек,
 	{icount:}
@@ -137,7 +137,7 @@
 	{linkproducer:}Производитель: <a href="/-showcase/producers/{producer_nick}">{producer}</a>
 	{itemname:}<b><a href="/-showcase/prices/{name}">{file|:Нет файла}</a></b><br>
 	{itemname:}<b>{file|:Нет файла}</b><br>
-	{notime:}файл не внесён,
+	{notime:}файл не внесён.
 	{noans:}раньше не вносился.
 	{noduration:}Время загрузки не известно,
 {itemprice:}
@@ -148,7 +148,7 @@
 			<i></i><br>{size:size} {mtime:time}
 		</div>
 		<div class="p-2 flex-grow-1">
-			{duration?duration:duration?:noduration} {time?time:time?:notime} {ans?ans:res?:noans}
+			{duration?duration:duration?:noduration} {time?time:time?:notime} {ans?ans:res}
 			
 		</div>
 		
@@ -172,7 +172,7 @@
 			{size:size} {mtime:time}
 		</div>
 		<div class="p-2 flex-grow-1">
-			{duration?duration:duration?:noduration} {time?time:time?:notime} {ans?ans:res?:noans}
+			{duration?duration:duration?:noduration} {time?time:time?:notime} {ans?ans:res?}
 		</div>
 		{:cactions}
 	</div>
