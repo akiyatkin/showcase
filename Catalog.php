@@ -9,31 +9,42 @@ use infrajs\db\Db;
 use akiyatkin\showcase\Data;
 use akiyatkin\showcase\Showcase;
 use infrajs\event\Event;
-
+use infrajs\ans\Ans;
 
 Event::$classes['Showcase-catalog'] = function (&$obj) {
 	return $obj['pos']['producer'].' '.$obj['pos']['article'].' '.$obj['name'];
 };
 class Catalog {
-	public static function action($action, $name, $src, $type = 'table') {
-		$res = null;
-		if ($action == 'clearAll') $res = Data::actionClearAll();
+	public static function action($type = 'table') {
+		Catalog::init();
+		Prices::init();
+		
+		$ans = array();
+		$ans['post'] = $_POST;
+		$ans['conf'] = Showcase::$conf;
 
+		$action = Ans::REQ('action');
+		$name = Ans::REQ('name');
+		$src = Ans::REQ('src');
+		$type = Ans::REQ('type','string',$type);
+
+		$res = null;
 		if ($type == 'table') {
 			if ($action == 'load') $res = Catalog::actionLoad($name, $src);
 			if ($action == 'read') $res = Catalog::actionRead($name, $src);
 			if ($action == 'remove') $res = Catalog::actionRemove($name, $src);
+			if ($action == 'loadAll') $res = Catalog::actionLoadAll();
 		} else if ($type == 'price') {
 			if ($action == 'load') $res = Prices::actionLoad($name, $src);
 			if ($action == 'read') $res = Prices::actionRead($name, $src);
 			if ($action == 'remove') $res = Prices::actionRemove($name, $src);
+			if ($action == 'loadAll') $res = Prices::actionLoadAll();
 		}
-		
-		
+		if ($action == 'clearAll') $res = Data::actionClearAll();
 		if ($action == 'addFiles') $res = Data::actionAddFiles($name);
 		if ($action == 'addFilesAll') $res = Data::actionAddFiles();
-		if ($action == 'loadAll') $res = Catalog::actionLoadAll();
-		return $res;
+		$ans['res'] = $res;
+		return $ans;
 	}
 	public static function getList() {
 		$options = Catalog::getOptions();
@@ -213,8 +224,9 @@ class Catalog {
 		$catalog_id = $row['catalog_id'];
 		$order = $row['order'];
 
-		$ans = array('Файл'=>$src);
-
+		$option = Catalog::getOptions($name);
+		$ans = array('Данные' => $src);
+		if ($option['producer']) $ans['Производитель'] = '<a href="/-showcase/producers/'.$option['producer_nick'].'">'.$option['producer'].'</a>';
 		$data = Catalog::readCatalog($name, $src);
 			
 		$groups = Catalog::applyGroups($data, $catalog_id, $order, $ans);
@@ -223,7 +235,7 @@ class Catalog {
 
 		$ans['Принято моделей'] = 0;
 		$ans['Принято позиций'] = 0;
-		$ans['Пропущено из-за конфликта с другими данными'] = 0;
+		//$ans['Пропущено из-за конфликта с другими данными'] = 0;
 		$db = &Db::pdo();
 		$db->beginTransaction();
 		
@@ -242,7 +254,7 @@ class Catalog {
 			$model_id = Catalog::initModel($name, $producer_id, $article_id, $catalog_id, $order, $time, $group_id); //У существующей модели указывается time
 
 			if (!$model_id) {
-				$ans['Пропущено из-за конфликта с другими данными']++;
+				//$ans['Пропущено из-за конфликта с другими данными']++;
 				return; //Каталог не может управлять данной моделью, так как есть более приоритетный источник
 			}
 		

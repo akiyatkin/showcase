@@ -15,16 +15,6 @@ Event::$classes['Showcase-prices'] = function (&$obj) {
 };
 
 class Prices {
-	public static function action($action, $name, $src) {
-		$res = null;
-		if ($action == 'clearAll') $res = Data::actionClearAll();
-		if ($action == 'addFiles') $res = Data::actionAddFiles($name);
-		if ($action == 'load') $res = Prices::actionLoad($name, $src);
-		if ($action == 'remove') $res = Prices::actionRemove($name, $src);
-		if ($action == 'addFilesAll') $res = Data::actionAddFiles();
-		if ($action == 'loadAll') $res = Prices::actionLoadAll();
-		return $res;
-	}
 	public static function getPrice($name) {
 		$option = Prices::getOptions($name);
 
@@ -318,6 +308,7 @@ class Prices {
 		$data = Prices::readPrice($name, $src);
 		$option = Prices::getOptions($name);
 		$ans['Прайс'] = $name;
+		if ($option['producer']) $ans['Производитель'] = '<a href="/-showcase/producers/'.$option['producer_nick'].'">'.$option['producer'].'</a>';
 		$ans['Внесение параметров'] = implode(', ',$option['props']);
 		$ans['Ключ прайса'] = $option['priceprop'];
 		$ans['Ключ каталога'] = $option['catalogprop'];

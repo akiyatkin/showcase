@@ -4,12 +4,12 @@
 		{(:/-showcase/prices):link}Прайсы{:/link} |
 		{(:/-showcase/groups):link}Группы{:/link} |
 		{(:/-showcase/producers):link}Производители{:/link} |
-		{(:/-showcase/models):link}Модели{:/link} |
+		<!--{(:/-showcase/models):link}Модели{:/link} |-->
 		{(:/-showcase/api):link}API{:/link}
 		<span class="float-right">Загрузить с Яндекс Диска
-		<a class="btn btn-outline-info btn-sm" href="/-showcase/tables?-ydisk=tables">Данные</a>
-		<a class="btn btn-outline-info btn-sm" href="/-showcase/prices?-ydisk=prices">Прайсы</a>
-		<a class="btn btn-outline-info btn-sm" href="/-showcase/prices?-ydisk=true">Всё</a> 
+		<a class="btn btn-outline-info btn-sm" href="?-ydisk=tables">Данные</a>
+		<a class="btn btn-outline-info btn-sm" href="?-ydisk=prices">Прайсы</a>
+		<a class="btn btn-outline-info btn-sm" href="?-ydisk=true">Всё</a> 
 		<small><a href="/">{View.getHost()}</a></small>
 		</span>
 	</div>
@@ -27,7 +27,7 @@
 	<h1>Технические команды</h1>
 	<a class="btn btn-secondary" href="/-showcase/drop">Удалить данные и пересоздать базу данных</a>
 	<hr>
-{res:}<div style="font-size:80%" class="mt-2 alert alert-success">{::reskeys}</div>
+{res:}<div class=""><pre><code>{::reskeys}</code></pre></div>
 	{reskeys:}{~typeof(.)=:object?:resobj?:resstr}
 	{resstr:}<b>{~key}</b>: {.}<br>
 	{resobj:}<div onclick="$(this).next().slideToggle()"><span class="a">{~key}</span>: {~length(.)}</div><div style="display: none">{~print(.)}</div>
@@ -46,14 +46,22 @@
 		{:menu}
 		<img class="float-right" src='/-imager/?src={logo}&w=100'>
 		<h1>{producer}</h1>
-		<div class="alert alert-{cls}">{:prodinfo}</div>
+		<div class="alert alert-{cls}">
+			<div class="d-flex justify-content-between align-items-center">
+			<div>{:prodinfo}</div><div>{:actbunch}</div>
+			</div>
 		
-		<div class="mt-2 text-right" style="clear:both">{:actbunch}</div>
+		</div>
+		
+		
 		<h2>Данные</h2>
-		{clist::itemcatalog}
+		<div class="alert">
+			{clist::itemcatalog}
+		</div>
 		<h2>Прайсы</h2>
+		<div class="alert alert-secondary">
 		{plist::itemprice}
-		
+		</div>
 		{:foot}
 	{skip:}
 	<span class="a" onclick="$(this).next().slideToggle()">skip</span>.
@@ -63,12 +71,14 @@
 		{:menu}
 		<h1>Производители</h1>
 		{list::producer}
+		{:foot}
 	{producer:}<div class="alert alert-{cls}"><a href="/-showcase/producers/{producer_nick}">{producer}</a> <div class="float-right">{logo:pic}</div> {:prodinfo}</div>
 {GROUPS:}
 	{:menu}
 	<h1>Группы</h1>
 	{list.childs::groups}
 	<br><br><br><br>
+	{:foot}
 	{groups:}
 		<div>
 		{~length(childs)?:subgroup?:justgroup}
@@ -99,35 +109,29 @@
 		{:menu}
 		<h1>Прайсы</h1>
 		{list::itemprice}
-		
-		<hr>
-		<div class="d-flex justify-content-between">
-			<div>
-				<span class="btn btn-primary" onclick="ActionPrice('loadAll')">Внести все новые прайсы</span>
-			</div>
-			<div>
-				<span class="btn btn-danger" onclick="ActionPrice('clearAll')">Очистить всё</span>
-			</div>
-		</div>
 		{:foot}
+{ACTMENU:}
+	<hr>
+	<div class="d-flex justify-content-between">
+		<div>
+			<span class="btn btn-sm btn-info" onclick="ActionTable('loadAll')">Внести все новые <b>данные</b></span>
+			<span class="btn btn-sm btn-info" onclick="ActionPrice('loadAll')">Внести все новые <b>прайсы</b></span>
+			<span class="btn btn-sm btn-info" onclick="Action('addFilesAll')">Связать всё с <b>файлами</b></span>
+		</div>
+		<div>
+			<span class="btn btn-sm btn-danger" onclick="Action('clearAll')">Очистить <b>всё</b></span>
+		</div>
+	</div>
+	<hr>
 {CATALOG:}
 		{:menu}
+		
 		<h1>Данные</h1>
 		{list::itemcatalog}
 		
-		<hr>
-		<div class="d-flex justify-content-between">
-			<div>
-				<!--<a href="/-showcase/update" class="btn btn-primary">Внести все новые данные и прайсы</a>-->
-				<span class="btn btn-primary" onclick="ActionTable('loadAll')">Внести все новые данные</span>
-				<span class="btn btn-info" onclick="ActionTable('addFilesAll')">Связать всё с файлами</span>
-			</div>
-			<div>
-				<span class="btn btn-danger" onclick="ActionTable('clearAll')">Очистить всё</span>
-			</div>
-		</div>
+		
 		{:foot}
-	{time:}<b title="{~date(:H:i,.)}">{~date(:d.m,.)}</b>.
+	{time:}<b>{~date(:j F H:i,.)}</b>.
 	{size:}<b>{.}</b> Кб, 
 	{duration:}Загрузка за <b title="{.}">{.<:1?:1?.}</b> сек,
 	{icount:}
@@ -187,18 +191,19 @@
 			{file?:actpload}
 			{isdata?:actdelprice}
 		</div>
-	{actpload:}<span class="btn btn-primary" onclick="ActionPrice('load','{name}','{conf.prices}{file}')">Внести</span>
-	{actdelprice:}<span class="btn btn-danger" onclick="ActionPrice('remove','{name}','{conf.prices}{file}')">Очистить</span>
+	{actpload:}<span class="btn btn-sm btn-info" onclick="ActionPrice('load','{name}','{conf.prices}{file}')">Внести</span>
+	{actdelprice:}<span class="btn btn-sm btn-danger" onclick="ActionPrice('remove','{name}','{conf.prices}{file}')">Очистить</span>
 {cactions:}
 		<div class="p-2 text-right" style="width:400px">
 			{file?:actfile}
 			{plist??(time?:actbunch)}
 			{time?:actdel}
 		</div>
-	{actbunch:}<span class="btn btn-info" onclick="Action('addFiles','{producer_nick}')">Связать с файлами</span>
-	{actfile:}<span class="btn btn-primary" onclick="ActionTable('load','{name}','{conf.tables}{file}')">Внести</span>
-	{actdel:}<span class="btn btn-danger" onclick="ActionTable('remove','{name}','{conf.tables}{file}')">Очистить</span>
+	{actbunch:}<span class="btn btn-sm btn-info" onclick="Action('addFiles','{producer_nick}')">Связать с файлами</span>
+	{actfile:}<span class="btn btn-sm btn-info" onclick="ActionTable('load','{name}','{conf.tables}{file}')">Внести</span>
+	{actdel:}<span class="btn btn-sm btn-danger" onclick="ActionTable('remove','{name}','{conf.tables}{file}')">Очистить</span>
 {foot:}
+	{:ACTMENU}
 	<hr>
 	<form id="form" method="POST">
 		<input id="formaction" type="hidden" name="action" value="">
