@@ -110,7 +110,7 @@ class Prices {
 		foreach ($savedlist as $name => $row) {
 			$row['ans'] = Load::json_decode($row['ans'], true);
 			if ($name) $options[$name] += $row;
-			
+
 		}
 		
 		return $options;
@@ -514,6 +514,7 @@ class Prices {
 				'ignore' => [],
 				"lists"	=> [],
 				'producer' => $name,
+				'producer_nick' => Path::encode($name),
 				'props' => ["Цена"],
 				"priceprop" => "Артикул",
 				"catalogprop" => "Артикул"
