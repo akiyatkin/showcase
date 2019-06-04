@@ -872,9 +872,9 @@ class Data {
 				','producer_nick', [':cost_id'=>$cost_id]);
 			foreach($list as $i => $row) {
 				if(isset($costs[$row['producer_nick']])) {
-					$list[$i]['Без цен'] = $row['count'] - $costs[$row['producer_nick']]['count'];	
+					$list[$i]['Без цен'] = $listcost[$row['producer_nick']]['count'] - $costs[$row['producer_nick']]['count'];	
 				} else {
-					$list[$i]['Без цен'] = $row['count'];
+					$list[$i]['Без цен'] = $listcost[$row['producer_nick']]['count'];
 				}
 			}
 			$images = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
