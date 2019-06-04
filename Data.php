@@ -849,7 +849,7 @@ class Data {
 			return $list;
 			
 		} else {
-			$list = Data::all('SELECT p.producer, p.logo, p.producer_nick, count(*) as `count`, 
+			$list = Data::all('SELECT p.producer, p.logo, p.producer_nick, count(*) as `count`,
 				GROUP_CONCAT(DISTINCT c.name SEPARATOR \', \') as catalog, 
 				GROUP_CONCAT(DISTINCT pp.name SEPARATOR \', \') as price
 				from showcase_models m
@@ -860,6 +860,11 @@ class Data {
 				GROUP BY producer
 				order by count DESC',[':cost_id'=>$cost_id]);
 			
+			$listcost = Data::fetchto('SELECT p.producer_nick, count(*) as count FROM showcase_models m
+				INNER JOIN showcase_producers p on (p.producer_id = m.producer_id)
+				GROUP BY p.producer_nick
+				','producer_nick');
+
 			$costs = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id)
 				inner join showcase_mnumbers n on (n.model_id = m.model_id and n.prop_id = :cost_id)
@@ -881,9 +886,9 @@ class Data {
 			$options = Prices::getList();
 			foreach($list as $i => $row) {
 				if (isset($images[$row['producer_nick']])) {
-					$list[$i]['Без картинок'] = $row['count'] - $images[$row['producer_nick']]['count'];	
+					$list[$i]['Без картинок'] = $listcost[$row['producer_nick']]['count'] - $images[$row['producer_nick']]['count'];	
 				} else {
-					$list[$i]['Без картинок'] = $row['count'];
+					$list[$i]['Без картинок'] = $listcost[$row['producer_nick']]['count'];
 				}
 				if (isset($opt['producers'][$row['producer_nick']])) {
 					$list[$i] += $opt['producers'][$row['producer_nick']];
