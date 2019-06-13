@@ -446,7 +446,7 @@ class Prices {
 		$duration = (time() - $time);
 		
 		foreach($ans as $i=>$val){
-			if(sizeof($ans[$i]) > 500) $ans[$i] = sizeof($ans[$i]);
+			if (is_array($ans[$i]) && sizeof($ans[$i]) > 500) $ans[$i] = sizeof($ans[$i]);
 		}
 
 		$jsonans = Load::json_encode($ans);
