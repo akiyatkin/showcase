@@ -65,7 +65,7 @@ class Data {
 	public static function loadShowcaseConfig(){
 		$opt = Load::loadJSON('~showcase.json');
 		if(!$opt) $opt = [];
-		$opt = $opt + array(
+		$opt += array(
 			'catalog'=>[],
 			'justonevalue'=>[],
 			'numbers'=>[],
@@ -76,6 +76,7 @@ class Data {
 			'filters'=>[],
 			'values'=>[]	
 		);
+		$opt['filters'] += ['buttons'=>[],'groups'=>[]];
 		
 		$opt['justonevalue'][] = 'Цена';
 		$opt['justonevalue'] = array_unique($opt['justonevalue']);
@@ -222,6 +223,7 @@ class Data {
 	public static function checkType($prop) {
 		$options = Data::loadShowcaseConfig();
 		$prop = Path::encode($prop);
+
 		if ($prop == 'Артикул') return 'article';
 		if (in_array($prop, $options['numbers'])) return 'number';
 		if (in_array($prop, $options['texts'])) return 'text';

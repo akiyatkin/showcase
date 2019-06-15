@@ -9,27 +9,37 @@ use infrajs\load\Load;
 return Rest::get( function () {
 	$ans = array();
 
+	
 	$md = Showcase::initMark($ans);
 
 	$group = '';
 	foreach ($md['group'] as $group => $one) break;
-	$arlist = Showcase::getOptions()['filters'];
+	$arlist = Showcase::getOptions()['filters']['groups'];
 	
-	$ar = array();
+	
 	
 	if (!$group) $group = Showcase::$conf['title'];
 	$group = Showcase::getGroup($group);
 	if (!$group) $group = Showcase::getGroup();
 
+	if(isset($arlist[Showcase::$conf['title']])) {
+		$ar = $arlist[Showcase::$conf['title']];	
+	} else {
+		$ar = [];
+	}
+	
 	for ($i = sizeof($group['path'])-1; $i >= 0; $i--) {
 		$g = $group['path'][$i];
 		if (!isset($arlist[$g])) continue;
 		$ar = array_merge($ar,$arlist[$g]);
 	}
 	
+	
+	
 	if (!$ar && isset($arlist[Showcase::$conf['title']])) {
 		$ar = $arlist[Showcase::$conf['title']];
 	}
+
 	$props = Ans::get('props','string');
 	if ($props) {
 		$props = explode(',', $props);
@@ -70,7 +80,8 @@ return Rest::get( function () {
 			if(!$prop_id) continue;
 			$type = Data::checkType($prop_nick);
 			$def = ($type == 'number')? 'range':'value';
-			$filtertype = Showcase::getOption(['props', $prop_nick, 'filter'], $def);
+			$filtertype = $def;
+			//$filtertype = Showcase::getOption(['props', $prop_nick, 'filter'], $def);
 			if ($filtertype == 'value') {
 				if ($type == 'value') {
 					$values = Data::all('SELECT v.value, v.value_nick, count(*) as count FROM showcase_mvalues mv
@@ -105,7 +116,7 @@ return Rest::get( function () {
 				if ($type == 'number') {	
 					
 					$row = Data::fetch('
-						SELECT mv.model_id, min(mv.number) as min, max(mv.number) as max 
+						SELECT min(mv.number) as min, max(mv.number) as max 
 						FROM showcase_mnumbers mv
 						'.$groups.'
 						WHERE mv.prop_id = :prop_id
@@ -154,6 +165,10 @@ return Rest::get( function () {
 				'type' => $filtertype
 			);
 		}
+	}
+	foreach ($params as $k=>$p) {
+		$params[$k] += Showcase::getOption(['filters','props',$p['prop_nick']],['tpl'=>'prop-select']);
+		if (isset($params[$k]['values']) && !sizeof($p['values'])) unset($params[$k]);
 	}
 	$ans['list'] = $params;
 	return Ans::ret($ans);
