@@ -156,7 +156,7 @@ return Rest::get( function () {
 			);
 		}
 	}
-	$columns = Showcase::getOption(['columns']);
+	$columns = ['producer'];//Showcase::getOption(['columns']);
 	foreach ($params as $k=>$p) {
 		if (!in_array($k, $columns)) $params[$k]['more'] = true;
 		
