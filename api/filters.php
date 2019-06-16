@@ -7,29 +7,19 @@ use infrajs\load\Load;
 
 
 return Rest::get( function () {
-	$ans = array();
-
 	
+	$ans = array();
 	$md = Showcase::initMark($ans);
 
-	$group = '';
-	foreach ($md['group'] as $group => $one) break;
 	$arlist = Showcase::getOptions()['filters']['groups'];
-	
-	
-	
-	if (!$group) $group = Showcase::$conf['title'];
-	$group = Showcase::getGroup($group);
-	if (!$group) $group = Showcase::getGroup();
-
 	if(isset($arlist[Showcase::$conf['title']])) {
 		$ar = $arlist[Showcase::$conf['title']];	
 	} else {
 		$ar = [];
 	}
 	
-	for ($i = sizeof($group['path'])-1; $i >= 0; $i--) {
-		$g = $group['path'][$i];
+	for ($i = sizeof($ans['group']['path'])-1; $i >= 0; $i--) {
+		$g = $ans['group']['path'][$i];
 		if (!isset($arlist[$g])) continue;
 		$ar = array_merge($ar,$arlist[$g]);
 	}
@@ -166,10 +156,14 @@ return Rest::get( function () {
 			);
 		}
 	}
+	$columns = Showcase::getOption(['columns']);
 	foreach ($params as $k=>$p) {
+		if (!in_array($k, $columns)) $params[$k]['more'] = true;
+		
 		$params[$k] += Showcase::getOption(['filters','props',$p['prop_nick']],['tpl'=>'prop-select']);
-		if (isset($params[$k]['values']) && !sizeof($p['values'])) unset($params[$k]);
+		if (empty($ans['md'][$p['prop_nick']]) && isset($params[$k]['values']) && sizeof($p['values'])<2) unset($params[$k]);
 	}
+	
 	$ans['list'] = $params;
 	return Ans::ret($ans);
 });

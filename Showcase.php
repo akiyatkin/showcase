@@ -89,6 +89,15 @@ class Showcase {
 		}, array($m));
 		$ans['m'] = $ar['m'];
 		$ans['md'] = $ar['md'];
+
+		$group = false;
+		foreach ($ans['md']['group'] as $group => $one) break;
+		if (!$group) $group = Showcase::$conf['title'];
+		$group = Showcase::getGroup($group);
+		if (!$group) $group = Showcase::getGroup();
+		unset($group['childs']);
+		$ans['group'] = $group;
+
 		return $ar['md'];
 	}
 	public static function getMean($prop_nick, $value_nick) {
@@ -499,7 +508,7 @@ class Showcase {
 	}
 
 
-	public static $columns = array("images", "files", "texts","videos", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие-на-складе");
+	public static $columns = array("producer","article","producer_nick","article_nick", "images", "files", "texts","videos", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие-на-складе");
 	public static function getOption($right = [], $def = null) {
 		$options = Once::func( function (){
 			$options = Data::getOptions();
