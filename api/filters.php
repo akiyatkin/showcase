@@ -159,9 +159,10 @@ return Rest::get( function () {
 	$columns = ['producer'];//Showcase::getOption(['columns']);
 	foreach ($params as $k=>$p) {
 		if (!in_array($k, $columns)) $params[$k]['more'] = true;
-		
+
 		$params[$k] += Showcase::getOption(['filters','props',$p['prop_nick']],['tpl'=>'prop-select']);
-		if (empty($ans['md'][$p['prop_nick']]) && isset($params[$k]['values']) && sizeof($p['values'])<2) unset($params[$k]);
+
+		if (empty($params[$k]['showalways']) && empty($ans['md'][$p['prop_nick']]) && isset($params[$k]['values']) && sizeof($p['values'])<2) unset($params[$k]);
 	}
 	
 	$ans['list'] = $params;
