@@ -148,4 +148,4 @@ Showcase::add('more', function () {
 	return !!$val;
 });
 
-Path::reqif('~showcase.php');
+Path::reqif(Showcase::$conf['phpoptions']);

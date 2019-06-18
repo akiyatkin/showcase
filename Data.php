@@ -63,7 +63,7 @@ class Data {
 		return $stmt->rowCount();
 	}
 	public static function loadShowcaseConfig(){
-		$opt = Load::loadJSON('~showcase.json');
+		$opt = Load::loadJSON(Showcase::$conf['jsonoptions']);
 		if(!$opt) $opt = [];
 		$opt += array(
 			'catalog'=>[],
