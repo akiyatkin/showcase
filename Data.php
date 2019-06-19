@@ -366,6 +366,9 @@ class Data {
 				},$ak);
 			}, []);
 			$ans['Файлов'] = sizeof($ans['Бесхозные файлы']);
+			
+			
+
 			foreach ($list as $prod => $arts) {
 				//$producer_id = Data::initProducer($prod);
 				$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$prod]);
@@ -390,6 +393,7 @@ class Data {
 							}
 							$values[$value_id] = true;
 							$prop_id = $pid[$type];
+
 							Data::exec(
 								'INSERT INTO showcase_mvalues (model_id, item_num, prop_id, value_id) VALUES(?,?,?,?)',
 								[$model_id, $item_num, $prop_id, $value_id]
@@ -401,6 +405,7 @@ class Data {
 					}
 				}
 			}
+
 			$ans['Бесхозные файлы'] = array_keys($ans['Бесхозные файлы']);
 			$ans['Найденные файлы'] = array_keys($ans['Найденные файлы']);
 			Data::addFilesIcons();
@@ -574,7 +579,7 @@ class Data {
 		$fayliid = Data::initProp('Файлы', 'value');//Пути. Могут быть несколько (pr.producer, a.article, pr.item_num)
 		if ($producer) {
 			$producer_id = Data::initProducer($producer);
-			$fayli = Data::all('SELECT pr.producer, a.article, mv.item_num, v.value from showcase_mvalues mv
+			$fayli = Data::all('SELECT pr.producer, a.article, a.article_nick, mv.item_num, v.value from showcase_mvalues mv
 				INNER JOIN showcase_values v ON v.value_id = mv.value_id
 				INNER JOIN showcase_models m ON m.model_id = mv.model_id and m.producer_id = ?
 				INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
@@ -582,7 +587,7 @@ class Data {
 				WHERE mv.prop_id = ?',
 			[$producer_id, $fayliid]);
 		} else {
-			$fayli = Data::all('SELECT pr.producer, a.article, mv.item_num, v.value from showcase_mvalues mv
+			$fayli = Data::all('SELECT pr.producer, a.article, a.article_nick, mv.item_num, v.value from showcase_mvalues mv
 				INNER JOIN showcase_values v ON v.value_id = mv.value_id
 				INNER JOIN showcase_models m ON m.model_id = mv.model_id
 				INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
@@ -593,7 +598,7 @@ class Data {
 		
 		foreach ($fayli as $fayl) {
 			$prod = $fayl['producer'];
-			$art = mb_strtolower($fayl['article']);
+			$art = mb_strtolower($fayl['article_nick']);
 			$num = $fayl['item_num'];
 
 			if (!isset($list[$prod])) $list[$prod] = array();
