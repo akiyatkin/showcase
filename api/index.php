@@ -180,14 +180,12 @@ return Rest::get( function () {
 			$ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick, $item_nick);
 			if ($item_nick && !$ans['pos']) $ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick);
 			
-			$active = $article_nick;
-			if (Showcase::$conf['hiddenarticle']) {
-				if(isset($pos['Наименование'])) {
-					$active = $pos['Наименование'];
-				} else {
-					$active = $pos['article'];		
-				}
+			$active = $ans['pos']['article'];
+
+			if (Showcase::$conf['hiddenarticle'] && isset($ans['pos']['Наименование'])) {
+				$active = $ans['pos']['Наименование'];
 			}
+
 			
 			if (!$ans['pos']) {
 				$ans['breadcrumbs'][] = array('href'=>'producers','title'=>'Производители');

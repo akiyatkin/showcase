@@ -24,6 +24,7 @@
 	"groupimages":"~catalog/images/",
 	"showemptygroups":false,
 
+	"checkaccess":false,
 	"hiddenarticle":false,
 	"Группы уникальны":true,
 	"listreverse":false,

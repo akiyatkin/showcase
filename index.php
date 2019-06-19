@@ -10,7 +10,7 @@ use akiyatkin\showcase\Showcase;
 
 date_default_timezone_set("Europe/Samara");
 
-Access::debug(true);
+if (Showcase::$conf['checkaccess']) Access::debug(true);
 ob_start();
 echo Rest::get( function () {
 	$ans = [];
