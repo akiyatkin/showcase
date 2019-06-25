@@ -4,8 +4,8 @@ use infrajs\db\Db;
 use infrajs\ans\Ans;
 use infrajs\path\Path;
 
-Path::mkdir('~auto/');
-Path::mkdir('~auto/.showcase/');
+//Path::mkdir('~auto/');
+//Path::mkdir('~auto/.showcase/');
 
 function scexec($sql) {
 	$db = &Db::pdo();

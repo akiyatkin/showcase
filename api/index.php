@@ -62,9 +62,6 @@ return Rest::get( function () {
 		$ans['canonical'] = View::getPath().$link;
 		return Ans::ans($ans);	
 }], 'search', [function (){
-		$val = Ans::GET('val');
-		$val = Path::encode(Path::toutf(strip_tags($val)));
-		$art = Ans::GET('art');
 
 		$md = Showcase::initMark($ans);
 		

@@ -37,7 +37,7 @@ class Showcase {
 		Showcase::$list[$name] = array('fndef' => $fndef, 'fncheck' => $fncheck);
 	}
 	public static function getDefaultMark() {
-		$mark = new Marker('~auto/.showcase/');
+		$mark = new Marker();
 		$mark->len = 4;
 		foreach (Showcase::$list as $name => $v) {
 			$mark->add($name, $v['fndef'], $v['fncheck']);
@@ -51,7 +51,7 @@ class Showcase {
 		}
 		return $list;
 	}
-	public static function initMark(&$ans = array(), $val = '', $art = '')
+	public static function initMark(&$ans = array())
 	{
 		$val = Ans::GET('val');
 		$val = Path::encode(Path::toutf(strip_tags($val)));
@@ -80,11 +80,15 @@ class Showcase {
 		}
 		
 		$m = Path::toutf(Seq::get($_GET, array('m')));
-		$ar = Once::func( function ($m) {
+		$ar = Once::func( function ($m = '') {
 			$mark = Showcase::getDefaultMark();
 			$mark->setVal($m);
 			$md = $mark->getData();
-			$m = $mark->getVal();	
+			//$m = $mark->getVal();	
+
+			$m = $mark->getOrigVal($m);
+			
+			
 			return array('md' => $md, 'm' => $m);
 		}, array($m));
 		$ans['m'] = $ar['m'];
