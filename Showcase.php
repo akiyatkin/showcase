@@ -555,12 +555,12 @@ class Showcase {
 			a.article, g.group_nick, g.group
 			FROM showcase_models m
 			INNER JOIN showcase_articles a on (a.article_id = m.article_id and a.article_nick = :article)
-			LEFT JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = :producer)
-			LEFT JOIN showcase_groups g on (g.group_id = m.group_id)
+			INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = :producer)
+			INNER JOIN showcase_groups g on (g.group_id = m.group_id)
 			order by m.article_id
 			', [':article'=>$article_nick,':producer'=>$producer_nick]);
 		if (!$data) return false;
-		
+		//print_r($data);
 		$item = Data::fetch('SELECT item_num, item, item_nick from showcase_items where model_id = ? and item_nick = ?',[$data['model_id'], $item_nick]);
 		if ($item === false) return false;
 		$item_num = $item['item_num'];
@@ -605,19 +605,19 @@ class Showcase {
 					left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
 					left join showcase_props ps on ps.prop_id = mv.prop_id
 					left join showcase_values v on v.value_id = mv.value_id
-					where mv.model_id = ? and mv.item_num > 0 
+					where mv.model_id = :model_id and mv.item_num > 0 
 					UNION ALL
 					SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, mv.number as val from showcase_mnumbers mv
 					left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
 					left join showcase_props ps on ps.prop_id = mv.prop_id
-					WHERE mv.model_id = ? and mv.item_num > 0 
+					WHERE mv.model_id = :model_id and mv.item_num > 0 
 					UNION ALL
 					SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, mv.text as val from showcase_mtexts mv
 					left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
 					left join showcase_props ps on ps.prop_id = mv.prop_id
-					where mv.model_id = ? and mv.item_num > 0 
+					where mv.model_id = :model_id and mv.item_num > 0 
 
-					',[$data['model_id'],$data['model_id'],$data['model_id']]);
+					',[':model_id' => $data['model_id']]);
 			
 			$items = [];
 			foreach ($its as $i) {
