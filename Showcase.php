@@ -63,6 +63,8 @@ class Showcase {
 
 			if ($val == 'actions') {
 				$_GET['m'].=':more.Наличие-на-складе.Акция=1:more.Наличие-на-складе.Распродажа=1';
+			} else if ($val == 'items') {
+				$_GET['m'].=':sort=items';
 			} else {
 				$group = Showcase::getGroup($val);
 				if ($group) {
@@ -403,7 +405,11 @@ class Showcase {
 		
 		$no = implode(' ', $no);	
 		$start = ($page-1)*$count;
-
+		if($md['sort'] == 'items') {
+			$sort = 'IF(i.item_nick = "",1,0),';
+		} else {
+			$sort = '';
+		}
 		$sql = '
 			SELECT SQL_CALC_FOUND_ROWS max(i.item_nick) as item_nick, mn.number, a.article_nick, pr.producer_nick, GROUP_CONCAT(m.group_id) from showcase_items i
 			LEFT JOIN showcase_models m on i.model_id = m.model_id
@@ -417,6 +423,7 @@ class Showcase {
 			WHERE 1=1 '.$grquery.' '.$prquery.' '.$no.'
 			GROUP BY pr.producer_id, a.article_id
 			ORDER BY 
+			'.$sort.'
 			IF(mn3.value_id is null,1,0),
 			IF(mn2.value_id = :nal1,0,1),
 			IF(mn2.value_id = :nal2,0,1), 
@@ -530,7 +537,6 @@ class Showcase {
 	
 	public static function getModelShow($producer_nick, $article_nick, $item_nick = '') {
 		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nick);
-		
 		if (!$pos) return $pos;
 		if (isset($pos['texts'])) {
 			foreach ($pos['texts'] as $i => $src) {
@@ -673,11 +679,13 @@ class Showcase {
 			}
 		}
 		foreach ($data as $prop => $val) {
-			if (is_array($val) && !in_array($prop, Data::$files)) {
+			if (is_array($val) && !in_array($prop, Data::$files) && !in_array($prop,['more'])) {
 				$data[$prop] = implode(', ', $val);
 			}
 		}
+		
 		if ($more) {
+
 			foreach($more as $name => $val) {
 				if (is_array($val)) {
 					$more[$name] = implode(', ', $val);
@@ -685,7 +693,6 @@ class Showcase {
 			}
 			$data['more'] = $more;
 		}
-		
 	}
 	public static function numbers($page, $pages, $plen = 11)
 	{
