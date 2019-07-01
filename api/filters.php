@@ -44,15 +44,21 @@ return Rest::get( function () {
 	if ($groups) $groups = 'INNER JOIN showcase_models m on (m.model_id = mv.model_id and m.group_id in ('.implode(',', $groups).'))';
 	else $groups = '';
 	
+	if (Showcase::getOptions()['filters']['order'] == 'count') {
+		$order = ' order by count DESC';
+	} else {
+		$order = ' order by value';	
+	}
 	
-
 	foreach ($ar as $prop_nick) {
 		if ($prop_nick == 'producer') {//Артикул, Группа
-			$row = [];			
+			$row = [];
+			
 			$values = Data::all('SELECT pr.producer as value, pr.producer_nick as value_nick, count(*) as count 
 				FROM showcase_models mv
-				left join showcase_producers pr on mv.producer_id = pr.producer_id
-			'.$groups.' group by pr.producer_id order by value');
+				INNER join showcase_producers pr on mv.producer_id = pr.producer_id
+			'.$groups.' group by pr.producer_id'.$order);// order by value
+			
 			
 			//if (sizeof($values) < 2) continue;
 			$params[$prop_nick] = [
@@ -79,7 +85,7 @@ return Rest::get( function () {
 					'.$groups.'
 					where mv.prop_id = :prop_id
 					group by mv.value_id
-					order by value
+					'.$order.'
 					',[':prop_id'=>$prop_id]);
 				} else if ($type == 'number') {
 					

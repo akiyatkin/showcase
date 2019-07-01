@@ -76,7 +76,7 @@ class Data {
 			'filters'=>[],
 			'values'=>[]	
 		);
-		$opt['filters'] += ['buttons'=>[],'groups'=>[]];
+		$opt['filters'] += ['buttons'=>[],'groups'=>[],'order'=>'name'];
 		
 		$opt['justonevalue'][] = 'Цена';
 		$opt['justonevalue'] = array_unique($opt['justonevalue']);
@@ -228,9 +228,10 @@ class Data {
 		if (in_array($prop, $options['numbers'])) return 'number';
 		if (in_array($prop, $options['texts'])) return 'text';
 		if (in_array($prop, $options['values'])) return 'value';
-		foreach ($options['filters'] as $row) {
-			if (in_array($prop, $row)) return 'value';
-		}
+		
+		if (in_array($prop, $options['filters']['groups'])) return 'value';
+		if (in_array($prop, $options['filters']['buttons'])) return 'value';
+		
 		return 'value';
 	}
 	public static function clearProp($prop_id) {
