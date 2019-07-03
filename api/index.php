@@ -167,7 +167,12 @@ return Rest::get( function () {
 		
 	},[
 		function( ) {
-			echo 'article';
+			$ans = [
+				'msg'=>'Не указан произодитель',
+				'pos'=>[]
+
+			];
+			return Ans::err($ans);
 		},
 		[function ($a, $producer_nick, $article_nick, $item_nick = false) {
 			$ans = array();
