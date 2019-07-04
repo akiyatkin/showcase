@@ -384,8 +384,10 @@ class Data {
 						where m.producer_id = ?', [$art, $altart, $producer_id]);
 					if (!$model_id) continue;//Имя файла как артикул не зарегистрировано, даже если удалить производителя из артикула
 					$values = [];
+					$order = 0;
 					foreach ($items as $item_num => $files) {
 						foreach ($files as $src => $type) { //Все эти файлы относятся к найденной модели
+							$order++;
 							$value_id = Data::initValue($src);
 							$ans['Найденные файлы'][$src] = true;
 							unset($ans['Бесхозные файлы'][$src]);
@@ -396,8 +398,8 @@ class Data {
 							$prop_id = $pid[$type];
 
 							Data::exec(
-								'INSERT INTO showcase_mvalues (model_id, item_num, prop_id, value_id) VALUES(?,?,?,?)',
-								[$model_id, $item_num, $prop_id, $value_id]
+								'INSERT INTO showcase_mvalues (model_id, item_num, prop_id, value_id, `order`) VALUES(?,?,?,?,?)',
+								[$model_id, $item_num, $prop_id, $value_id, $order]
 							);
 
 							//print_r([$producer_id, $article_id, $num, $value_id]);
