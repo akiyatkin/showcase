@@ -430,7 +430,12 @@ class Data {
 			Xlsx::runGroups($root, function &(&$group) use ($images_id){
 				//Ищим свою картинку
 				$group['icon'] = null;
+				
 				$icon = Rubrics::find(Showcase::$conf['icons'], $group['group_nick'], Data::$images);
+				if (!$icon) {
+					$nick = Path::encode($group['group']);
+					$icon = Rubrics::find(Showcase::$conf['icons'], $nick, Data::$images);
+				}
 				if ($icon) {
 					$group['icon'] = $icon;
 				} else {
