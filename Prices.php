@@ -198,10 +198,10 @@ class Prices {
 
 		return $list;
 	}
-	public static function updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value) {
+	public static function updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value, $name) {
 
 		$list = Prices::getMyItems($type, $producer_id, $prop_id, $value);
-		
+
 		$modified = 0;
 		$misorder = 0;
 		$misvalue = 0;
@@ -224,7 +224,23 @@ class Prices {
 			
 
 			//Для этих моделей нужно записать новые свойства из props, но надо чтобы текущие значения не были более приоритеными
+			
+			
+			Once::func(function($price_id, $model_id, $item_num) use ($name, $order) {
+				$p = [
+					'prop'=>'Прайс',
+					'type'=>'value'
+				];
+				$p['prop_id'] = Data::initProp($p['prop'], $p['type']);
+
+				$value_id = Data::initValue($name);
+				Data::exec('INSERT showcase_mvalues (model_id, item_num, prop_id, value_id, price_id, `order`)
+				VALUES(?,?,?,?,?,?)', [$model_id, $item_num, $p['prop_id'], $value_id, $price_id, $order]);	
+			},[$price_id, $model_id, $item_num]);
+			
+
 			$r = false;
+
 			foreach ($props as $p) {
 				//Смотрим что установлено для нашей модели. Будет insert или update
 				
@@ -402,7 +418,7 @@ class Prices {
 					$value = str_ireplace($option['producer_nick'], '', $value); //Удалили из кода продусера
 				}
 
-				list($c, $modified, $mposs) = Prices::updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value);
+				list($c, $modified, $mposs) = Prices::updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value, $name);
 				if ($c == 0) {
 					$ans['Ошибки прайса'][] = $value;
 					return $r;

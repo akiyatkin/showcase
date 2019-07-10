@@ -519,7 +519,7 @@ class Showcase {
 	}
 
 
-	public static $columns = array("producer","article","producer_nick","article_nick", "images", "files", "texts","videos", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие-на-складе");
+	public static $columns = array("producer","article","producer_nick","article_nick", "images", "files", "texts","videos", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие-на-складе","Прайс");
 	public static function getOption($right = [], $def = null) {
 		$options = Once::func( function (){
 			$options = Data::getOptions();

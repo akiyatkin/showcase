@@ -852,6 +852,7 @@ class Data {
 					$list['Ошибки прайса'] += sizeof($p['ans']['Ошибки прайса']);
 				}
 			}
+
 			$list['Ошибки каталога'] = 0;
 			foreach($options as $name => $p) {
 				if ($p['producer_nick'] == $producer_nick) {

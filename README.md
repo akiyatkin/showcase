@@ -1,6 +1,11 @@
 # Showcase
 
+Data - таблицы данных
+Prices - таблицы прайсов
+Catalog - и данные и прайсы
+Showcase - API интерфейс использования
 
+# Структура данных
 
 showcase_prices 		price_id, [name], producer_id, time, order, count, duration, ans
 showcase_catalog 		catalog_id, [name], producer_id, time, order, count, duration, ans

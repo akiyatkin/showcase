@@ -6,10 +6,11 @@
 		{(:/-showcase/producers):link}Производители{:/link} |
 		<!--{(:/-showcase/models):link}Модели{:/link} |-->
 		{(:/-showcase/api):link}API{:/link}
-		<span class="float-right">Загрузить с Яндекс Диска
+		<span class="float-right">
+			<!--Загрузить с Яндекс Диска
 		<a class="btn btn-outline-info btn-sm" href="?-ydisk=tables">Данные</a>
 		<a class="btn btn-outline-info btn-sm" href="?-ydisk=prices">Прайсы</a>
-		<a class="btn btn-outline-info btn-sm" href="?-ydisk=true">Всё</a> 
+		<a class="btn btn-outline-info btn-sm" href="?-ydisk=true">Всё</a> -->
 		<small><a href="/">{View.getHost()}</a></small>
 		</span>
 	</div>
@@ -48,9 +49,9 @@
 		<h1>{producer}</h1>
 		<div class="alert alert-{cls}">
 			<div class="d-flex justify-content-between align-items-center">
-			<div>{:prodinfo}</div><div>{:actbunch}</div>
+			<div>{:prodinfo}</div><div>{:actload} {:actbunch}</div>
 			</div>
-		
+			 {skip:skip}
 		</div>
 		
 		
@@ -66,7 +67,7 @@
 	{skip:}
 	<span class="a" onclick="$(this).next().slideToggle()">skip</span>.
 	<div style="display:none">{~print(.)}</div>
-	{prodinfo:}Моделей: <b><a href="/catalog/{producer_nick}">{count}</a></b>, без цен: <b><a href="/catalog/{producer_nick}?m=:more.Цена.no=1">{Без цен}</a></b>, без картинок: <b><a href="/catalog/{producer_nick}?m=:more.images.no=1">{Без картинок}</a></b>, ошибки прайса: <b><a href="/-showcase/producers/{producer_nick}">{Ошибки прайса}</a></b>, ошибки каталога: <b><a href="/-showcase/producers/{producer_nick}">{Ошибки каталога}</a></b> {skip:skip}
+	{prodinfo:}Моделей: <b><a href="/catalog/{producer_nick}">{count}</a></b>, без цен: <b><a href="/catalog/{producer_nick}?m=:more.Цена.no=1">{Без цен}</a></b>, без картинок: <b><a href="/catalog/{producer_nick}?m=:more.images.no=1">{Без картинок}</a></b>, ошибки прайса: <b><a href="/-showcase/producers/{producer_nick}">{Ошибки прайса}</a></b>, ошибки каталога: <b><a href="/-showcase/producers/{producer_nick}">{Ошибки каталога}</a></b>
 {PRODUCERS:}
 		{:menu}
 		<h1>Производители</h1>
@@ -200,6 +201,7 @@
 			{time?:actdel}
 		</div>
 	{actbunch:}<span class="btn btn-sm btn-info" onclick="Action('addFiles','{producer_nick}')">Связать с файлами</span>
+	{actload:}<span class="btn btn-sm btn-success" onclick="Action('loadproducer','{producer_nick}')">Внести производителя</span>
 	{actfile:}<span class="btn btn-sm btn-info" onclick="ActionTable('load','{name}','{conf.tables}{file}')">Внести</span>
 	{actdel:}<span class="btn btn-sm btn-danger" onclick="ActionTable('remove','{name}','{conf.tables}{file}')">Очистить</span>
 {foot:}

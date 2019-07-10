@@ -10,6 +10,7 @@ use akiyatkin\showcase\Data;
 use akiyatkin\showcase\Showcase;
 use infrajs\event\Event;
 use infrajs\ans\Ans;
+use akiyatkin\ydisk\Ydisk;
 
 Event::$classes['Showcase-catalog'] = function (&$obj) {
 	return $obj['pos']['producer'].' '.$obj['pos']['article'].' '.$obj['name'];
@@ -24,6 +25,9 @@ class Catalog {
 		$ans['conf'] = Showcase::$conf;
 
 		$action = Ans::REQ('action');
+		if ($action) {
+			Ydisk::replaceAll();
+		}
 		$name = Ans::REQ('name');
 		$src = Ans::REQ('src');
 		$type = Ans::REQ('type','string',$type);
@@ -40,6 +44,9 @@ class Catalog {
 			if ($action == 'remove') $res = Prices::actionRemove($name, $src);
 			if ($action == 'loadAll') $res = Prices::actionLoadAll();
 		}
+		//echo $name;
+		//exit;
+		if ($action == 'loadproducer') $res = Catalog::actionLoadProducer($name);
 		if ($action == 'clearAll') $res = Data::actionClearAll();
 		if ($action == 'addFiles') $res = Data::actionAddFiles($name);
 		if ($action == 'addFilesAll') $res = Data::actionAddFiles();
@@ -67,13 +74,44 @@ class Catalog {
 		}
 		return $options;
 	}
+	
+	public static function actionLoadProducer($producer_nick) {
+		$options = Catalog::getList();
+		$res = [];
+		foreach ($options as $name => $row) {
+			if (empty($row['isfile'])) {
+				if (!empty($row['icount'])) {
+					$res['Данные - удаляем данные удалённого файла '.$name] = Catalog::actionRemove($name);
+				}
+			} else if (!$row['producer_nick'] || $row['producer_nick'] == $producer_nick) {
+				$src = Showcase::$conf['tables'].$row['file'];
+				$res['Данные - вносим '.$name] = Catalog::actionLoad($name, $src);
+			}
+
+			
+		}
+		$options = Prices::getList();
+		foreach ($options as $name => $row) {
+			if (empty($row['isfile'])) {
+				if (!empty($row['icount'])) {
+					$src = Showcase::$conf['pricessrc'].$row['file'];
+					$res['Прайс - удаляем '.$name] = Prices::actionRemove($name, $src);
+				}
+			} else if (!$row['producer_nick'] || $row['producer_nick'] == $producer_nick) {
+				$src = Showcase::$conf['pricessrc'].$row['file'];
+				$res['Прайс - вносим '.$name] = Prices::actionLoad($name, $src);
+			}
+		}
+
+		return $res;
+	}
 	public static function actionLoadAll() {
 		$options = Catalog::getList();
 		$res = [];
 		foreach ($options as $name => $row) {
 			if (empty($row['isfile'])) {
 				if (!empty($row['icount'])) {
-					$res['Данные - удаляем параметров '.$name] = Catalog::actionRemove($name);
+					$res['Данные - удаляем данные удалённого файла '.$name] = Catalog::actionRemove($name);
 				}
 			} else {
 				if (!isset($row['time']) || $row['time'] < $row['mtime']) {

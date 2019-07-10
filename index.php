@@ -86,7 +86,14 @@ echo Rest::get( function () {
 
 	}, function ($a, $producer_nick){
 		$ans = Catalog::action();
+		
+		$prod = Data::fetch('SELECT producer_id, producer, producer_nick from showcase_producers where producer_nick = ?',[$producer_nick]);
 
+		if ($prod) {
+			$ans['producer'] = $prod['producer'];
+			$ans['producer_nick'] = $prod['producer_nick'];
+		}
+		
 		$ans += Data::getProducers($producer_nick);
 		
 		if (isset($ans['catalog'])) {
@@ -106,8 +113,9 @@ echo Rest::get( function () {
 			if ($p['producer_nick'] != $producer_nick && !isset($plist[$name])) unset($options[$name]);
 		}
 		$ans['plist'] = $options;
-
 		$options = Catalog::getList();
+
+		
 		
 		foreach ($options as $name => $p) {
 			if ($p['producer_nick'] != $producer_nick && !isset($clist[$name])) unset($options[$name]);
