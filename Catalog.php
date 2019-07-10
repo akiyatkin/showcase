@@ -17,6 +17,10 @@ Event::$classes['Showcase-catalog'] = function (&$obj) {
 };
 class Catalog {
 	public static function action($type = 'table') {
+		$action = Ans::REQ('action');
+		if ($action) {
+			Ydisk::replaceAll();
+		}
 		Catalog::init();
 		Prices::init();
 		
@@ -24,10 +28,7 @@ class Catalog {
 		$ans['post'] = $_POST;
 		$ans['conf'] = Showcase::$conf;
 
-		$action = Ans::REQ('action');
-		if ($action) {
-			Ydisk::replaceAll();
-		}
+		
 		$name = Ans::REQ('name');
 		$src = Ans::REQ('src');
 		$type = Ans::REQ('type','string',$type);

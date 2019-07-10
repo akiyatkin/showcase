@@ -790,12 +790,12 @@ class Data {
 		if (empty($skip['Пояснения'])) $skip['Пояснения'] = ['Сообщение и сколько позиций оно затрагивает'=>1];
 		if (empty($skip['Без картинок'])) $skip['Без картинок'] = 0;
 		if (empty($skip['Без цен'])) $skip['Без цен'] = 0;
-		if (empty($skip['Ошибки прайса'])) $skip['Ошибки прайса'] = 0;
+		if (empty($skip['Ошибки прайсов'])) $skip['Ошибки прайсов'] = 0;
 		if (empty($skip['Ошибки каталога'])) $skip['Ошибки каталога'] = 0;
 
 		$costs = $prod['Без картинок'] - $skip['Без картинок'];
 		$images = $prod['Без цен'] - $skip['Без цен'];
-		$prices = $prod['Ошибки прайса'] - $skip['Ошибки прайса'];
+		$prices = $prod['Ошибки прайсов'] - $skip['Ошибки прайсов'];
 		$tables = $prod['Ошибки каталога'] - $skip['Ошибки каталога'];
 
 		$errs = ($prices!=0?1:0) + ($images!=0?1:0) + ($costs!=0?1:0) + ($tables!=0?1:0);
@@ -808,6 +808,7 @@ class Data {
 	public static function getProducers($producer_nick = false) {
 		$cost_id = Data::initProp("Цена");
 		$image_id = Data::initProp("images");
+		$price_id = Data::initProp("Прайс");
 		$opt = Data::getOptions();
 		if ($producer_nick) {
 			$list = Data::fetch('SELECT p.producer, p.logo, p.producer_nick, 
@@ -844,15 +845,19 @@ class Data {
 				$list += $opt['producers'][$producer_nick];
 			}
 
-			$options = Prices::getList();
-			$list['Ошибки прайса'] = 0;
-			foreach($options as $name => $p) {
-				if ($p['producer_nick'] == $producer_nick) {
-					if (empty($p['ans']['Ошибки прайса'])) continue;
-					$list['Ошибки прайса'] += sizeof($p['ans']['Ошибки прайса']);
-				}
-			}
+			
 
+
+			//Есть в каталоге, но нет в прайсе
+			$prices = Data::col('SELECT count(DISTINCT m.model_id) FROM showcase_models m
+				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)
+				inner join showcase_mvalues n on (n.model_id = m.model_id and n.prop_id = :price_id)
+				',[':price_id'=>$price_id,':producer_nick'=>$producer_nick]);
+			$list['Ошибки прайсов'] = $list['count'] - $prices;
+
+			
+			//Есть в прайсе, но нет в каталоге
+			$options = Prices::getList();
 			$list['Ошибки каталога'] = 0;
 			foreach($options as $name => $p) {
 				if ($p['producer_nick'] == $producer_nick) {
@@ -881,6 +886,7 @@ class Data {
 				GROUP BY p.producer_nick
 				','producer_nick');
 
+
 			$costs = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id)
 				inner join showcase_mnumbers n on (n.model_id = m.model_id and n.prop_id = :cost_id)
@@ -893,30 +899,49 @@ class Data {
 					$list[$i]['Без цен'] = $listcost[$row['producer_nick']]['count'];
 				}
 			}
+
 			$images = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id)
 				inner join showcase_mvalues n on (n.model_id = m.model_id and n.prop_id = :image_id)
 				GROUP BY m.producer_id
 				','producer_nick', [':image_id'=>$image_id]);
-
-			$options = Prices::getList();
 			foreach($list as $i => $row) {
 				if (isset($images[$row['producer_nick']])) {
 					$list[$i]['Без картинок'] = $listcost[$row['producer_nick']]['count'] - $images[$row['producer_nick']]['count'];	
 				} else {
 					$list[$i]['Без картинок'] = $listcost[$row['producer_nick']]['count'];
 				}
+			}
+
+			$prices = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
+				inner join showcase_producers pr on (m.producer_id = pr.producer_id)
+				inner join showcase_mvalues n on (n.model_id = m.model_id and n.prop_id = :price_id)
+				GROUP BY m.producer_id
+				','producer_nick', [':price_id'=>$price_id]);
+			foreach($list as $i => $row) {
+				if (isset($prices[$row['producer_nick']])) {
+					$list[$i]['Ошибки прайсов'] = $listcost[$row['producer_nick']]['count'] - $prices[$row['producer_nick']]['count'];	
+				} else {
+					$list[$i]['Ошибки прайсов'] = $listcost[$row['producer_nick']]['count'];
+				}
+			}
+
+
+
+			$options = Prices::getList();
+			foreach($list as $i => $row) {
+
 				if (isset($opt['producers'][$row['producer_nick']])) {
 					$list[$i] += $opt['producers'][$row['producer_nick']];
 				}
 				
-				$list[$i]['Ошибки прайса'] = 0;
+				/*$list[$i]['Ошибки прайсов'] = 0;
 				foreach($options as $name => $p) {
-					if (empty($p['ans']['Ошибки прайса'])) continue;
+					if (empty($p['ans']['Ошибки прайсов'])) continue;
 					if ($p['producer_nick'] == $row['producer_nick']) {
-						$list[$i]['Ошибки прайса'] += sizeof($p['ans']['Ошибки прайса']);
+						$list[$i]['Ошибки прайсов'] += sizeof($p['ans']['Ошибки прайсов']);
 					}
-				}
+				}*/
 				$list[$i]['Ошибки каталога'] = 0;
 				foreach($options as $name => $p) {
 					if (empty($p['ans']['Ошибки каталога'])) continue;
