@@ -916,9 +916,10 @@ class Data {
 				inner join showcase_mvalues n on (n.model_id = m.model_id and n.prop_id = :price_id)
 				GROUP BY m.producer_id
 				','producer_nick', [':price_id'=>$price_id]);
+			
 			foreach($list as $i => $row) {
 				if (isset($prices[$row['producer_nick']])) {
-					$list[$i]['Ошибки каталога'] = $listcost[$row['producer_nick']]['count'] - $prices[$row['producer_nick']]['count'];	
+					$list[$i]['Ошибки каталога'] = $listcost[$row['producer_nick']]['count'] - $prices[$row['producer_nick']]['count'];
 				} else {
 					$list[$i]['Ошибки каталога'] = $listcost[$row['producer_nick']]['count'];
 				}
@@ -940,13 +941,13 @@ class Data {
 						$list[$i]['Ошибки прайсов'] += sizeof($p['ans']['Ошибки прайсов']);
 					}
 				}*/
-				$list[$i]['Ошибки каталога'] = 0;
+				/*$list[$i]['Ошибки каталога'] = 0;
 				foreach($options as $name => $p) {
 					if (empty($p['ans']['Ошибки каталога'])) continue;
 					if ($p['producer_nick'] == $row['producer_nick']) {
 						$list[$i]['Ошибки каталога'] += sizeof($p['ans']['Ошибки каталога']);
 					}
-				}
+				}*/
 				Data::checkCls($list[$i]);
 			}
 

@@ -74,7 +74,7 @@
 		<h1>Производители</h1>
 		{list::producer}
 		{:foot}
-	{producer:}<div class="alert alert-{cls}"><a href="/-showcase/producers/{producer_nick}">{producer}</a> <div class="float-right">{logo:pic}</div> {:prodinfo}</div>
+	{producer:}<div class="alert alert-{cls}"><a href="/-showcase/producers/{producer_nick}">{producer}</a> <div class="float-right">{logo:pic}</div> {:prodinfo} {skip:skip}</div>
 {GROUPS:}
 	{:menu}
 	<h1>Группы</h1>
