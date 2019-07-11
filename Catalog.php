@@ -21,6 +21,7 @@ class Catalog {
 		if ($action) {
 			Ydisk::replaceAll();
 		}
+		Path::reqif(Showcase::$conf['phpoptions']);
 		Catalog::init();
 		Prices::init();
 		

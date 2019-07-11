@@ -11,7 +11,9 @@ use akiyatkin\showcase\Showcase;
 date_default_timezone_set("Europe/Samara");
 
 if (Showcase::$conf['checkaccess']) Access::debug(true);
+
 ob_start();
+
 echo Rest::get( function () {
 	$ans = [];
 	$ans['count'] = Data::col('SELECT count(*) as `count` from showcase_models');
@@ -85,6 +87,7 @@ echo Rest::get( function () {
 	return Rest::parse('-showcase/index.tpl', $ans, 'PRODUCERS');
 
 	}, function ($a, $producer_nick){
+
 		$ans = Catalog::action();
 		
 		$prod = Data::fetch('SELECT producer_id, producer, producer_nick from showcase_producers where producer_nick = ?',[$producer_nick]);

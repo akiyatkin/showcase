@@ -147,5 +147,3 @@ Showcase::add('more', function () {
 	}
 	return !!$val;
 });
-
-Path::reqif(Showcase::$conf['phpoptions']);
