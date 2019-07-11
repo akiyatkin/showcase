@@ -790,20 +790,18 @@ class Data {
 		if (empty($skip['Пояснения'])) $skip['Пояснения'] = ['Сообщение и сколько позиций оно затрагивает'=>1];
 		if (empty($skip['Без картинок'])) $skip['Без картинок'] = 0;
 		if (empty($skip['Без цен'])) $skip['Без цен'] = 0;
-		if (empty($skip['Ошибки прайсов'])) $skip['Ошибки прайсов'] = 0;
 		if (empty($skip['Ошибки каталога'])) $skip['Ошибки каталога'] = 0;
+		//if (empty($skip['Ошибки каталога'])) $skip['Ошибки каталога'] = 0;
 
 		$costs = $prod['Без картинок'] - $skip['Без картинок'];
 		$images = $prod['Без цен'] - $skip['Без цен'];
-		$prices = $prod['Ошибки прайсов'] - $skip['Ошибки прайсов'];
 		$tables = $prod['Ошибки каталога'] - $skip['Ошибки каталога'];
 
-		$errs = ($prices!=0?1:0) + ($images!=0?1:0) + ($costs!=0?1:0) + ($tables!=0?1:0);
+		$errs = ($images!=0?1:0) + ($costs!=0?1:0) + ($tables!=0?1:0);
 		if ($errs === 0)  $prod['cls'] = 'success';
-		if ($errs === 1)  $prod['cls'] = 'info';
-		if ($errs === 2)  $prod['cls'] = 'primary';
-		if ($errs === 3)  $prod['cls'] = 'warning';
-		if ($errs === 4)  $prod['cls'] = 'danger';
+		if ($errs === 1)  $prod['cls'] = 'primary';
+		if ($errs === 2)  $prod['cls'] = 'warning';
+		if ($errs === 3)  $prod['cls'] = 'danger';
 	}
 	public static function getProducers($producer_nick = false) {
 		$cost_id = Data::initProp("Цена");
@@ -853,18 +851,18 @@ class Data {
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)
 				inner join showcase_mvalues n on (n.model_id = m.model_id and n.prop_id = :price_id)
 				',[':price_id'=>$price_id,':producer_nick'=>$producer_nick]);
-			$list['Ошибки прайсов'] = $list['count'] - $prices;
+			$list['Ошибки каталога'] = $list['count'] - $prices;
 
 			
 			//Есть в прайсе, но нет в каталоге
-			$options = Prices::getList();
+			/*$options = Prices::getList();
 			$list['Ошибки каталога'] = 0;
 			foreach($options as $name => $p) {
 				if ($p['producer_nick'] == $producer_nick) {
 					if (empty($p['ans']['Ошибки каталога'])) continue;
 					$list['Ошибки каталога'] += sizeof($p['ans']['Ошибки каталога']);
 				}
-			}
+			}*/
 			Data::checkCls($list);
 
 			return $list;
@@ -920,9 +918,9 @@ class Data {
 				','producer_nick', [':price_id'=>$price_id]);
 			foreach($list as $i => $row) {
 				if (isset($prices[$row['producer_nick']])) {
-					$list[$i]['Ошибки прайсов'] = $listcost[$row['producer_nick']]['count'] - $prices[$row['producer_nick']]['count'];	
+					$list[$i]['Ошибки каталога'] = $listcost[$row['producer_nick']]['count'] - $prices[$row['producer_nick']]['count'];	
 				} else {
-					$list[$i]['Ошибки прайсов'] = $listcost[$row['producer_nick']]['count'];
+					$list[$i]['Ошибки каталога'] = $listcost[$row['producer_nick']]['count'];
 				}
 			}
 

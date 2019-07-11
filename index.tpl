@@ -67,7 +67,8 @@
 	{skip:}
 	<span class="a" onclick="$(this).next().slideToggle()">skip</span>.
 	<div style="display:none">{~print(.)}</div>
-	{prodinfo:}Моделей: <b><a href="/catalog/{producer_nick}">{count}</a></b>, без цен: <b><a href="/catalog/{producer_nick}?m=:more.Цена.no=1">{Без цен}</a></b>, без картинок: <b><a href="/catalog/{producer_nick}?m=:more.images.no=1">{Без картинок}</a></b>, ошибки прайсов: <b><a href="/catalog/{producer_nick}?m=:more.Прайс.no=1">{Ошибки прайсов}</a></b>, ошибки каталога: <b><a href="/-showcase/producers/{producer_nick}">{Ошибки каталога}</a></b>
+	{prodinfo:}Моделей: <b><a href="/catalog/{producer_nick}">{count}</a></b>, без цен: <b><a href="/catalog/{producer_nick}?m=:more.Цена.no=1">{Без цен}</a></b>, без картинок: <b><a href="/catalog/{producer_nick}?m=:more.images.no=1">{Без картинок}</a></b>, 
+	Ошибки каталога: <b><a href="/catalog/{producer_nick}?m=:more.Прайс.no=1">{Ошибки каталога}</a></b>
 {PRODUCERS:}
 		{:menu}
 		<h1>Производители</h1>
