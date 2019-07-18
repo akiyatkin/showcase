@@ -290,6 +290,7 @@ class Data {
 				INNER JOIN showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = ?)
 				INNER JOIN showcase_props p on (mv.prop_id = p.prop_id and p.prop_id = ?)
 			',[$producer_nick, $prop_id]);
+			
 		} else {
 			$images = Data::all('SELECT mv.text, mv.model_id, mv.item_num FROM showcase_mtexts mv
 				INNER JOIN showcase_props p on mv.prop_id = p.prop_id
@@ -835,7 +836,7 @@ class Data {
 
 			$images = Data::col('SELECT count(DISTINCT m.model_id) FROM showcase_models m
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)
-				inner join showcase_mvalues n on (n.model_id = m.model_id and n.prop_id = :image_id)
+				inner join showcase_mtexts n on (n.model_id = m.model_id and n.prop_id = :image_id)
 				',[':image_id'=>$image_id,':producer_nick'=>$producer_nick]);
 			$list['Без картинок'] = $list['count'] - $images;
 
@@ -901,7 +902,7 @@ class Data {
 
 			$images = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id)
-				inner join showcase_mvalues n on (n.model_id = m.model_id and n.prop_id = :image_id)
+				inner join showcase_mtexts n on (n.model_id = m.model_id and n.prop_id = :image_id)
 				GROUP BY m.producer_id
 				','producer_nick', [':image_id'=>$image_id]);
 			foreach($list as $i => $row) {
