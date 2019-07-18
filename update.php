@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS `showcase_prices` (
 	`order` SMALLINT unsigned COMMENT 'Порядок применнеия данных',
 	`count` SMALLINT unsigned COMMENT 'Количество записей',
 	`duration` SMALLINT unsigned COMMENT 'Записывается время разбора данных',
-	`ans` text NULL COMMENT '',
+	`ans` mediumtext NULL COMMENT '',
 	PRIMARY KEY (`price_id`)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS `showcase_catalog` (
 	`order` SMALLINT unsigned COMMENT 'Порядок определяется при обновлении всех файлов',
 	`count` SMALLINT unsigned COMMENT 'Количество записей',
 	`duration` SMALLINT unsigned COMMENT 'Записывается время разбора данных',
-	`ans` text NULL COMMENT '',
+	`ans` mediumtext NULL COMMENT '',
 	PRIMARY KEY (`catalog_id`)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
@@ -189,10 +189,9 @@ CREATE TABLE IF NOT EXISTS `showcase_mtexts` (
 	`model_id` MEDIUMINT unsigned NOT NULL COMMENT '',
 	`item_num` SMALLINT unsigned NOT NULL COMMENT '',
 	`prop_id` SMALLINT unsigned NOT NULL COMMENT '',
-	`text` text NOT NULL COMMENT '',
+	`text` mediumtext NOT NULL COMMENT '',
 	`price_id` SMALLINT unsigned NULL COMMENT '65 тыс',
 	`order` SMALLINT unsigned NOT NULL COMMENT '',
-	UNIQUE (`model_id`, `item_num`, `prop_id`),
 	INDEX (model_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 END;

@@ -86,6 +86,9 @@ class Data {
 		
 		$opt['texts'][] = 'Описание';
 		$opt['texts'][] = 'Наименование';
+		$opt['texts'][] = 'Иллюстрации';
+		foreach (Data::$files as $f) $opt['texts'][] = $f; //Все пути текстовые
+
 		$opt['texts'] = array_unique($opt['texts']);
 
 		return $opt;
@@ -266,40 +269,38 @@ class Data {
 	public static function removeFiles($producer_nick){
 		if ($producer_nick) {
 			foreach (Data::$files as $type) {
-				$prop_id = Data::initProp($type, 'value'); //Удаляем все параметры связаные с файлами images, files, texts
-				$r = Data::exec('DELETE mv FROM showcase_mvalues mv, showcase_models m, showcase_producers pr
+				$prop_id = Data::initProp($type, 'text'); //Удаляем все параметры связаные с файлами images, files, texts
+				$r = Data::exec('DELETE mv FROM showcase_mtexts mv, showcase_models m, showcase_producers pr
 					WHERE m.model_id = mv.model_id and m.producer_id = pr.producer_id and pr.producer_nick = ?
 					and mv.prop_id = ?', [$producer_nick, $prop_id]);	
 			}
 		} else {
 			foreach (Data::$files as $type) {
-				$prop_id = Data::initProp($type, 'value'); //Удаляем все параметры связаные с файлами images, files, texts
-				Data::exec('DELETE FROM `showcase_mvalues` where prop_id = ?', [$prop_id]);	
+				$prop_id = Data::initProp($type, 'text'); //Удаляем все параметры связаные с файлами images, files, texts
+				Data::exec('DELETE FROM `showcase_mtexts` where prop_id = ?', [$prop_id]);	
 			}
 		}
 		
 	}
 	public static function applyIllustracii($producer_nick) {
-		$prop_id = Data::initProp('Иллюстрации','value');
+		$prop_id = Data::initProp('Иллюстрации','text');
 		if ($producer_nick) {
-			$images = Data::all('SELECT p.prop, v.value_id, v.value, mv.model_id, mv.item_num FROM showcase_mvalues mv
+			$images = Data::all('SELECT p.prop, mv.text, mv.model_id, mv.item_num FROM showcase_mtexts mv
 				INNER JOIN showcase_models m on (m.model_id = mv.model_id)
 				INNER JOIN showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = ?)
 				INNER JOIN showcase_props p on (mv.prop_id = p.prop_id and p.prop_id = ?)
-				INNER JOIN showcase_values v on v.value_id = mv.value_id
 			',[$producer_nick, $prop_id]);
 		} else {
-			$images = Data::all('SELECT v.value_id, v.value, mv.model_id, mv.item_num FROM showcase_mvalues mv
+			$images = Data::all('SELECT mv.text, mv.model_id, mv.item_num FROM showcase_mtexts mv
 				INNER JOIN showcase_props p on mv.prop_id = p.prop_id
-				INNER JOIN showcase_values v on v.value_id = mv.value_id
 				where p.prop_id = ?
 			',[$prop_id]);
 		}
-		$prop_id = Data::initProp('images','value');
+		$prop_id = Data::initProp('images','text');
 		foreach ($images as $pos) {
 			Data::exec(
-				'INSERT INTO showcase_mvalues (model_id, item_num, prop_id, value_id) VALUES(?,?,?,?)',
-				[$pos['model_id'], $pos['item_num'], $prop_id, $pos['value_id']]
+				'INSERT INTO showcase_mtexts (model_id, item_num, prop_id, `text`) VALUES(?,?,?,?)',
+				[$pos['model_id'], $pos['item_num'], $prop_id, $pos['text']]
 			);
 		}
 		return sizeof($images);
@@ -354,7 +355,7 @@ class Data {
 			Data::removeFiles($producer_nick);
 
 			$pid = [];
-			foreach (Data::$files as $type) $pid[$type] = Data::initProp($type, 'value');
+			foreach (Data::$files as $type) $pid[$type] = Data::initProp($type, 'text');
 
 			Data::applyIllustracii($producer_nick);
 			$ans['Файлов'] = 0;
@@ -388,18 +389,18 @@ class Data {
 					foreach ($items as $item_num => $files) {
 						foreach ($files as $src => $type) { //Все эти файлы относятся к найденной модели
 							$order++;
-							$value_id = Data::initValue($src);
+							//$value_id = Data::initValue($src);
 							$ans['Найденные файлы'][$src] = true;
 							unset($ans['Бесхозные файлы'][$src]);
-							if (isset($values[$value_id])) {
+							/*if (isset($values[$value_id])) {
 								continue; //Дубли одного пути или похоже пути из-за Path encode путь может давайть одинаковый value_nick в этом случае похожий путь будет проигнорирован
 							}
-							$values[$value_id] = true;
+							$values[$value_id] = true;*/
 							$prop_id = $pid[$type];
 
 							Data::exec(
-								'INSERT INTO showcase_mvalues (model_id, item_num, prop_id, value_id, `order`) VALUES(?,?,?,?,?)',
-								[$model_id, $item_num, $prop_id, $value_id, $order]
+								'INSERT INTO showcase_mtexts (model_id, item_num, prop_id, `text`, `order`) VALUES(?,?,?,?,?)',
+								[$model_id, $item_num, $prop_id, $src, $order]
 							);
 
 							//print_r([$producer_id, $article_id, $num, $value_id]);
