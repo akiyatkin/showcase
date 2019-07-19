@@ -418,13 +418,13 @@ class Showcase {
 			LEFT JOIN showcase_articles a on a.article_id = m.article_id
 			LEFT JOIN showcase_mnumbers mn on (mn.model_id = m.model_id and (mn.item_num = i.item_num or mn.item_num = 0) and mn.prop_id = :cost_id)
 			LEFT JOIN showcase_mvalues mn2 on (mn2.model_id = m.model_id and (mn2.item_num = i.item_num or mn2.item_num = 0) and mn2.prop_id = :nalichie_id)
-			LEFT JOIN showcase_mvalues mn3 on (mn3.model_id = m.model_id and (mn3.item_num = i.item_num or mn3.item_num = 0) and mn3.prop_id = :image_id)
+			LEFT JOIN showcase_mtexts mn3 on (mn3.model_id = m.model_id and (mn3.item_num = i.item_num or mn3.item_num = 0) and mn3.prop_id = :image_id)
 			'.$join.'
 			WHERE 1=1 '.$grquery.' '.$prquery.' '.$no.'
 			GROUP BY pr.producer_id, a.article_id
 			ORDER BY 
 			'.$sort.'
-			IF(mn3.value_id is null,1,0),
+			IF(mn3.text is null,1,0),
 			IF(mn2.value_id = :nal1,0,1),
 			IF(mn2.value_id = :nal2,0,1), 
 			IF(mn2.value_id = :nal3,0,1), 
@@ -446,12 +446,11 @@ class Showcase {
 
 
 		$groups = Data::fetchto('
-			SELECT max(v.value) as img, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_models m
+			SELECT max(mn3.text) as img, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_models m
 			LEFT JOIN showcase_groups g on g.group_id = m.group_id
 			LEFT JOIN showcase_producers pr on pr.producer_id = m.producer_id
 			LEFT JOIN showcase_articles a on a.article_id = m.article_id
-			LEFT JOIN showcase_mvalues mn3 on (mn3.model_id = m.model_id and mn3.prop_id = :image_id)
-			LEFT JOIN showcase_values v on mn3.value_id = v.value_id
+			LEFT JOIN showcase_mtexts mn3 on (mn3.model_id = m.model_id and mn3.prop_id = :image_id)
 			'.$join.'
 			WHERE 1=1 '.$grquery.' '.$prquery.' '.$no.'
 			GROUP BY m.group_id
