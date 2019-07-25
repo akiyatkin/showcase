@@ -191,7 +191,7 @@ return Rest::get( function () {
 			
 			if (!$ans['pos']) {
 				$ans['breadcrumbs'][] = array('href'=>'producers','title'=>'Производители');
-				$ans['breadcrumbs'][] = array('href'=>'','title'=>$producer_nick,'href'=>$producer_nick);
+				//$ans['breadcrumbs'][] = array('href'=>'','title'=>$producer_nick,'href'=>$producer_nick);
 				$ans['breadcrumbs'][] = array('active'=>true, 'title'=>$active);
 				return Ans::err($ans);
 			}
@@ -201,8 +201,8 @@ return Rest::get( function () {
 				$group = Showcase::getGroup($p);
 				$ans['breadcrumbs'][] = array('title'=>$group['group'],'href'=>$p);
 			}, $ans['pos']['path']);
-			$ans['breadcrumbs'][] = array('href'=>$producer_nick, 'title'=>$ans['pos']['producer']);
-			$ans['breadcrumbs'][] = array('active'=>true, 'title'=>$active);
+			//$ans['breadcrumbs'][] = array('href'=>$producer_nick, 'title'=>$ans['pos']['producer']);
+			$ans['breadcrumbs'][] = array('active'=>true, 'title'=>$ans['pos']['producer'].'&nbsp;'.$active);
 			return Ans::ret($ans);
 
 		}]
