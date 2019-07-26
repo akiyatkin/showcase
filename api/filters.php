@@ -4,6 +4,8 @@ use akiyatkin\showcase\Data;
 use infrajs\ans\Ans;
 use infrajs\rest\Rest;
 use infrajs\load\Load;
+use infrajs\path\Path;
+use infrajs\excel\Xlsx;
 
 
 return Rest::get( function () {
@@ -163,12 +165,62 @@ return Rest::get( function () {
 		}
 	}
 	$columns = ['producer'];//Showcase::getOption(['columns']);
+	/*
+	Обработка параметров в showcase.json каждого фильтра
+	- showalways
+	- tpl
+
+	chain выбор
+	- json
+	- key
+
+	*/
+
 	foreach ($params as $k=>$p) {
 		if (!in_array($k, $columns)) $params[$k]['more'] = true;
 
-		$params[$k] += Showcase::getOption(['filters','props',$p['prop_nick']],['tpl'=>'prop-select']);
+		$params[$k] += Showcase::getOption(['filters','props',$p['prop_nick']],['tpl'=>'prop-default']);
 
-		if (empty($params[$k]['showalways']) && empty($ans['md'][$p['prop_nick']]) && isset($params[$k]['values']) && sizeof($p['values'])<2) unset($params[$k]);
+		$p = $params[$k];
+		if (isset($p['chain'])) {
+			$data = Load::loadJSON($p['chain']);
+			$data = $data['data'];
+			$chain = [];
+			$el = array_reverse($data['head']);
+
+			$vals = array_reduce($p['values'], function($vals, $v){
+				$vals[$v['value_nick']] = 1;
+				return $vals;
+			},[]);
+
+			Xlsx::runPoss($data, function($pos) use (&$list, $p, &$chain, $el, $vals) {
+				$keyval = Path::encode($pos[$el[sizeof($el)-1]]);
+				if (!isset($vals[$keyval])) return;
+				array_reduce($el, function ($ar, $key) use($pos, &$chain, &$last){
+					$child = &$ar[0];
+					if(empty($child['childs'])) $child['childs'] = [];
+					$child['key'] = $key;
+					$val = $pos[$key];
+					$nick = Path::encode($val);
+					if (empty($child['childs'][$nick])) $child['childs'][$nick] = ['value'=>$val,'nick'=>$nick];
+					return [&$child['childs'][$nick]];
+				}, [&$chain]);
+			});
+
+			
+			$params[$k]['chain'] = $chain;
+			//unset($params[$k]['values']);
+		}
+
+
+		if (
+			empty($params[$k]['showalways']) 
+			&& empty($ans['md'][$p['prop_nick']]) 
+			&& isset($params[$k]['values']) 
+			&& sizeof($p['values'])<2) 
+		{
+			unset($params[$k]);
+		}
 	}
 	
 	$ans['list'] = $params;
