@@ -146,10 +146,10 @@ class Showcase {
 		}
 		return $groups;
 	}
-	public static function getGroupsIn($md) {
+	public static function getGroupsIn($md = []) {
 		
 		$groups = [];
-		foreach ($md['group'] as $group => $one) {
+		if (!empty($md['group'])) foreach ($md['group'] as $group => $one) {
 			$group_id = Data::col('SELECT group_id from showcase_groups where group_nick = ?',[$group]);
 			if ($group_id == 1) {
 				$groups = [];
@@ -166,8 +166,10 @@ class Showcase {
 		return $groups;
 		
 	}
-	public static function search($md, &$ans, $page = 1) {
-		$count = $md['count'];
+	public static function search($md = false, &$ans = array(), $page = 1) {
+		if (empty($md['count'])) $count = 0;
+		else $count = $md['count'];
+
 		$cost_id = Data::initProp("Цена");
 		$image_id = Data::initProp("images");
 		$nalichie_id = Data::initProp("Наличие на складе");
@@ -181,7 +183,7 @@ class Showcase {
 		}
 		$prquery = '';
 		$prods = [];
-		foreach ($md['producer'] as $prod => $one) {
+		if(!empty($md['producer'])) foreach ($md['producer'] as $prod => $one) {
 			$prod = Data::fetch('SELECT producer_id, producer, producer_nick from showcase_producers where producer_nick = ?',[$prod]);
 			if ($prod) $prods[] = $prod;
 		}
@@ -204,7 +206,7 @@ class Showcase {
 		$join = [];
 		$no = [];
 		
-		foreach ($md['more'] as $prop_nick => $vals) {
+		if(!empty($md['more'])) foreach ($md['more'] as $prop_nick => $vals) {
 			
 			$titles = [];
 			foreach ($vals as $v => $one) {
@@ -273,7 +275,32 @@ class Showcase {
 					unset($vals['yes']);
 					$join[] = 'INNER JOIN showcase_mvalues p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
 				}
-				
+			} else if ($type == 'text') {
+				if (!empty($vals['no'])) {
+					
+					$join[] = 'LEFT JOIN showcase_mtexts p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
+
+					
+					$no[] = 'and (p'.$un.'.text is null)';
+					//Только no
+					unset($vals['no']);
+					
+					
+					if ($vals) {
+						$joinp = [];
+						foreach ($vals as $val => $one) {
+							$joinp[] = 'p'.$un.'.text = '.$val;
+						}
+						$vals = [];
+						$joinp = implode(' OR ', $joinp);
+						$no[] = 'and (p'.$un.'.text is null OR ('.$joinp.'))';
+					}
+					
+
+				} else if (isset($vals['yes'])) {
+					unset($vals['yes']);
+					$join[] = 'INNER JOIN showcase_mtexts p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
+				}
 			} else if ($type == 'number') {
 				if (!empty($vals['no']) || !empty($vals['minmax'])) {
 					
@@ -405,11 +432,14 @@ class Showcase {
 		
 		$no = implode(' ', $no);	
 		$start = ($page-1)*$count;
-		if($md['sort'] == 'items') {
+
+		if (!empty($md['sort']) && $md['sort'] == 'items') {
 			$sort = 'IF(i.item_nick = "",1,0),';
 		} else {
 			$sort = '';
 		}
+		if ($count) $limit = 'limit '.$start.','.$count;
+		else $limit = '';
 		$sql = '
 			SELECT SQL_CALC_FOUND_ROWS max(i.item_nick) as item_nick, mn.number, a.article_nick, pr.producer_nick, GROUP_CONCAT(m.group_id) from showcase_items i
 			LEFT JOIN showcase_models m on i.model_id = m.model_id
@@ -430,11 +460,12 @@ class Showcase {
 			IF(mn2.value_id = :nal3,0,1), 
 			IF(mn.number IS NULL,1,0), 
 			mn.number
-			limit '.$start.','.$count;
+			'.$limit.'
+			';
 		//echo '<pre>';
 		//echo $sql;
 		//print_r($md);
-
+		
 		$models = Data::all($sql, [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id, 
 			':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3]
 		);
@@ -510,11 +541,14 @@ class Showcase {
 			}
 		}
 		if (sizeof($ans['childs']) == 1) unset($ans['childs']);
-		$pages = ceil($size / $count);
-		if ($pages < $page) $page = $pages;
-		$ans['count'] = (int) $size;
+		if ($count) {
+			$pages = ceil($size / $count);
+			if ($pages < $page) $page = $pages;
+			$ans['count'] = (int) $size;
 
-		$ans['numbers'] = Showcase::numbers($page, $pages, 7);
+			$ans['numbers'] = Showcase::numbers($page, $pages, 7);
+		}
+		return $ans;
 	}
 
 
