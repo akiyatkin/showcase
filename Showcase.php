@@ -16,7 +16,6 @@ use infrajs\ans\Ans;
 use infrajs\sequence\Sequence as Seq;
 use infrajs\mark\Mark as Marker;
 
-
 Event::$classes['Showcase-position'] = function ($pos) {
 	$id = $pos['producer_nick'].' '.$pos['article_nick'];
 	if (!empty($pos['item_nick'])) $id .= ' '.$pos['item_nick'];

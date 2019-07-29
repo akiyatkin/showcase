@@ -1,6 +1,7 @@
 {
 	"pub":["hiddenarticle"],
 	"conf":"akiyatkin\\showcase\\Showcase",
+	"dependencies":["ydisk"],
 	"require":"infra.php",
 	"update":"update.php",
 	"title":"Каталог",
