@@ -377,9 +377,8 @@ class Data {
 				$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$prod]);
 				foreach ($arts as $art => $items) {
 					
-					$altart = str_ireplace($prod, '', $art); //Удалили из артикула продусера
+					$altart = str_ireplace(mb_strtolower($prod), '', $art); //Удалили из артикула продусера
 					$altart = Path::encode($altart);
-
 					$model_id = Data::col('SELECT m.model_id
 						FROM showcase_models m
 						INNER JOIN showcase_articles a on (m.article_id = a.article_id and (a.article_nick = ? or a.article_nick = ?))
