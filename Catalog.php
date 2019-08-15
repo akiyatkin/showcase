@@ -20,7 +20,9 @@ class Catalog {
 		$action = Ans::GET('action');
 		if (!$action) {
 			$action = Ans::REQ('action');
-			Ydisk::replaceAll();
+			if ($action) {
+				Ydisk::replaceAll();
+			}
 		}
 		
 		
