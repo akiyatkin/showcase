@@ -17,11 +17,12 @@ Event::$classes['Showcase-catalog'] = function (&$obj) {
 };
 class Catalog {
 	public static function action($type = 'table') {
-		$action = Ans::POST('action');
-		if ($action) {
+		$action = Ans::GET('action');
+		if (!$action) {
+			$action = Ans::REQ('action');
 			Ydisk::replaceAll();
 		}
-		$action = Ans::REQ('action');
+		
 		
 		Catalog::init();
 		Prices::init();
