@@ -437,6 +437,14 @@ class Showcase {
 		} else {
 			$sort = '';
 		}
+
+		if ($md['reverse']) {
+			$asc = "DESC";
+		} else {
+			$asc = "ASC";
+		}
+		
+
 		if ($count) $limit = 'limit '.$start.','.$count;
 		else $limit = '';
 		$sql = '
@@ -458,7 +466,7 @@ class Showcase {
 			IF(mn2.value_id = :nal2,0,1), 
 			IF(mn2.value_id = :nal3,0,1), 
 			IF(mn.number IS NULL,1,0), 
-			mn.number
+			mn.number '.$asc.'
 			'.$limit.'
 			';
 		//echo '<pre>';
