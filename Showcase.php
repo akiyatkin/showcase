@@ -547,7 +547,11 @@ class Showcase {
 				unset($ans['childs'][$i]['childs'][$ii]['childs']);
 			}
 		}
-		//if (sizeof($ans['childs']) == 1) unset($ans['childs']);
+		if (sizeof($ans['childs']) == 1 && isset($ans['group'])) {
+			if ($ans['childs'][0]['group_nick'] == $ans['group']['group_nick']) {
+				unset($ans['childs']);
+			}
+		}
 		if ($count) {
 			$pages = ceil($size / $count);
 			if ($pages < $page) $page = $pages;
