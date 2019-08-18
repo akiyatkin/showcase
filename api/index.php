@@ -97,7 +97,7 @@ return Rest::get( function () {
 		$art = Ans::GET('art');
 		$md = Showcase::initMark($ans, $val, $art);
 
-		$link = $_GET['seo'];
+		$link = Ans::GET('seo','string','');
 		
 		if ($md['group']){
 			foreach($md['group'] as $val => $one) break;
