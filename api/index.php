@@ -51,15 +51,9 @@ return Rest::get( function () {
 		$ans = [];
 		$link = Ans::GET('seo');
 		$link = $link.'/producers';
-		$seofile = Showcase::$conf['grouparticles'].'producers.json';
-		if (Path::theme($seofile)) {
-			$ans['external'] = $seofile;
-		} else {
-			$ans['title'] = 'Производители';
-			$seofile = Showcase::$conf['grouparticles'].'seo.json';
-			if (Path::theme($seofile)) $ans['external'] = $seofile;
-		}
+		$ans['title'] = 'Производители';
 		$ans['canonical'] = View::getPath().$link;
+
 		return Ans::ans($ans);	
 }], 'search', [function (){
 
@@ -83,7 +77,7 @@ return Rest::get( function () {
 
 		Showcase::search($md, $ans, $ans['page']);
 
-		$src  =  Rubrics::find(Showcase::$conf['grouparticles'], $ans['title']);
+		$src  =  Rubrics::find(Showcase::$conf['groups'], $ans['title']);
 		if ($src) {
 			$ans['textinfo']  =  Rubrics::info($src); 
 			$ans['text']  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение каталога, должно быть вне кэша
@@ -112,21 +106,11 @@ return Rest::get( function () {
 
 		unset($ans['md']);
 		unset($ans['m']);
-		$seosrc = Showcase::$conf['grouparticles'].Path::encode(Showcase::$conf['title']).'.json';
-		Path::theme($seosrc);
 		if ($val) {
-			$seofile = Showcase::$conf['grouparticles'].$val.'.json';
-			if (Path::theme($seofile)) {
-				$ans['external']  =  Showcase::$conf['grouparticles'].$val.'.json';
-			} else {
-				if (Path::theme($seosrc)) $ans['external']  =  Showcase::$conf['grouparticles'].Path::encode(Showcase::$conf['title']).'.json';
-				$title = $val;
-				$group = Showcase::getGroup($val);
-				if ($group) $title = $group['group'];
-				$ans['title']  =  $title;
-			}
-		} else {
-			if (Path::theme($seosrc)) $ans['external']  =  Showcase::$conf['grouparticles'].Path::encode(Showcase::$conf['title']).'.json';
+			$title = $val;
+			$group = Showcase::getGroup($val);
+			if ($group) $title = $group['group'];
+			$ans['title']  =  $title;
 		}
 		$ans['canonical']  =  View::getPath().$link;
 		return Ans::ans($ans);
@@ -150,8 +134,6 @@ return Rest::get( function () {
 		$link = strip_tags(Ans::GET('seo'));
 		$link = $link.'/'.urlencode($pos['producer']).'/'.urlencode($pos['article']);
 
-		$seosrc = Showcase::$conf['grouparticles'].Path::encode(Showcase::$conf['title']).'.json';
-		if (Path::theme($seosrc)) $ans['external'] = $seosrc;
 		$ans['title'] = $pos['producer'].' '.$pos['article'];
 		if(!empty($pos['Наименование'])) $ans['title'] = $pos['Наименование'].' '.$ans['title'];
 		$ans['canonical'] = View::getPath().$link;

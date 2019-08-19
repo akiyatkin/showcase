@@ -519,7 +519,9 @@ class Data {
 	public static function addFilesFS(&$list, $prod) {
 		if ($prod) {
 			Data::addFilesFSproducer($list, $prod);
-			Data::addFilesFSimages($list, $prod);
+			Data::addFilesFStype($list, $prod, 'images');
+			Data::addFilesFStype($list, $prod, 'files');
+			Data::addFilesFStype($list, $prod, 'texts');
 		} else {
 			$dir = Showcase::$conf['folders'];
 			FS::scandir($dir, function ($prod) use (&$list) {
@@ -527,13 +529,31 @@ class Data {
 			});
 			$dir = Showcase::$conf['images'];
 			FS::scandir($dir, function ($prod) use (&$list) {
-				Data::addFilesFSimages($list, $prod);
+				Data::addFilesFStype($list, $prod, 'images');
+			});
+			$dir = Showcase::$conf['files'];
+			FS::scandir($dir, function ($prod) use (&$list) {
+				Data::addFilesFStype($list, $prod, 'files');
+			});
+			$dir = Showcase::$conf['texts'];
+			FS::scandir($dir, function ($prod) use (&$list) {
+				Data::addFilesFStype($list, $prod, 'texts');
 			});
 			
 		}
 		foreach ($list as $prod => $arts) if (!$arts) unset($list[$prod]); 
 	}
-	public static function addFilesFSimages(&$list, $prod) {
+	public static function addFilesFStype(&$list, $prod, $type) { //files, texts, images
+		$dir = Showcase::$conf[$type].$prod.'/';
+		if (!Path::theme($dir)) return; //Подходят только папки
+		$index = Data::getIndex($dir,  Data::$$type);
+		foreach ($index as $art => $files) {
+			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
+			$files = array_fill_keys($files, $type);
+			$list[$prod][$art][0] += $files;
+		}
+	}
+	/*public static function addFilesFSimages(&$list, $prod) {
 		$dir = Showcase::$conf['images'].$prod.'/';
 		if (!Path::theme($dir)) return; //Подходят только папки
 		$index = Data::getIndex($dir,  Data::$images);
@@ -542,7 +562,7 @@ class Data {
 			$images = array_fill_keys($images,'images');
 			$list[$prod][$art][0] += $images;
 		}
-	}
+	}*/
 	public static function addFilesFSproducer(&$list, $prod) {
 		if (in_array($prod,['articles','tables'])) return; //Относится к группам
 		$dir = Showcase::$conf['folders'].$prod.'/';

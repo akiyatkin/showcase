@@ -112,12 +112,12 @@ class Prices {
 			if (empty($row['isfile'])) { //Удалить
 				//удаляем
 				if (!empty($row['icount'])) {
-					$src = Showcase::$conf['pricessrc'].$row['file'];
+					$src = Showcase::$conf['prices'].$row['file'];
 					$res['Прайс - удаляем '.$name] = Prices::actionRemove($name, $src);
 				}
 			} else {
 				if (!isset($row['time']) || $row['time'] < $row['mtime']) {
-					$src = Showcase::$conf['pricessrc'].$row['file'];
+					$src = Showcase::$conf['prices'].$row['file'];
 					$res['Прайс - вносим '.$name] = Prices::actionLoad($name, $src);
 				} 
 			}
@@ -129,7 +129,7 @@ class Prices {
 		$conf = Showcase::$conf;
 		
 		$options = Data::getOptions('prices');
-		$list = Data::getFileList($conf['pricessrc']);
+		$list = Data::getFileList($conf['prices']);
 		$order = 0;
 		foreach ($list as $filename => $val) {
 			$order++;
@@ -499,7 +499,7 @@ class Prices {
 	public static function getOptions($filename = false) {//3 пересечения Опциии, Файлы, БазаДанных
 		$list = Data::getOptions('prices');
 	
-		$filelist = Data::getFileList(Showcase::$conf['pricessrc']);
+		$filelist = Data::getFileList(Showcase::$conf['prices']);
 		
 		foreach ($filelist as $name => $val) { // По файлам
 			if (!isset($list[$name])) $list[$name] = array();

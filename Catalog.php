@@ -21,7 +21,7 @@ class Catalog {
 		if (!$action) {
 			$action = Ans::REQ('action');
 			if ($action) {
-				Ydisk::replaceAll();
+				if (Showcase::$conf["ydisk"]) Ydisk::replaceAll();
 			}
 		}
 		
@@ -100,11 +100,11 @@ class Catalog {
 		foreach ($options as $name => $row) {
 			if (empty($row['isfile'])) {
 				if (!empty($row['icount'])) {
-					$src = Showcase::$conf['pricessrc'].$row['file'];
+					$src = Showcase::$conf['prices'].$row['file'];
 					$res['Прайс - удаляем '.$name] = Prices::actionRemove($name, $src);
 				}
 			} else if (!$row['producer_nick'] || $row['producer_nick'] == $producer_nick) {
-				$src = Showcase::$conf['pricessrc'].$row['file'];
+				$src = Showcase::$conf['prices'].$row['file'];
 				$res['Прайс - вносим '.$name] = Prices::actionLoad($name, $src);
 			}
 		}
