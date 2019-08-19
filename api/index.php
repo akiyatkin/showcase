@@ -77,7 +77,7 @@ return Rest::get( function () {
 
 		Showcase::search($md, $ans, $ans['page']);
 
-		$src  =  Rubrics::find(Showcase::$conf['groups'], $ans['title']);
+		$src  =  Rubrics::find(Showcase::$conf['articles'], $ans['title']);
 		if ($src) {
 			$ans['textinfo']  =  Rubrics::info($src); 
 			$ans['text']  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение каталога, должно быть вне кэша
