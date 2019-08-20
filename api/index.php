@@ -10,6 +10,7 @@ use akiyatkin\showcase\Showcase;
 use infrajs\path\Path;
 use infrajs\view\View;
 use infrajs\each\Each;
+use infrajs\layer\seojson\Seojson;
 use infrajs\rubrics\Rubrics;
 //ob_start();
 date_default_timezone_set("Europe/Samara");
@@ -52,7 +53,7 @@ return Rest::get( function () {
 		$link = Ans::GET('seo');
 		$link = $link.'/producers';
 		$ans['title'] = 'Производители';
-		$ans['canonical'] = View::getPath().$link;
+		$ans['canonical'] = Seojson::getSite().'/'.$link;
 
 		return Ans::ans($ans);	
 }], 'search', [function (){
@@ -112,7 +113,7 @@ return Rest::get( function () {
 			if ($group) $title = $group['group'];
 			$ans['title']  =  $title;
 		}
-		$ans['canonical']  =  View::getPath().$link;
+		$ans['canonical'] = Seojson::getSite().'/'.$link;
 		return Ans::ans($ans);
 }], 'pos', [
 	function (){
@@ -132,11 +133,15 @@ return Rest::get( function () {
 			return Ans::err($ans,'Position not found');
 		}
 		$link = strip_tags(Ans::GET('seo'));
-		$link = $link.'/'.urlencode($pos['producer']).'/'.urlencode($pos['article']);
+		$link = $link.'/'.urlencode($pos['producer_nick']).'/'.urlencode($pos['article_nick']);
 
-		$ans['title'] = $pos['producer'].' '.$pos['article'];
-		if(!empty($pos['Наименование'])) $ans['title'] = $pos['Наименование'].' '.$ans['title'];
-		$ans['canonical'] = View::getPath().$link;
+		if (!empty($pos['Наименование'])) $ans['title'] = $pos['Наименование'];
+		else $ans['title'] = $pos['producer'].' '.$pos['article'];
+
+		if (!empty($pos['Описание'])) $ans['description'] = $pos['Описание'];
+		else if (!empty($pos['Наименование'])) $ans['description'] = $pos['Наименование'];
+
+		$ans['canonical'] = Seojson::getSite().'/'.$link;
 		
 		if (isset($pos['images'][0])) {
 			$ans['image_src'] = '/-imager/?w=400&src='.$pos['images'][0];	
