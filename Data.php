@@ -62,6 +62,12 @@ class Data {
 		$stmt->execute($args);
 		return $stmt->rowCount();
 	}
+	public static function initPropNick(&$list) {
+		$list = array_unique($list);
+		foreach ($list as $k=>$v) {
+			$list[$k] = Path::encode($v);
+		}
+	}
 	public static function loadShowcaseConfig(){
 		$opt = Load::loadJSON(Showcase::$conf['jsonoptions']);
 		if(!$opt) $opt = [];
@@ -77,19 +83,20 @@ class Data {
 			'values'=>[]	
 		);
 		$opt['filters'] += ['buttons'=>[],'groups'=>[],'order'=>'name'];
+
+		Data::initPropNick($opt['values']);
 		
 		$opt['justonevalue'][] = 'Цена';
-		$opt['justonevalue'] = array_unique($opt['justonevalue']);
+		Data::initPropNick($opt['justonevalue']);
 
 		$opt['numbers'][] = 'Цена';
-		$opt['numbers'] = array_unique($opt['numbers']);
+		Data::initPropNick($opt['numbers']);
 		
 		$opt['texts'][] = 'Описание';
 		$opt['texts'][] = 'Наименование';
 		$opt['texts'][] = 'Иллюстрации';
 		foreach (Data::$files as $f) $opt['texts'][] = $f; //Все пути текстовые
-
-		$opt['texts'] = array_unique($opt['texts']);
+		Data::initPropNick($opt['texts']);
 
 		return $opt;
 	}
@@ -225,15 +232,15 @@ class Data {
 	
 	public static function checkType($prop) {
 		$options = Data::loadShowcaseConfig();
-		$prop = Path::encode($prop);
+		$prop_nick = Path::encode($prop);
 
-		if ($prop == 'Артикул') return 'article';
-		if (in_array($prop, $options['numbers'])) return 'number';
-		if (in_array($prop, $options['texts'])) return 'text';
-		if (in_array($prop, $options['values'])) return 'value';
+		if ($prop_nick == 'Артикул') return 'article';
+		if (in_array($prop_nick, $options['numbers'])) return 'number';
+		if (in_array($prop_nick, $options['texts'])) return 'text';
+		if (in_array($prop_nick, $options['values'])) return 'value';
 		
-		if (in_array($prop, $options['filters']['groups'])) return 'value';
-		if (in_array($prop, $options['filters']['buttons'])) return 'value';
+		if (in_array($prop_nick, $options['filters']['groups'])) return 'value';
+		if (in_array($prop_nick, $options['filters']['buttons'])) return 'value';
 		
 		return 'value';
 	}

@@ -13,9 +13,15 @@ return Rest::get( function () {
 	$ans = array();
 	$md = Showcase::initMark($ans);
 
-	$arlist = Showcase::getOptions()['filters']['groups'];
-	if(isset($arlist[Showcase::$conf['title']])) {
-		$ar = $arlist[Showcase::$conf['title']];	
+	$arlist2 = Showcase::getOptions()['filters']['groups'];
+	$arlist = array();
+	foreach ($arlist2 as $k=>$v) {
+		$arlist[Path::encode($k)] = [];
+		foreach($v as $vv) $arlist[Path::encode($k)][] = Path::encode($vv);
+	}
+	$title_nick = Path::encode(Showcase::$conf['title']);
+	if(isset($arlist[$title_nick])) {
+		$ar = $arlist[$title_nick];
 	} else {
 		$ar = [];
 	}
@@ -51,7 +57,6 @@ return Rest::get( function () {
 	} else {
 		$order = ' order by value';	
 	}
-	
 	foreach ($ar as $prop_nick) {
 		if ($prop_nick == 'producer') {//Артикул, Группа
 			$row = [];
@@ -80,6 +85,7 @@ return Rest::get( function () {
 			$def = ($type == 'number')? 'range':'value';
 			$filtertype = $def;
 			//$filtertype = Showcase::getOption(['props', $prop_nick, 'filter'], $def);
+
 			if ($filtertype == 'value') {
 				if ($type == 'value') {
 					$values = Data::all('SELECT v.value, v.value_nick, count(*) as count FROM showcase_mvalues mv
@@ -89,6 +95,7 @@ return Rest::get( function () {
 					group by mv.value_id
 					'.$order.'
 					',[':prop_id'=>$prop_id]);
+					sort($values);
 				} else if ($type == 'number') {
 					
 					$values = Data::all('
@@ -111,6 +118,7 @@ return Rest::get( function () {
 					'values' => $values
 				];
 			} else if ($filtertype == 'range') {
+
 				if ($type == 'number') {	
 					
 					$row = Data::fetch('
@@ -119,6 +127,7 @@ return Rest::get( function () {
 						'.$groups.'
 						WHERE mv.prop_id = :prop_id
 					', [':prop_id' => $prop_id]);
+
 
 
 					$dif = round($row['max'] - $row['min']);

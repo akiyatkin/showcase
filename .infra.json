@@ -21,6 +21,7 @@
 	"phpoptions":"~.prices/showcase.php",
 	
 	"ydisk":false,
+	"cleanname":false,
 	"showemptygroups":false,
 	"checkaccess":false,
 	"hiddenarticle":false,
