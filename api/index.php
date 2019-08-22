@@ -135,11 +135,19 @@ return Rest::get( function () {
 		$link = strip_tags(Ans::GET('seo'));
 		$link = $link.'/'.urlencode($pos['producer_nick']).'/'.urlencode($pos['article_nick']);
 
-		if (!empty($pos['Наименование'])) $ans['title'] = $pos['Наименование'];
-		else $ans['title'] = $pos['producer'].' '.$pos['article'];
+		if (!empty($pos['Наименование'])) {
+			$ans['title'] = $pos['Наименование'];
+			if (Showcase::$conf['cleanname']) { //Если в наименовании нет артикула, добавляем
+				$ans['title'] .= ' '. $pos['producer'].' '.$pos['article'];
+			}
+		} else $ans['title'] = $pos['producer'].' '.$pos['article'];
+		
 
 		if (!empty($pos['Описание'])) $ans['description'] = $pos['Описание'];
-		else if (!empty($pos['Наименование'])) $ans['description'] = $pos['Наименование'];
+		else if (!empty($pos['Наименование'])) $ans['description'] = $pos['Наименование'].'.';
+		if (Showcase::$conf['cleanname']) { //Если в наименовании нет артикула, добавляем
+			$ans['description'] .= ' Купить '. $pos['producer'].' '.$pos['article'];
+		}
 
 		$ans['canonical'] = Seojson::getSite().'/'.$link;
 		

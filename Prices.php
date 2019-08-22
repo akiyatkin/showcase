@@ -412,8 +412,6 @@ class Prices {
 				Event::fire('Showcase-prices.onload', $obj); //В событии дописываем нужное свойство которое уже есть в props
 
 				$value = $pos[$option['priceprop']];
-				
-
 				if (!empty($option['cleararticle']) && $option['producer_nick']) {
 					$value = str_ireplace($option['producer_nick'], '', $value); //Удалили из кода продусера
 				}
