@@ -207,6 +207,7 @@ class Catalog {
 			'listreverse' => false,
 			'Известные колонки' => array("Артикул","Производитель")
 		));
+
 		/*if (!empty($opt['producer'])) {
 			Xlsx::runPoss($data, function (&$pos) use (&$opt) {
 				$pos['Производитель'] = $opt['producer'];
@@ -272,7 +273,6 @@ class Catalog {
 		$ans = array('Данные' => $src);
 		if ($option['producer']) $ans['Производитель'] = '<a href="/-showcase/producers/'.$option['producer_nick'].'">'.$option['producer'].'</a>';
 		$data = Catalog::readCatalog($name, $src);
-			
 		$groups = Catalog::applyGroups($data, $catalog_id, $order, $ans);
 		$props = array();
 		$count = 0;
@@ -314,8 +314,9 @@ class Catalog {
 				}
 				array_unshift($pos['items'], $item);
 			}
-				
+		
 			$r = Catalog::writeProps($model_id, $pos, 0);
+
 			$obj = [
 				'model_id' => $model_id, 
 				'pos' => &$pos,
@@ -353,6 +354,7 @@ class Catalog {
 		$order = 0;
 		$r = false;
 		
+		$propval = []; //Нужно убедится что нет дублей с разным написанием.
 		foreach ($item['more'] as $prop => $val) {
 			$type = Data::checkType($prop);
 			$prop_id = Data::initProp($prop, $type);
@@ -370,16 +372,16 @@ class Catalog {
 			} else {
 				$strid = ($type == 'number')? 'number' : 'value_id';
 				$ar = (in_array($prop, $options['justonevalue']))? [$val] : explode(',', $val);
-				$vals = [];
 				foreach ($ar as $v) {
 					$order++;
 					$v = trim($v);
 					if ($v === '') continue;
 					$v = ($type=='value')? Data::initValue($v) : $v;
-					if (isset($vals[$v])) continue; //Уже вставлен
-					$vals[$v] = true;
+					$test = $prop_id.':'.$v;
+					if (isset($propvals[$test])) continue; //Уже вставлен
+					$propvals[$test] = true;
 					$r = true;
-					
+
 					Data::lastId('INSERT INTO `showcase_m'.$type.'s`(model_id, item_num, `prop_id`,'.$strid.',`order`) VALUES(?,?,?,?,?)',
 						[$model_id, $item_num, $prop_id, $v, $order]
 					);

@@ -13,6 +13,7 @@
 	"prices":"~catalog/.prices/",
 	"files":"~catalog/files/",
 	"texts":"~catalog/texts/",
+	"videos":"~catalog/texts/",
 	"folders":"~catalog/folders/",
 	"articles":"~catalog/articles/",
 
@@ -25,7 +26,6 @@
 	"checkaccess":false,
 	"hiddenarticle":false,
 	"Группы уникальны":true,
-	"listreverse":false,
 	"ignorelistname":false
 	
 }

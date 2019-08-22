@@ -14,7 +14,6 @@ showcase_groups			group_id, group, [group_nick], parent_id, icon
 showcase_producers 		producer_id, producer, [producer_nick], icon
 showcase_articles 		article_id, article, [article_nick]
 
-
 showcase_props 			prop_id, prop, [prop_nick], type (1 value, 2 number, 3 text) - number и text считаются только те свойство которые указаны в конфиге
 showcase_values 		value_id, value, [value_nick] - value_nick создаётся для тех свойств которые есть в фильтрах конфига
 

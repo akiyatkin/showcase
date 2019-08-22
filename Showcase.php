@@ -496,7 +496,7 @@ class Showcase {
 		//Найти общего предка для всех групп
 		//Пропустить 1 вложенную группу
 		//Отсортировать группы по их order
-
+		
 		$root = Data::getGroups();
 
 		Xlsx::runGroups($root, function &(&$group) use ($groups){
@@ -521,11 +521,11 @@ class Showcase {
 			
 			if (!isset($group['childs'])) return $r;
 
-			usort($group['childs'], function ($a, $b){
+			/*usort($group['childs'], function ($a, $b){
 				if ($a['found'] > $b['found']) return -1;
 				if ($a['found'] < $b['found']) return 1;
 				return 0;
-			});
+			});*/
 			return $r;
 		}, true);
 		
@@ -541,6 +541,7 @@ class Showcase {
 			return $r;
 		});
 		$ans['childs'] = array_values($root['childs']);
+		
 		foreach($ans['childs'] as $i => $ch) {
 			if (empty($ans['childs'][$i]['childs'])) continue;
 			foreach($ans['childs'][$i]['childs'] as $ii => $cch) {
@@ -584,7 +585,8 @@ class Showcase {
 		if (!$pos) return $pos;
 		if (isset($pos['texts'])) {
 			foreach ($pos['texts'] as $i => $src) {
-				$pos['texts'][$i]  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение 
+				$pos['texts'][$i]  =  Rubrics::article($src);//Изменение текста не отражается как изменение 
+				//$pos['texts'][$i]  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение 
 			}
 		}
 		if (isset($pos['files'])) {

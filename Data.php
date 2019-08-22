@@ -21,8 +21,10 @@ class Data {
 		Data::$timerprev = $t;
 		echo $begin.'-'.$prev.' '.$msg.'<br>'."\n";
 	}
+	public static $iexts = ['db',''];
 	public static $types = ['number','text','value'];
 	public static $files = ['texts', 'images', 'files', 'videos'];
+
 	public static $images = ['png', 'gif', 'jpg', 'jpeg','svg'];
 	public static $texts = ['html', 'tpl', 'mht', 'docx'];
 	public static $videos = ['avi','ogv','mp4','swf'];
@@ -519,50 +521,34 @@ class Data {
 	public static function addFilesFS(&$list, $prod) {
 		if ($prod) {
 			Data::addFilesFSproducer($list, $prod);
-			Data::addFilesFStype($list, $prod, 'images');
-			Data::addFilesFStype($list, $prod, 'files');
-			Data::addFilesFStype($list, $prod, 'texts');
+			foreach (Data::$files as $type) {
+				Data::addFilesFStype($list, $prod, $type);
+			}
 		} else {
 			$dir = Showcase::$conf['folders'];
 			FS::scandir($dir, function ($prod) use (&$list) {
 				Data::addFilesFSproducer($list, $prod);
 			});
-			$dir = Showcase::$conf['images'];
-			FS::scandir($dir, function ($prod) use (&$list) {
-				Data::addFilesFStype($list, $prod, 'images');
-			});
-			$dir = Showcase::$conf['files'];
-			FS::scandir($dir, function ($prod) use (&$list) {
-				Data::addFilesFStype($list, $prod, 'files');
-			});
-			$dir = Showcase::$conf['texts'];
-			FS::scandir($dir, function ($prod) use (&$list) {
-				Data::addFilesFStype($list, $prod, 'texts');
-			});
-			
+			foreach (Data::$files as $type) {
+				$dir = Showcase::$conf[$type];
+				FS::scandir($dir, function ($prod) use (&$list, $type) {
+					Data::addFilesFStype($list, $prod, $type);
+				});
+			}
 		}
 		foreach ($list as $prod => $arts) if (!$arts) unset($list[$prod]); 
 	}
-	public static function addFilesFStype(&$list, $prod, $type) { //files, texts, images
+	public static function addFilesFStype(&$list, $prod, $type) { //files, texts, images, videos
 		$dir = Showcase::$conf[$type].$prod.'/';
 		if (!Path::theme($dir)) return; //Подходят только папки
-		$index = Data::getIndex($dir,  Data::$$type);
+		$ext = $type == 'files' ? false : Data::$$type;
+		$index = Data::getIndex($dir, $exts);
 		foreach ($index as $art => $files) {
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
 			$files = array_fill_keys($files, $type);
 			$list[$prod][$art][0] += $files;
 		}
 	}
-	/*public static function addFilesFSimages(&$list, $prod) {
-		$dir = Showcase::$conf['images'].$prod.'/';
-		if (!Path::theme($dir)) return; //Подходят только папки
-		$index = Data::getIndex($dir,  Data::$images);
-		foreach ($index as $art => $images) {
-			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
-			$images = array_fill_keys($images,'images');
-			$list[$prod][$art][0] += $images;
-		}
-	}*/
 	public static function addFilesFSproducer(&$list, $prod) {
 		if (in_array($prod,['articles','tables'])) return; //Относится к группам
 		$dir = Showcase::$conf['folders'].$prod.'/';
@@ -570,14 +556,15 @@ class Data {
 		if (!Path::theme($dir)) return; //Подходят только папки
 		if (!isset($list[$prod])) $list[$prod] = array();
 
-
 		FS::scandir($dir, function ($fart) use ($dir, &$list, $prod) {
 			$art = mb_strtolower($fart);
 			if (!Path::theme($dir.$fart.'/')) return; //Подходят только папки
-			if (in_array($art, ['files','images','texts'])) return;
+			if (in_array($art, Data::$files)) return;
 				
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];//Data::$files;
 			FS::scandir($dir.$fart.'/', function ($file) use (&$list, $prod, $dir, $art, $fart) {
+				$fd = Load::nameInfo($file);
+				if (in_array($fd['ext'], Data::$iexts)) return;
 				$src = $dir.$fart.'/'.$file;
 				$type = Data::fileType($src);
 				$list[$prod][$art][0][$src] = $type;
@@ -601,7 +588,16 @@ class Data {
 			
 		}
 	}
-	
+	/*public static function addFilesFSimages(&$list, $prod) {
+		$dir = Showcase::$conf['images'].$prod.'/';
+		if (!Path::theme($dir)) return; //Подходят только папки
+		$index = Data::getIndex($dir,  Data::$images);
+		foreach ($index as $art => $images) {
+			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
+			$images = array_fill_keys($images,'images');
+			$list[$prod][$art][0] += $images;
+		}
+	}*/
 	public static function addFilesFaylov(&$list, $producer) {
 		$dir = Showcase::$conf['folders'];
 		//Можно ли привязать файлы к item. Да, только через свойства Файлы, Файл, Фото. Для связи достаточно item_num
@@ -721,11 +717,11 @@ class Data {
 	}
 	public static function getIndex($dir, $exts = false) {
 		if (!Path::theme($dir)) return array();
-		
 		$list = array();
 		Config::scan($dir, function ($src, $level) use (&$list, $exts) {
 			$fd = Load::pathInfo($src);
 			if ($exts && !in_array($fd['ext'], $exts)) return;
+			if (in_array($fd['ext'], Data::$iexts)) return;
 			$name = $fd['name'];
 			$p = explode(', ',$name);
 			foreach ($p as $name) {
