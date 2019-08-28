@@ -144,9 +144,9 @@ return Rest::get( function () {
 		
 
 		if (!empty($pos['Описание'])) $ans['description'] = $pos['Описание'];
-		else if (!empty($pos['Наименование'])) $ans['description'] = $pos['Наименование'].'.';
+		else if (!empty($pos['Наименование'])) $ans['description'] = 'Купить '.$pos['Наименование'];
 		if (Showcase::$conf['cleanname']) { //Если в наименовании нет артикула, добавляем
-			$ans['description'] .= ' Купить '. $pos['producer'].' '.$pos['article'];
+			$ans['description'] .= $pos['producer'].' '.$pos['article'];
 		}
 
 		$ans['canonical'] = Seojson::getSite().'/'.$link;
