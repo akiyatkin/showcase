@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS `showcase_groups` (
 	`group_nick` varchar(255) NOT NULL COMMENT '',
 	`icon` varchar(255) NULL COMMENT '',
 	`catalog_id` SMALLINT unsigned NOT NULL COMMENT 'Кто записал структуру и может изменить её',
+	`order` SMALLINT unsigned COMMENT 'Порядок определяется загрузки данных',
 	PRIMARY KEY (`group_id`),
 	UNIQUE INDEX (`group_nick`)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;

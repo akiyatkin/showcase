@@ -509,7 +509,6 @@ class Catalog {
 	
 	
 	public static function applyGroups($data, $catalog_id, $order, &$ans) { //order нового каталога
-		
 		$groups = array();
 		$ans['Найдено групп'] = 0;
 		$ans['Новых групп'] = 0;
@@ -521,7 +520,9 @@ class Catalog {
 		});
 		print_r($data);
 		exit;*/
-		Xlsx::runGroups($data, function &($group) use ($catalog_id, &$groups, $order, &$ans){
+		$gorder = 0;
+		Xlsx::runGroups($data, function &($group) use ($catalog_id, &$groups, $order, &$ans, &$gorder){
+			$gorder++;
 			$ans['Найдено групп']++;
 			$r = null;
 			$group_nick =  $group['id'];
@@ -536,10 +537,10 @@ class Catalog {
 			if ($row) {
 				$group_id = $row['group_id'];
 				if ($catalog_id == $row['catalog_id'] || $row['order'] > $order || !$row['catalog_id']) {
-					//$order - новый прайс должен стоять выше старого
+					//$order - новые данные должны стоять выше старых
 					$parent_id = Catalog::getGroupId($parent_nick);
 
-					Data::exec('UPDATE showcase_groups SET parent_id = ?, `catalog_id` = ? WHERE group_id = ?',[$parent_id, $catalog_id, $group_id]);
+					Data::exec('UPDATE showcase_groups SET parent_id = ?, `order` = ?, `catalog_id` = ? WHERE group_id = ?',[$parent_id, $gorder, $catalog_id, $group_id]);
 				}
 				$groups[$group_nick] = $group_id;
 				return $r;
@@ -553,7 +554,7 @@ class Catalog {
 				$parent_id = null;
 			}
 
-			$group_id = Data::lastId('INSERT INTO `showcase_groups`(`group`,`parent_id`,`group_nick`, `catalog_id`) VALUES(?,?,?,?)',[$group['title'], $parent_id, $group_nick,$catalog_id]);
+			$group_id = Data::lastId('INSERT INTO `showcase_groups`(`group`,`order`,`parent_id`,`group_nick`, `catalog_id`) VALUES(?,?,?,?,?)',[$group['title'], $gorder, $parent_id, $group_nick,$catalog_id]);
 			
 			$groups[$group_nick] = $group_id;
 			return $r;

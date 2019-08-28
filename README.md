@@ -2,15 +2,15 @@
 
 Data - таблицы данных
 Prices - таблицы прайсов
-Catalog - и данные и прайсы
-Showcase - API интерфейс использования
+Catalog - вместе данные и прайсы
+Showcase - frontend API интерфейс
 
 # Структура данных
 
 showcase_prices 		price_id, [name], producer_id, time, order, count, duration, ans
 showcase_catalog 		catalog_id, [name], producer_id, time, order, count, duration, ans
 ===
-showcase_groups			group_id, group, [group_nick], parent_id, icon
+showcase_groups			group_id, group, [group_nick], parent_id, icon, catalog_id, order
 showcase_producers 		producer_id, producer, [producer_nick], icon
 showcase_articles 		article_id, article, [article_nick]
 

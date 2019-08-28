@@ -564,11 +564,14 @@ class Showcase {
 	}
 
 
-	public static $columns = array("producer","article","producer_nick","article_nick", "images", "files", "texts","videos", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие-на-складе","Прайс");
+	public static $columns = array("producer","article","producer_nick","article_nick", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие-на-складе","Прайс");
 	public static function getOption($right = [], $def = null) {
 		$options = Once::func( function (){
 			$options = Data::getOptions();
-			$options['columns'] = array_merge(Showcase::$columns, $options['columns']);
+			$options['columns'] = array_merge(Data::$files, Showcase::$columns, $options['columns']);
+			$options['columns'] = array_map( function ($val) {
+				return Path::encode($val);
+			}, $options['columns']);
 			return $options;
 		});
 		$res = Seq::get($options, $right);

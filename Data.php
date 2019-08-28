@@ -23,11 +23,12 @@ class Data {
 	}
 	public static $iexts = ['db',''];
 	public static $types = ['number','text','value'];
-	public static $files = ['texts', 'images', 'files', 'videos'];
+	public static $files = ['texts', 'images', 'files', 'videos','slides'];
 
-	public static $images = ['png', 'gif', 'jpg', 'jpeg','svg'];
 	public static $texts = ['html', 'tpl', 'mht', 'docx'];
+	public static $images = ['png', 'gif', 'jpg', 'jpeg','svg'];
 	public static $videos = ['avi','ogv','mp4','swf'];
+	public static $slides = ['png', 'jpg', 'jpeg'];
 	public static function fetch($sql, $args = []) {
 		$stmt = Db::stmt($sql);
 		$stmt->execute($args);
@@ -354,10 +355,10 @@ class Data {
 			$list = [];
 			Data::addFilesFaylov($list, $producer_nick); //Файлы
 
-			Data::addFilesFS($list, $producer_nick);
+			Data::addFilesFS($list, $producer_nick); //Из папок
 			
 
-			Data::addFilesSyns($list, $producer_nick); //Синонимы Фото и Файл
+			Data::addFilesSyns($list, $producer_nick); //Синонимы Фото и Файл для поиска
 
 		
 			$db = &Db::pdo();
@@ -548,7 +549,7 @@ class Data {
 	public static function addFilesFStype(&$list, $prod, $type) { //files, texts, images, videos
 		$dir = Showcase::$conf[$type].$prod.'/';
 		if (!Path::theme($dir)) return; //Подходят только папки
-		$ext = $type == 'files' ? false : Data::$$type;
+		$exts = $type == 'files' ? false : Data::$$type;
 		$index = Data::getIndex($dir, $exts);
 		foreach ($index as $art => $files) {
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
@@ -746,12 +747,12 @@ class Data {
 
 		
 		$root = Once::func(function (){
-			$list = Data::fetchto('SELECT g.group_nick, g.icon, g.group, c.name as catalog, count(*) as count, max(model_id) as notempty, g2.group_nick as parent_nick FROM showcase_groups g
+			$list = Data::fetchto('SELECT g.group_nick, g.icon, g.order, g.group, c.name as catalog, count(*) as count, max(model_id) as notempty, g2.group_nick as parent_nick FROM showcase_groups g
 			left JOIN showcase_models m ON g.group_id = m.group_id
 			left JOIN showcase_catalog c ON c.catalog_id = g.catalog_id
 			left JOIN showcase_groups g2 ON g2.group_id = g.parent_id
 			GROUP BY group_nick
-			order by g.group_id','group_nick');
+			order by c.order, g.order','group_nick');
 			
 			$parents = [];
 			foreach ($list as $i=>&$group) {

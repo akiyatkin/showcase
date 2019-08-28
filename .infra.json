@@ -13,13 +13,13 @@
 	"prices":"~catalog/.prices/",
 	"files":"~catalog/files/",
 	"texts":"~catalog/texts/",
-	"videos":"~catalog/texts/",
+	"videos":"~catalog/videos/",
+	"slides":"~catalog/slides/",
 	"folders":"~catalog/folders/",
 	"articles":"~catalog/articles/",
 
-	"menu":"-showcase/menu.json",
-	"jsonoptions":"~.prices/showcase.json",
-	"phpoptions":"~.prices/showcase.php",
+	"jsonoptions":"~catalog/.prices/showcase.json",
+	"phpoptions":"~catalog/.prices/showcase.php",
 	
 	"ydisk":false,
 	"cleanname":false,
