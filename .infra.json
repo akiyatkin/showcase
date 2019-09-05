@@ -22,7 +22,7 @@
 	"phpoptions":"~catalog/.prices/showcase.php",
 	
 	"ydisk":false,
-	"cleanname":false,
+	"cleanname":true,
 	"showemptygroups":false,
 	"checkaccess":false,
 	"hiddenarticle":false,

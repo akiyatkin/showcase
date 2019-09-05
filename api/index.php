@@ -144,15 +144,16 @@ return Rest::get( function () {
 		
 
 		if (!empty($pos['Описание'])) $ans['description'] = $pos['Описание'];
-		else if (!empty($pos['Наименование'])) $ans['description'] = 'Купить '.$pos['Наименование'];
-		if (Showcase::$conf['cleanname']) { //Если в наименовании нет артикула, добавляем
-			$ans['description'] .= $pos['producer'].' '.$pos['article'];
-		}
+		
+		//if (!empty($pos['Наименование'])) $ans['description'] = 'Купить '.$pos['Наименование'];
+		//if (Showcase::$conf['cleanname']) { //Если в наименовании нет артикула, добавляем
+		//	$ans['description'] .= $pos['producer'].' '.$pos['article'];
+		//}
 
 		$ans['canonical'] = Seojson::getSite().'/'.$link;
 		
 		if (isset($pos['images'][0])) {
-			$ans['image_src'] = '/-imager/?w=400&src='.$pos['images'][0];	
+			$ans['image_src'] = Seojson::getSite().'/-imager/?w=400&src='.$pos['images'][0];	
 		}
 		/*$seo = Load::loadJSON('~'.$link.'/seo.json');
 		if ($seo) {
