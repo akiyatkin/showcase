@@ -239,5 +239,24 @@ numbers и values по умолчанию сплитятся по запятым
 	"images":"~catalog/images/", - Картинки разбитые по папкам производителей
 	"files":"~catalog/files/", - Файлы разбитыи по папка производителей
 	"texts":"~catalog/texts/", - Тексты разбитые по папка производителей
+	"slides":"~catalog/slides/", - Большие картинки разбитые по папка производителей
 	"folders":"~catalog/folders/", - Всё разбитое по папкам производителей и папкам артикулам
 
+# События
+
+## Showcase-position.onshow 	
+$pos - полное описание позиции
+
+## Showcase-position.onsearch 
+$pos - описание позиции в поиске
+
+## Showcase-catalog.onload	
+обработка загружаемых данных из Excel данных, до внесения в базу
+$obj = ['model_id' => $model_id, 'pos' => &$pos, 'name' => $catalog_name ]; 
+
+## Showcase-prices.oncheck (depricated - эту функцию может выполнять onload)
+Может вернуть false и отменить внесение этой строчки из прайса
+Можно добавить свойство которое уже есть в props для внесения. 
+
+## Showcase-prices.onload
+В событии дописываем нужное свойство которое уже есть в props для внесения.

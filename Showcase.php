@@ -21,12 +21,12 @@ Event::$classes['Showcase-position'] = function ($pos) {
 	if (!empty($pos['item_nick'])) $id .= ' '.$pos['item_nick'];
 	return $id;
 };
-Event::$classes['Showcase-group'] = function (&$group) {
+/*Event::$classes['Showcase-group'] = function (&$group) {
 	return $group['group_nick'];
 };
 Event::$classes['Showcase-producer'] = function (&$prod) {
 	return $prod['producer_nick'];
-};
+};*/
 
 class Showcase {
 	public static $conf;
@@ -439,9 +439,9 @@ class Showcase {
 		}
 
 		if ($md['reverse']) {
-			$asc = "DESC";
-		} else {
 			$asc = "ASC";
+		} else {
+			$asc = "DESC";
 		}
 		
 

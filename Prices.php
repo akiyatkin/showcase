@@ -289,6 +289,7 @@ class Prices {
 				$r = true;
 				$ar = ($p['type'] == 'text') ? [$val] : explode(',', $val);
 				foreach ($ar as $v) {
+					$v = trim($v);
 					$value_id = ($p['type'] == 'value') ? Data::initValue($v) : $v;
 					Data::exec('INSERT showcase_'.$t.' (model_id, item_num, prop_id, '.$mainprop.', price_id, `order`)
 					VALUES(?,?,?,?,?,?)', [$model_id, $item_num, $p['prop_id'], $value_id, $price_id, $oldorder]);
