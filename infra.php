@@ -16,7 +16,7 @@ Showcase::add('count', function () {
 	return 12;
 }, function (&$val) {
 	$val = (int) $val;
-	if ($val < 1 || $val > 1000) return false;
+	if ($val < 1 || $val > 10000) return false;
 	return true;
 });
 Showcase::add('reverse', function () {
