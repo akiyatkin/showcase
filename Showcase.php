@@ -419,7 +419,7 @@ class Showcase {
 			$ans['filters'][] = array(
 				'title' => 'Поиск',
 				'name' => 'search',
-				'value' => $md['search']
+				'value' => Path::encode($md['search'], true)
 			);
 		
 			$no[] = $str;
