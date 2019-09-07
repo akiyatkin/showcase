@@ -93,7 +93,6 @@ return Rest::get( function () {
 		$md = Showcase::initMark($ans, $val, $art);
 
 		$link = Ans::GET('seo','string','');
-		
 		if ($md['group']){
 			foreach($md['group'] as $val => $one) break;
 			$link = $link.'/'.$val;
@@ -104,16 +103,22 @@ return Rest::get( function () {
 			$val = $md['search'];
 			$link = $link.'/'.$val;
 		}
-
+		$ans['canonical'] = Seojson::getSite().'/'.$link;
 		unset($ans['md']);
 		unset($ans['m']);
-		if ($val) {
-			$title = $val;
+		$seo = Load::loadJSON('-seo/?path='.$link);
+		$ans += $seo;
+
+		if (empty($ans['title']) || ($ans["Адрес"] != $link && empty($ans['json']))) {
+			unset($ans['description']);
+			unset($ans['keywords']);
+			$ans['title']  =  $val;
 			$group = Showcase::getGroup($val);
-			if ($group) $title = $group['group'];
-			$ans['title']  =  $title;
+			if ($group) {
+				$ans['title'] = $group['group'];
+				if (isset($group['icon'])) $ans['image_src'] = $group['icon'];
+			}
 		}
-		$ans['canonical'] = Seojson::getSite().'/'.$link;
 		return Ans::ans($ans);
 }], 'pos', [
 	function (){
@@ -186,13 +191,13 @@ return Rest::get( function () {
 
 			
 			if (!$ans['pos']) {
-				$ans['breadcrumbs'][] = array('href'=>'producers','title'=>'Производители');
+				//$ans['breadcrumbs'][] = array('href'=>'producers','title'=>'Производители');
 				//$ans['breadcrumbs'][] = array('href'=>'','title'=>$producer_nick,'href'=>$producer_nick);
 				$ans['breadcrumbs'][] = array('active'=>true, 'title'=>$active);
 				return Ans::err($ans);
 			}
 			
-			
+			$ans['breadcrumbs'][] = array('title'=>Showcase::$conf['title'],'href'=>'');
 			array_map(function($p) use (&$ans){
 				$group = Showcase::getGroup($p);
 				$ans['breadcrumbs'][] = array('title'=>$group['group'],'href'=>$p);

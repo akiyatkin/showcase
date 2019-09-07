@@ -868,7 +868,7 @@ class Showcase {
 			
 			$ans['breadcrumbs'][] = array('title' => $conf['title'], 'add' => 'producer:');
 			
-			$ans['breadcrumbs'][] = array('href' => 'producers','title' => 'Производители');
+			//$ans['breadcrumbs'][] = array('href' => 'producers','title' => 'Производители');
 			$ans['breadcrumbs'][] = array('href' => $ans['title'], 'title' => $ans['name']);
 			$ans['breadcrumbs'][sizeof($ans['breadcrumbs'])-1]['active']  =  true;
 
