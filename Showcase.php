@@ -498,7 +498,7 @@ class Showcase {
 		//Отсортировать группы по их order
 		
 		$root = Data::getGroups();
-
+		
 		Xlsx::runGroups($root, function &(&$group) use ($groups){
 			$r = null;
 			$nick = $group['group_nick'];
@@ -540,9 +540,11 @@ class Showcase {
 			if ($img) $group['img'] = $img;
 			return $r;
 		});
+		
 		$ans['childs'] = array_values($root['childs']);
 		
-		foreach($ans['childs'] as $i => $ch) {
+		
+		foreach ($ans['childs'] as $i => $ch) {
 			if (empty($ans['childs'][$i]['childs'])) continue;
 			foreach($ans['childs'][$i]['childs'] as $ii => $cch) {
 				unset($ans['childs'][$i]['childs'][$ii]['childs']);

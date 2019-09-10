@@ -101,6 +101,15 @@ class Data {
 		foreach (Data::$files as $f) $opt['texts'][] = $f; //Все пути текстовые
 		Data::initPropNick($opt['texts']);
 
+		if (isset($opt['groups'])) {
+			$groups = [];
+			foreach ($opt['groups'] as $k => $v) {
+				$groups[Path::encode($k)] = $v;
+			}
+			$opt['groups'] = $groups;
+		} else {
+			$opt['groups'] = [];
+		}
 		return $opt;
 	}
 	
@@ -451,12 +460,12 @@ class Data {
 					$group['icon'] = $icon;
 				} else {
 					//Ищим картинку своей позииции
-					$row = Data::fetch('SELECT g.group_nick, g.group, g.group_id, v.value as icon from showcase_groups g
+					$row = Data::fetch('SELECT g.group_nick, g.group, g.group_id, mv.text as icon from showcase_groups g
 						inner join showcase_models m on (m.group_id = g.group_id)	
-						inner join showcase_mvalues mv on (mv.model_id = m.model_id and mv.prop_id = :images_id)
-						left join showcase_values v on (v.value_id = mv.value_id)
+						inner join showcase_mtexts mv on (mv.model_id = m.model_id and mv.prop_id = :images_id)
 						where g.group_nick = :group_nick
 						', [':images_id' => $images_id, ':group_nick' => $group['group_nick']]);
+
 					
 					if ($row) {
 						$group['icon'] = $row['icon'];
@@ -470,6 +479,7 @@ class Data {
 								}
 							}
 						}
+
 					}
 				}
 				
@@ -481,7 +491,7 @@ class Data {
 				return $r;
 			}, true);
 
-
+			
 			$list = Data::all('SELECT producer_nick FROM showcase_producers');
 			foreach ($list as $k => $prod) {
 				$list[$k]['logo'] = null;
@@ -783,7 +793,26 @@ class Data {
 				$group['path'][] = $group['group_nick'];
 				return $r;
 			});
-			Xlsx::runGroups($root, function &(&$group, $i, $parent) {
+			$opt = Data::getOptions();
+			Xlsx::runGroups($root, function &(&$group, $i, $parent) use ($opt) {
+
+				if (isset($opt['groups'][$group['group_nick']])) {
+					$group['showcase'] = $opt['groups'][$group['group_nick']];
+				} else if(isset($group['path'])) {
+					foreach ($group['path'] as $g) {
+						if (isset($opt['groups'][$g])) {
+							$group['showcase'] = $opt['groups'][$g];
+						}
+					}	
+				}
+				if (!isset($group['showcase'])) {
+					$root_nick = Path::encode(Showcase::$conf['title']);
+					if (isset($opt['groups'][$root_nick])) {
+						$group['showcase'] = $opt['groups'][$root_nick];
+					}
+				}
+				
+				
 				$group['sum'] = $group['count'];
 				if (isset($group['childs'])) {
 					foreach ($group['childs'] as $child) {

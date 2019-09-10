@@ -207,7 +207,7 @@ class Catalog {
 			'listreverse' => false,
 			'Известные колонки' => array("Артикул","Производитель")
 		));
-
+		
 		/*if (!empty($opt['producer'])) {
 			Xlsx::runPoss($data, function (&$pos) use (&$opt) {
 				$pos['Производитель'] = $opt['producer'];
@@ -273,6 +273,7 @@ class Catalog {
 		$ans = array('Данные' => $src);
 		if ($option['producer']) $ans['Производитель'] = '<a href="/-showcase/producers/'.$option['producer_nick'].'">'.$option['producer'].'</a>';
 		$data = Catalog::readCatalog($name, $src);
+		
 		$groups = Catalog::applyGroups($data, $catalog_id, $order, $ans);
 		$props = array();
 		$count = 0;
