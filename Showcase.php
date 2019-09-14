@@ -190,7 +190,7 @@ class Showcase {
 			$prods = array_unique($prods);
 			$ans['filters'][] = array( 
 				'name' => 'producer',
-				'value' => implode(', ',array_column($prods,'producer')),
+				'value' => implode(', ', array_column($prods,'producer')),
 				'title' => 'Производитель'
 			);
 
@@ -344,8 +344,7 @@ class Showcase {
 						//Только no
 						unset($vals['no']);
 					}
-					
-					
+							
 					if ($vals) {
 						$joinp = [];
 						foreach ($vals as $val => $one) {
@@ -389,9 +388,8 @@ class Showcase {
 					$join[] = 'INNER JOIN showcase_mnumbers p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.' and ('.$joinp.'))';
 				}
 			}
-			
-			
 		}
+
 		if (!empty($md['search'])) {
 			$search = Path::encode($md['search']);
 			$v = preg_split("/[\s\-]+/", mb_strtolower($search));
@@ -421,7 +419,6 @@ class Showcase {
 				'name' => 'search',
 				'value' => Path::encode($md['search'], true)
 			);
-		
 			$no[] = $str;
 		}
 
@@ -472,6 +469,7 @@ class Showcase {
 		//echo '<pre>';
 		//echo $sql;
 		//print_r($md);
+		
 		
 		$models = Data::all($sql, [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id, 
 			':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3]
@@ -716,6 +714,8 @@ class Showcase {
 		$option = Data::getOptions();
 		$conf = Showcase::$conf;
 		$columns = Showcase::getOption(['columns']);
+		$files = Showcase::getOption(['files']);
+
 		
 		$more = array();
 		foreach ($list as $row) {
@@ -730,7 +730,7 @@ class Showcase {
 			}
 		}
 		foreach ($data as $prop => $val) {
-			if (is_array($val) && !in_array($prop, Data::$files) && !in_array($prop,['more'])) {
+			if (!in_array($prop, $files) && is_array($val) && !in_array($prop, Data::$files) && !in_array($prop,['more'])) {
 				$data[$prop] = implode(', ', $val);
 			}
 		}

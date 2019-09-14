@@ -9,6 +9,7 @@ use infrajs\excel\Xlsx;
 use infrajs\db\Db;
 use infrajs\config\Config;
 
+
 class Data {
 	public static $timer;
 	public static $timerprev;
@@ -21,9 +22,9 @@ class Data {
 		Data::$timerprev = $t;
 		echo $begin.'-'.$prev.' '.$msg.'<br>'."\n";
 	}
-	public static $iexts = ['db',''];
+	public static $iexts = ['db'];
 	public static $types = ['number','text','value'];
-	public static $files = ['texts', 'images', 'files', 'videos','slides'];
+	public static $files = ['texts', 'images', 'folders', 'videos','slides','files'];
 
 	public static $texts = ['html', 'tpl', 'mht', 'docx'];
 	public static $images = ['png', 'gif', 'jpg', 'jpeg','svg'];
@@ -77,16 +78,19 @@ class Data {
 		$opt += array(
 			'catalog'=>[],
 			'justonevalue'=>[],
+			//'files' => [],
 			'numbers'=>[],
 			'texts'=>[],
 			'columns'=>[],
 			'prices'=>[],
 			'props'=>[],
+			'groups'=>[],
 			'filters'=>[],
 			'values'=>[]	
 		);
 		$opt['filters'] += ['buttons'=>[],'groups'=>[],'order'=>'name'];
 
+		//Data::initPropNick($opt['files']);
 		Data::initPropNick($opt['values']);
 		
 		$opt['justonevalue'][] = 'Цена';
@@ -101,15 +105,19 @@ class Data {
 		foreach (Data::$files as $f) $opt['texts'][] = $f; //Все пути текстовые
 		Data::initPropNick($opt['texts']);
 
-		if (isset($opt['groups'])) {
-			$groups = [];
-			foreach ($opt['groups'] as $k => $v) {
-				$groups[Path::encode($k)] = $v;
-			}
-			$opt['groups'] = $groups;
-		} else {
-			$opt['groups'] = [];
+		
+		$keys = [];
+		foreach ($opt['groups'] as $k => $v) {
+			$keys[Path::encode($k)] = $v;
 		}
+		$opt['groups'] = $keys;
+
+		$keys = [];
+		foreach ($opt['filters'] as $k => $v) {
+			$keys[Path::encode($k)] = $v;
+		}
+		$opt['filters'] = $keys;
+		
 		return $opt;
 	}
 	
@@ -183,7 +191,7 @@ class Data {
 		
 		Data::exec('TRUNCATE `showcase_producers`');
 		Data::exec('TRUNCATE `showcase_articles`');
-		Data::exec('TRUNCATE `showcase_groups`');
+		//Data::exec('TRUNCATE `showcase_groups`'); Нельзя сбрасывать id для Директа
 		Data::exec('TRUNCATE `showcase_props`');
 		Data::exec('TRUNCATE `showcase_values`');
 		
@@ -214,13 +222,13 @@ class Data {
 	public static function initProp($prop, $type = false) {
 		if ($type == 'article') return false;
 		if ($type) $type = ["value"=>1, "number"=>2, "text"=>3][$type];
-		return Once::func( function ($prop) use ($type) {
+		return Once::func( function ($prop, $type) {
 			if (!$prop) return null;
 			
 			$nick = Path::encode($prop);
 
 			$row = Data::fetch('SELECT prop_id, type from showcase_props where prop_nick = ?', [$nick]);
-			
+
 			if ($row) {
 				if ($type && $type != $row['type']) {
 					if ($row['type'] == 'number') { //Удаляем старые значения
@@ -239,7 +247,7 @@ class Data {
 				'INSERT INTO showcase_props (prop, prop_nick, type) VALUES(?,?,?)',
 				[$prop, $nick, $type]
 			);	
-		}, [$prop]);
+		}, [$prop, $type]);
 	}
 	
 	public static function checkType($prop) {
@@ -374,8 +382,6 @@ class Data {
 			$db->beginTransaction();
 			Data::removeFiles($producer_nick);
 
-			$pid = [];
-			foreach (Data::$files as $type) $pid[$type] = Data::initProp($type, 'text');
 
 			Data::applyIllustracii($producer_nick);
 			$ans['Файлов'] = 0;
@@ -388,9 +394,6 @@ class Data {
 				},$ak);
 			}, []);
 			$ans['Файлов'] = sizeof($ans['Бесхозные файлы']);
-			
-			
-
 			foreach ($list as $prod => $arts) {
 				//$producer_id = Data::initProducer($prod);
 				$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$prod]);
@@ -415,7 +418,7 @@ class Data {
 								continue; //Дубли одного пути или похоже пути из-за Path encode путь может давайть одинаковый value_nick в этом случае похожий путь будет проигнорирован
 							}
 							$values[$value_id] = true;*/
-							$prop_id = $pid[$type];
+							$prop_id = Data::initProp($type, 'text');
 
 							Data::exec(
 								'INSERT INTO showcase_mtexts (model_id, item_num, prop_id, `text`, `order`) VALUES(?,?,?,?,?)',
@@ -436,7 +439,7 @@ class Data {
 
 			$db->commit();
 			foreach($ans as $i=>$val){
-				if (is_array($ans[$i]) && sizeof($ans[$i]) > 500) $ans[$i] = sizeof($ans[$i]);
+				if (is_array($ans[$i]) && sizeof($ans[$i]) > 700) $ans[$i] = sizeof($ans[$i]);
 			}
 			return $ans;
 		},[$producer_nick]);
@@ -538,28 +541,34 @@ class Data {
 	}
 	public static function addFilesFS(&$list, $prod) {
 		if ($prod) {
-			Data::addFilesFSproducer($list, $prod);
+			Data::addFilesFSproducer($list, $prod, Showcase::$conf['folders'].$prod.'/');
 			foreach (Data::$files as $type) {
-				Data::addFilesFStype($list, $prod, $type);
+				if (!isset(Showcase::$conf[$type])) continue;
+				Data::addFilesFStype(Showcase::$conf[$type].$prod.'/', $list, $prod, $type);
 			}
 		} else {
 			$dir = Showcase::$conf['folders'];
 			FS::scandir($dir, function ($prod) use (&$list) {
-				Data::addFilesFSproducer($list, $prod);
+				//В списке производителей могут быть некоторые левые папки depricated
+				if (in_array($prod,['groups', 'articles', 'tables'])) return; //Относится к группам
+				Data::addFilesFSproducer($list, $prod, Showcase::$conf['folders'].$prod.'/');
 			});
 			foreach (Data::$files as $type) {
+				if (!isset(Showcase::$conf[$type])) continue;
 				$dir = Showcase::$conf[$type];
 				FS::scandir($dir, function ($prod) use (&$list, $type) {
-					Data::addFilesFStype($list, $prod, $type);
+					Data::addFilesFStype(Showcase::$conf[$type].$prod.'/', $list, $prod, $type);
 				});
 			}
 		}
 		foreach ($list as $prod => $arts) if (!$arts) unset($list[$prod]); 
 	}
-	public static function addFilesFStype(&$list, $prod, $type) { //files, texts, images, videos
-		$dir = Showcase::$conf[$type].$prod.'/';
+	public static function addFilesFStype($dir, &$list, $prod, $type) { //files, texts, images, videos
 		if (!Path::theme($dir)) return; //Подходят только папки
-		$exts = $type == 'files' ? false : Data::$$type;
+		if ($type == 'folders') {
+			return Data::addFilesFSproducer($list, $prod, $dir);
+		}
+		$exts = $type == 'folders' ? false : Data::$$type;
 		$index = Data::getIndex($dir, $exts);
 		foreach ($index as $art => $files) {
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
@@ -567,44 +576,63 @@ class Data {
 			$list[$prod][$art][0] += $files;
 		}
 	}
-	public static function addFilesFSproducer(&$list, $prod) {
-		if (in_array($prod,['articles','tables'])) return; //Относится к группам
-		$dir = Showcase::$conf['folders'].$prod.'/';
-		
+	public static function indexdir($dir, &$list) {
+		FS::scandir($dir, function ($file) use (&$list, $dir) {
+			$fd = Load::nameInfo($file);
+			if (in_array($fd['ext'], Data::$iexts)) return;	
+			$src = $dir.$file;
+			if (!Path::theme($src.'/')) {
+				$type = Data::fileType($src);
+				$list[$src] = $type;
+			}
+		});
+	}
+	public static function addFilesFSproducer(&$list, $prod, $dir) {
 		if (!Path::theme($dir)) return; //Подходят только папки
 		if (!isset($list[$prod])) $list[$prod] = array();
-
 		FS::scandir($dir, function ($fart) use ($dir, &$list, $prod) {
+			$artdir = $dir.$fart.'/';
+			if (!Path::theme($artdir)) return; //Подходят только папки
 			$art = mb_strtolower($fart);
-			if (!Path::theme($dir.$fart.'/')) return; //Подходят только папки
+			$art = Path::encode($art);
 			if (in_array($art, Data::$files)) return;
 				
-			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];//Data::$files;
-			FS::scandir($dir.$fart.'/', function ($file) use (&$list, $prod, $dir, $art, $fart) {
-				$fd = Load::nameInfo($file);
-				if (in_array($fd['ext'], Data::$iexts)) return;
-				$src = $dir.$fart.'/'.$file;
-				$type = Data::fileType($src);
-				$list[$prod][$art][0][$src] = $type;
-			});	
-		});
-		//echo '<pre>';
-		//print_r($list);
-		//exit;
-		$index = Data::getIndex($dir.'images/',  Data::$images);
-		foreach ($index as $art => $images) {
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
-			$images = array_fill_keys($images,'images');
-			$list[$prod][$art][0] += $images;
+			$list[$prod][$art][0][$artdir] = 'folders';
+			Data::indexdir($artdir, $list[$prod][$art][0]);
+		});
+		
+		foreach (Data::$files as $type) {
+			if ($type == 'folders') {
+				FS::scandir($dir.$type.'/', function ($userdir) use ($dir, $type, &$list, $prod) {
+					Data::addFilesFSproducer($list, $prod, $dir.$type.'/'.$userdir.'/');
+				});
+			} else {
+				$index = Data::getIndex($dir.$type.'/',  Data::$$type);
+				foreach ($index as $art => $files) {
+					if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
+					$files = array_fill_keys($files, $type);
+					$list[$prod][$art][0] += $files;
+				}
+			}
 		}
-		$index = Data::getIndex($dir.'files/');
+		
+		/*$index = Data::getIndex($dir.'texts/',  Data::$texts);
+		foreach ($index as $art => $texts) {
+			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
+			$texts = array_fill_keys($texts,'texts');
+			$list[$prod][$art][0] += $texts;
+		}*/
+
+		
+		/*$index = Data::getIndex($dir.'files/');
 		foreach ($index as $art => $files) {
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
 			foreach ($files as $src) {
 				$list[$prod][$art][0][$src] = Data::fileType($src);
 			}
 			
-		}
+		}*/
 	}
 	/*public static function addFilesFSimages(&$list, $prod) {
 		$dir = Showcase::$conf['images'].$prod.'/';
@@ -754,15 +782,15 @@ class Data {
 		return $list;
 	}
 	public static function getGroups($group_nick = false) {
-
-		
 		$root = Once::func(function (){
-			$list = Data::fetchto('SELECT g.group_nick, g.icon, g.order, g.group, c.name as catalog, count(*) as count, max(model_id) as notempty, g2.group_nick as parent_nick FROM showcase_groups g
+			$cost_id = Data::initProp("Цена");
+			$list = Data::fetchto('SELECT g.group_nick, g.icon, g.order, g.group, c.name as catalog, count(distinct m.model_id) as count, max(m.model_id) as notempty, min(mn.number) as min, max(mn.number) as max, g2.group_nick as parent_nick, g2.group as parent FROM showcase_groups g
 			left JOIN showcase_models m ON g.group_id = m.group_id
+			left JOIN showcase_mnumbers mn ON (m.model_id = mn.model_id and mn.prop_id = ?)
 			left JOIN showcase_catalog c ON c.catalog_id = g.catalog_id
 			left JOIN showcase_groups g2 ON g2.group_id = g.parent_id
 			GROUP BY group_nick
-			order by c.order, g.order','group_nick');
+			order by c.order, g.order','group_nick',[$cost_id]);
 			
 			$parents = [];
 			foreach ($list as $i=>&$group) {

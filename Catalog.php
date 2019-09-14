@@ -15,6 +15,9 @@ use akiyatkin\ydisk\Ydisk;
 Event::$classes['Showcase-catalog'] = function (&$obj) {
 	return $obj['pos']['producer'].' '.$obj['pos']['article'].' '.$obj['name'];
 };
+Event::$classes['Showcase-onloadprice'] = function () {
+	return '';
+};
 class Catalog {
 	public static function action($type = 'table') {
 		$action = Ans::GET('action');
@@ -56,6 +59,14 @@ class Catalog {
 		if ($action == 'clearAll') $res = Data::actionClearAll();
 		if ($action == 'addFiles') $res = Data::actionAddFiles($name);
 		if ($action == 'addFilesAll') $res = Data::actionAddFiles();
+
+
+		if (
+			in_array($action, ['loadproducer','addFiles','addFilesAll']) || 
+			($type == 'price' && in_array($action, ['loadAll','load']))
+		) {
+			Event::fire('Showcase-priceonload');
+		}
 		$ans['res'] = $res;
 		return $ans;
 	}

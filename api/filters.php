@@ -13,12 +13,23 @@ return Rest::get( function () {
 	$ans = array();
 	$md = Showcase::initMark($ans);
 
-	$arlist2 = Showcase::getOptions()['filters']['groups'];
 	$arlist = array();
+		
+		//depricated
+		$arlist2 = Showcase::getOptions()['filters']['groups'];
+		foreach ($arlist2 as $k=>$v) {
+			$arlist[Path::encode($k)] = [];
+			foreach ($v as $vv) $arlist[Path::encode($k)][] = Path::encode($vv);
+		}
+
+	$arlist2 = Showcase::getOptions()['groups'];
 	foreach ($arlist2 as $k=>$v) {
-		$arlist[Path::encode($k)] = [];
-		foreach($v as $vv) $arlist[Path::encode($k)][] = Path::encode($vv);
+		$k = Path::encode($k);
+		if (empty($v['filters'])) continue;
+		$arlist[$k] = [];
+		foreach ($v['filters'] as $vv) $arlist[$k][] = Path::encode($vv);
 	}
+
 	$title_nick = Path::encode(Showcase::$conf['title']);
 	if(isset($arlist[$title_nick])) {
 		$ar = $arlist[$title_nick];
@@ -29,13 +40,7 @@ return Rest::get( function () {
 	for ($i = sizeof($ans['group']['path'])-1; $i >= 0; $i--) {
 		$g = $ans['group']['path'][$i];
 		if (!isset($arlist[$g])) continue;
-		$ar = array_merge($ar,$arlist[$g]);
-	}
-	
-	
-	
-	if (!$ar && isset($arlist[Showcase::$conf['title']])) {
-		$ar = $arlist[Showcase::$conf['title']];
+		$ar = array_merge($arlist[$g],$ar);
 	}
 
 	$props = Ans::get('props','string');
@@ -53,10 +58,12 @@ return Rest::get( function () {
 	else $groups = '';
 	
 	if (Showcase::getOptions()['filters']['order'] == 'count') {
+		//depricated
 		$order = ' order by count DESC';
 	} else {
 		$order = ' order by value';	
 	}
+
 	foreach ($ar as $prop_nick) {
 		if ($prop_nick == 'producer') {//Артикул, Группа
 			$row = [];
@@ -173,6 +180,7 @@ return Rest::get( function () {
 			);
 		}
 	}
+
 	$columns = ['producer'];//Showcase::getOption(['columns']);
 	/*
 	Обработка параметров в showcase.json каждого фильтра
@@ -184,11 +192,15 @@ return Rest::get( function () {
 	- key
 
 	*/
-
 	foreach ($params as $k=>$p) {
 		if (!in_array($k, $columns)) $params[$k]['more'] = true;
 
-		$params[$k] += Showcase::getOption(['filters','props',$p['prop_nick']],['tpl'=>'prop-default']);
+		$params[$k] += Showcase::getOption(['filters', $p['prop_nick']],[]);
+
+			//depricated
+			$params[$k] += Showcase::getOption(['filters','props',$p['prop_nick']],['tpl'=>'prop-default']);
+
+		$params[$k] += ['tpl'=>'prop-default'];
 
 		$p = $params[$k];
 		if (isset($p['chain'])) {

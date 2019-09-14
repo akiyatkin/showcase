@@ -244,11 +244,9 @@ class Prices {
 			foreach ($props as $p) {
 				//Смотрим что установлено для нашей модели. Будет insert или update
 				
-				
-				
 				$oldorder = 0;
 				$t = 'm'.$p['type'].'s';	//mvalues
-				$mainprop = ($p['type'] == 'value') ?'value_id': $p['type'];
+				
 				$row = Data::fetch('SELECT p.order from showcase_'.$t.' v
 					left join showcase_prices p on p.price_id = v.price_id
 					WHERE
@@ -264,43 +262,59 @@ class Prices {
 							continue; //Свойство установлено из более приоритетного прайса
 						}
 					}
-					Prices::deleteProp($model_id, $item_num, $p['prop_id']);
+					Prices::deleteProp($model_id, $item_num, $p['prop']);
 				}
-
+				
 				//Может пусто и записывать ничего не надо?
 				if (!isset($pos[$p['prop']])) {
 					$misvalue++;
 					continue;
 				}
+				
+				
+				$prop = $p['prop'];
+				$value = $pos[$prop];
+				
 				if ($p['type'] == 'number') {
-					$pos[$p['prop']] = (float) $pos[$p['prop']];
-					if (!$pos[$p['prop']]) {
+					$value = (float) $value;
+					if (!$value) {
 						$miszero++;
 						continue;
 					}
-				} else if ($pos[$p['prop']] == '') {
+				} else if ($value == '') {
 					$misempty++;
 					continue; //Нечего копировать, свойства то и нет
 				}
 
-
-				$val = $pos[$p['prop']];
-
-				$r = true;
-				$ar = ($p['type'] == 'text') ? [$val] : explode(',', $val);
-				foreach ($ar as $v) {
-					$v = trim($v);
-					$value_id = ($p['type'] == 'value') ? Data::initValue($v) : $v;
-					Data::exec('INSERT showcase_'.$t.' (model_id, item_num, prop_id, '.$mainprop.', price_id, `order`)
-					VALUES(?,?,?,?,?,?)', [$model_id, $item_num, $p['prop_id'], $value_id, $price_id, $oldorder]);
-				}
-
+				$r = Prices::insertProp($model_id, $item_num, $p['prop'], $value, $oldorder, $price_id);
 			}
 			if ($r) $modified++;
 			else array_pop($mposs);
 			$list[$i]['r'] = $r;
 		}
 		return [sizeof($list), $modified, $mposs];
+	}
+	public static function insertProp($model_id, $item_num, $prop, $value, $oldorder = 0, $price_id = 0) {
+		$ptype = Data::checkType($prop);
+		$pid = Data::initProp($prop, $ptype);
+		if ($ptype == 'number') {
+			$value = (float) $value;
+			if (!$value) return false;
+		} else if ($value == '') {
+			return false;
+		}
+
+		
+		$mainprop = ($ptype == 'value') ? 'value_id' : $ptype;
+		$ar = ($ptype == 'text') ? [$value] : explode(',', $value);
+		$table = 'm'.$ptype.'s';	//mvalues
+		foreach ($ar as $v) {
+			$v = trim($v);
+			$value_id = ($ptype == 'value') ? Data::initValue($v) : $v;
+			Data::exec('INSERT showcase_'.$table.' (model_id, item_num, prop_id, '.$mainprop.', price_id, `order`)
+			VALUES(?,?,?,?,?,?)', [$model_id, $item_num, $pid, $value_id, $price_id, $oldorder]);
+		}
+		return true;
 	}
 	public static function onload($pricename, $callback) {
 		Event::handler('Showcase-prices.onload', function ($obj) use ($pricename, $callback){
@@ -477,7 +491,9 @@ class Prices {
 			LEFT JOIN showcase_mtexts mt ON mv.model_id = mt.price_id
 			WHERE mv.price_id = ?',[$price_id]);
 	}*/
-	public static function deleteProp($model_id, $item_num, $prop_id) {
+	public static function deleteProp($model_id, $item_num, $prop) {
+		$prop_id = Data::initProp($prop);
+		if (!$prop_id) return;
 		foreach (Data::$types as $type) {
 			Data::exec('DELETE FROM showcase_m'.$type.'s WHERE model_id = ? and item_num = ? and prop_id =?', 
 				[$model_id, $item_num, $prop_id]);	

@@ -78,18 +78,21 @@
 {GROUPS:}
 	{:menu}
 	<h1>Группы</h1>
-	{list.childs::groups}
+	{list:subgroup}
 	<br><br><br><br>
 	{:foot}
-	{groups:}
-		<div>
-		{~length(childs)?:subgroup?:justgroup}
-	</div>
-		{subgroup:}
+	
+	{subgroup:}
 		<div><span class="a" onclick="$(this).parent().parent().find('.sub:first').slideToggle()">{group}</span> <small> ({group_nick}) {catalog}.xlsx</small> <b>{sum}</b>{icon:pic}</div>
-		<div class="ml-4 sub" style="display:none">{childs::groups}</div>
+		<div class="ml-4 sub" style="display:{order=:one??:none}">{childs::groups}</div>
 		{justgroup:}
 		<div>{group}</span> <small> ({group_nick}) {catalog}.xlsx</small> <b>{count}</b>{icon:pic}</div>
+		{one:}1
+		{none:}none
+		{groups:}
+			<div>
+				{~length(childs)?:subgroup?:justgroup}
+			</div>
 {PRICE:}
 		{:menu}
 		<h1>{file}</h1>
