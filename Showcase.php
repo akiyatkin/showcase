@@ -409,6 +409,7 @@ class Showcase {
 
 					OR a.article_nick LIKE "%'.$s.'%" 
 					OR g.group_nick LIKE "%'.$s.'%" 
+					OR p.group_nick LIKE "%'.$s.'%" 
 					OR m.article_id LIKE "%'.$s.'%" 
 					OR m.model_id LIKE "%'.$s.'%" 
 					OR pr.producer_nick LIKE "%'.$s.'%"
@@ -448,6 +449,7 @@ class Showcase {
 			SELECT SQL_CALC_FOUND_ROWS max(i.item_nick) as item_nick, mn.number, a.article_nick, pr.producer_nick, GROUP_CONCAT(m.group_id) from showcase_items i
 			LEFT JOIN showcase_models m on i.model_id = m.model_id
 			LEFT JOIN showcase_groups g on g.group_id = m.group_id
+			LEFT JOIN showcase_groups p on g.parent_id = p.group_id
 			LEFT JOIN showcase_producers pr on pr.producer_id = m.producer_id
 			LEFT JOIN showcase_articles a on a.article_id = m.article_id
 			LEFT JOIN showcase_mnumbers mn on (mn.model_id = m.model_id and (mn.item_num = i.item_num or mn.item_num = 0) and mn.prop_id = :cost_id)
@@ -474,6 +476,7 @@ class Showcase {
 		$models = Data::all($sql, [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id, 
 			':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3]
 		);
+
 		$size = Data::col('SELECT FOUND_ROWS()');
 		foreach ($models as $k=>$m) {
 			$models[$k] = Showcase::getModel($m['producer_nick'], $m['article_nick'], $m['item_nick']);
@@ -484,6 +487,7 @@ class Showcase {
 		$groups = Data::fetchto('
 			SELECT max(mn3.text) as img, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_models m
 			LEFT JOIN showcase_groups g on g.group_id = m.group_id
+			LEFT JOIN showcase_groups p on g.parent_id = p.group_id
 			LEFT JOIN showcase_producers pr on pr.producer_id = m.producer_id
 			LEFT JOIN showcase_articles a on a.article_id = m.article_id
 			LEFT JOIN showcase_mtexts mn3 on (mn3.model_id = m.model_id and mn3.prop_id = :image_id)
@@ -600,6 +604,7 @@ class Showcase {
 				$pos['files'][$i] = $fd;
 			} 
 		}
+		//Event::tik('Showcase-position.onshow'); //Позиция вызывается в двух слоях по разным запросам - ошибка в этом
 		Event::fire('Showcase-position.onshow', $pos);
 		return $pos;
 	}

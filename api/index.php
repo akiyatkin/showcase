@@ -197,7 +197,7 @@ return Rest::get( function () {
 				return Ans::err($ans);
 			}
 			
-			$ans['breadcrumbs'][] = array('title'=>Showcase::$conf['title'],'href'=>'');
+			$ans['breadcrumbs'][] = array('title'=>Showcase::$conf['title'],'href'=>'','add'=>':group');
 			array_map(function($p) use (&$ans){
 				$group = Showcase::getGroup($p);
 				$ans['breadcrumbs'][] = array('title'=>$group['group'],'href'=>$p);
