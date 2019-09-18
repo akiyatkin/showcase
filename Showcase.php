@@ -19,6 +19,7 @@ use infrajs\mark\Mark as Marker;
 Event::$classes['Showcase-position'] = function ($pos) {
 	$id = $pos['producer_nick'].' '.$pos['article_nick'];
 	if (!empty($pos['item_nick'])) $id .= ' '.$pos['item_nick'];
+	if (!empty($pos['catkit'])) $id .= ' '.$pos['catkit'];
 	return $id;
 };
 /*Event::$classes['Showcase-group'] = function (&$group) {
@@ -587,8 +588,8 @@ class Showcase {
 		return $options;
 	}
 	
-	public static function getModelShow($producer_nick, $article_nick, $item_nick = '') {
-		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nick);
+	public static function getModelShow($producer_nick, $article_nick, $item_nick = '', $catkit = []) {
+		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nick, $catkit);
 		if (!$pos) return $pos;
 		if (isset($pos['texts'])) {
 			foreach ($pos['texts'] as $i => $src) {
@@ -608,7 +609,7 @@ class Showcase {
 		Event::fire('Showcase-position.onshow', $pos);
 		return $pos;
 	}
-	public static function getModel($producer_nick, $article_nick, $item_nick = '') {
+	public static function getModel($producer_nick, $article_nick, $item_nick = '', $catkit = []) {
 		$data = Data::fetch('SELECT 
 			m.model_id, p.producer_nick, p.logo, g.icon,
 			p.producer, a.article_nick, 
@@ -712,6 +713,9 @@ class Showcase {
 		$g = Showcase::getGroup($data['group_nick']);
 		$data += $g;
 		unset($data['childs']);
+		
+		if ($catkit) $data['catkit'] = implode('&', $catkit);
+
 		Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
 		return $data;
 	}

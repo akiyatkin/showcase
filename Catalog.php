@@ -326,8 +326,6 @@ class Catalog {
 				}
 				array_unshift($pos['items'], $item);
 			}
-		
-			$r = Catalog::writeProps($model_id, $pos, 0);
 
 			$obj = [
 				'model_id' => $model_id, 
@@ -337,6 +335,8 @@ class Catalog {
 			Event::fire('Showcase-catalog.onload', $obj); 
 			//Срабатывает только для моделей. МОжно добавить недостающие свойства. 
 			//Сгенерировать id для items
+			
+			$r = Catalog::writeProps($model_id, $pos, 0);
 
 			$ans['Принято моделей']++;
 			$ans['Принято позиций']++;
@@ -443,13 +443,17 @@ class Catalog {
 	}
 	public static function clearModel($model_id) {
 		$files = '("'.implode('","', Data::$files).'")';
-		$sql = 'DELETE t FROM showcase_mvalues t, showcase_props p
-			WHERE p.prop_id = t.prop_id 
-			AND p.prop_nick not in '.$files.' 
-			AND t.model_id = ? AND t.price_id is null';
-		Data::exec($sql, [$model_id]);
-		Data::exec('DELETE t FROM showcase_mnumbers t WHERE t.model_id = ? and t.price_id is null', [$model_id]);
-		Data::exec('DELETE t FROM showcase_mtexts t WHERE t.model_id = ? and t.price_id is null', [$model_id]);
+		/*$sql = 'DELETE t FROM showcase_mvalues t, showcase_props p
+			WHERE p.prop_id = t.prop_id AND p.prop_nick not in '.$files.' AND 
+			t.model_id = ? AND t.price_id is null';
+		Data::exec($sql, [$model_id]);*/
+		$where1 = 'p.prop_id = t.prop_id AND (t.item_num != 0 OR (p.prop_nick not in '.$files.' AND t.model_id = ? and t.price_id is null))';
+		
+		$where1 = 'p.prop_id = t.prop_id AND t.model_id = ? and t.price_id is null';
+		$where2 = 'p.prop_id = t.prop_id AND t.model_id = ? and t.price_id is null AND p.prop_nick not in '.$files;
+		Data::exec('DELETE t FROM showcase_mvalues t, showcase_props p WHERE '.$where1, [$model_id]);
+		Data::exec('DELETE t FROM showcase_mnumbers t, showcase_props p WHERE '.$where1, [$model_id]);
+		Data::exec('DELETE t FROM showcase_mtexts t, showcase_props p WHERE '.$where2, [$model_id]);
 		Data::exec('DELETE t FROM showcase_items t WHERE t.model_id = ?', [$model_id]);
 		//Может остаться свойство с айтемом которого нет
 	}

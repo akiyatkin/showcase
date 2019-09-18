@@ -177,11 +177,28 @@ return Rest::get( function () {
 		},
 		[function ($a, $producer_nick, $article_nick, $item_nick = false) {
 			$ans = array();
+
 			Showcase::initMark($ans, $producer_nick, $article_nick);
 			$producer_nick = Path::toutf(strip_tags($producer_nick));
 			$article_nick = Path::toutf(strip_tags($article_nick));
-			$ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick, $item_nick);
-			if ($item_nick && !$ans['pos']) $ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick);
+
+			if ($item_nick) {
+				$r = explode('&', $item_nick);
+				$item_nick = array_shift($r);
+				$catkit = array_map(function ($r){
+					$r = explode(':', $r);
+					$art = Path::encode($r[0]);
+					if (isset($r[1])) {
+						return $art.':'.Path::encode($r[1]);
+					} else {
+						return $art;
+					}
+				}, $r);
+			} else {
+				$catkit = [];
+			}
+			$ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick, $item_nick, $catkit);
+			if ($item_nick && !$ans['pos']) $ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick, '', $catkit);
 			
 			$active = $ans['pos']['article'];
 
