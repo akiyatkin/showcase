@@ -888,7 +888,7 @@ class Showcase {
 			$ans['name'] = $md['search'];
 			$ans['title'] = Path::encode($md['search'], true);
 			$ans['breadcrumbs'][] = array('title' => $conf['title'], 'add' => 'search:');
-			$ans['breadcrumbs'][] = array('href' => 'find','title' => 'Поиск');
+			//$ans['breadcrumbs'][] = array('href' => 'find','title' => 'Поиск');
 			$ans['breadcrumbs'][] = array('title' => $ans['name']);
 			$ans['breadcrumbs'][sizeof($ans['breadcrumbs'])-1]['active']  =  true;
 		} else {
