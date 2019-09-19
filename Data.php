@@ -407,8 +407,10 @@ class Data {
 						where m.producer_id = ?', [$art, $altart, $producer_id]);
 					if (!$model_id) continue;//Имя файла как артикул не зарегистрировано, даже если удалить производителя из артикула
 					$values = [];
+					
 					$order = 0;
 					foreach ($items as $item_num => $files) {
+						ksort($files);
 						foreach ($files as $src => $type) { //Все эти файлы относятся к найденной модели
 							$order++;
 							//$value_id = Data::initValue($src);
