@@ -786,7 +786,7 @@ class Data {
 	public static function getGroups($group_nick = false) {
 		$root = Once::func(function (){
 			$cost_id = Data::initProp("Цена");
-			$list = Data::fetchto('SELECT g.group_nick, g.icon, g.order, g.group, c.name as catalog, count(distinct m.model_id) as count, max(m.model_id) as notempty, min(mn.number) as min, max(mn.number) as max, g2.group_nick as parent_nick, g2.group as parent FROM showcase_groups g
+			$list = Data::fetchto('SELECT g.group_id, g.parent_id, g.group_nick, g.icon, g.order, g.group, c.name as catalog, count(distinct m.model_id) as count, max(m.model_id) as notempty, min(mn.number) as min, max(mn.number) as max, g2.group_nick as parent_nick, g2.group as parent FROM showcase_groups g
 			left JOIN showcase_models m ON g.group_id = m.group_id
 			left JOIN showcase_mnumbers mn ON (m.model_id = mn.model_id and mn.prop_id = ?)
 			left JOIN showcase_catalog c ON c.catalog_id = g.catalog_id
