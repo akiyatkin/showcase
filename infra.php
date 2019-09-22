@@ -56,10 +56,10 @@ Showcase::add('group', function () {
 	}
 	$val = array_filter($val);
 	$values = array_keys($val);
-	$values = array_filter($values, function (&$value) {
-		if(in_array($value,array('yes', 'no'))) return true;
-		if(!$value)return false;
-		if(!Showcase::getGroup($value))return false;
+	$values = array_filter($values, function (&$nick) {
+		if (in_array($nick, array('yes', 'no'))) return true;
+		if (!$nick) return false;
+		if (!Showcase::getGroup($nick)) return false;
 		return true;
 	});
 	$val = array_fill_keys($values, 1);

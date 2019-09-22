@@ -56,7 +56,6 @@ class Showcase {
 		$val = Ans::GET('val');
 		$val = Path::encode(Path::toutf(strip_tags($val)));
 		$art = Ans::GET('art');
-
 		
 		if ($val && !$art) {
 			if (!isset($_GET['m'])) $_GET['m'] = '';
@@ -85,9 +84,10 @@ class Showcase {
 		$ar = Once::func( function ($m = '') {
 			$mark = Showcase::getDefaultMark();
 			$mark->setVal($m);
+
 			$md = $mark->getData();
 			//$m = $mark->getVal();	
-
+			
 			$m = $mark->getOrigVal($m);
 			
 			
@@ -723,7 +723,7 @@ class Showcase {
 		$option = Data::getOptions();
 		$conf = Showcase::$conf;
 		$columns = Showcase::getOption(['columns']);
-		$files = Showcase::getOption(['files']);
+		
 
 		
 		$more = array();
@@ -738,8 +738,14 @@ class Showcase {
 				$more[$prop][] = $row['val'];
 			}
 		}
+
+		//$files = Showcase::getOption(['files']);
 		foreach ($data as $prop => $val) {
-			if (!in_array($prop, $files) && is_array($val) && !in_array($prop, Data::$files) && !in_array($prop,['more'])) {
+			if (
+				//!in_array($prop, $files) && 
+				is_array($val) 
+				&& !in_array($prop, Data::$files) 
+				&& !in_array($prop,['more'])) {
 				$data[$prop] = implode(', ', $val);
 			}
 		}
