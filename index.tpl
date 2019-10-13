@@ -144,8 +144,9 @@
 	{ptitle:}{producer?:linkproducer?(:Общий прайс для всех производителей):com}
 	{ctitle:}{producer?:linkproducer?(:Общие данные для всех производителей):com}
 	{linkproducer:}Производитель: <a href="/-showcase/producers/{producer_nick}">{producer}</a>
-	{itemname:}<b><a href="/-showcase/prices/{name}">{file|:Нет файла}</a></b><br>
-	{itemname:}<b>{file|:Нет файла}</b><br>
+	{itemname:}<b><a href="/-showcase/prices/{name}">{file|:nofile}</a></b><br>
+	{itemname:}<b>{file|:nofile}</b><br>
+	{nofile:}Нет файла {name}
 	{notime:}файл не внесён.
 	{noans:}раньше не вносился.
 	{noduration:}Время загрузки не известно,

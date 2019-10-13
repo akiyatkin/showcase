@@ -705,8 +705,7 @@ class Data {
 		$fotoid = Data::initProp('Фото', 'value');//Имя файла который считать images. producer не отменяется
 		
 		//!!!!Имя файла может содержать имя производителя
-		
-		$rows = Data::all('SELECT pr.producer, a.article, mv.item_num, v.value from showcase_mvalues mv
+		$rows = Data::all('SELECT pr.producer_nick, pr.producer, a.article, mv.item_num, v.value from showcase_mvalues mv
 			INNER JOIN showcase_values v ON v.value_id = mv.value_id
 			INNER JOIN showcase_models m ON mv.model_id = m.model_id
 			INNER JOIN showcase_articles a ON a.article_id = m.article_id
@@ -716,15 +715,15 @@ class Data {
 		$fotos = []; //[$producer][$fimage] = ['article', 'item_num'];
 		
 		foreach ($rows as $row) {
-			if (!isset($fotos[$row['producer']])) $fotos[$row['producer']] = [];
-			if (!isset($fotos[$row['producer']][$row['value']])) $fotos[$row['producer']][$row['value']] = [];
-			$fotos[$row['producer']][$row['value']][] = $row;
+			if (!isset($fotos[$row['producer_nick']])) $fotos[$row['producer_nick']] = [];
+			if (!isset($fotos[$row['producer_nick']][$row['value']])) $fotos[$row['producer_nick']][$row['value']] = [];
+			$fotos[$row['producer_nick']][$row['value']][] = $row;
 		}
-
 		
 		foreach ($fotos as $prod => $artsyns) {
 			foreach ($artsyns as $syn => $syns) {
 				if (!isset($list[$prod][$syn][0])) continue;
+				
 				foreach ($list[$prod][$syn][0] as $src => $type) { //По синониму может быть несколько файлов
 					foreach ($syns as $row) { //Один синоним может быть для нескольких позиций и каждый файл записываем в каждую позицию
 						if ($type !== 'images') continue;
@@ -733,11 +732,12 @@ class Data {
 						$list[$prod][$art][$row['item_num']][$src] = $type;
 					}
 				}
+
 			}
 		}
 
 		$faylid = Data::initProp('Файл', 'value');//Имя файла тип которого надо ещё определить.  producer не отменяется
-		$rows = Data::all('SELECT pr.producer, a.article, mv.item_num, v.value from showcase_mvalues mv
+		$rows = Data::all('SELECT pr.producer_nick, pr.producer, a.article, mv.item_num, v.value from showcase_mvalues mv
 			INNER JOIN showcase_values v ON v.value_id = mv.value_id
 			INNER JOIN showcase_models m ON mv.model_id = m.model_id
 			INNER JOIN showcase_articles a ON a.article_id = m.article_id
@@ -746,9 +746,9 @@ class Data {
 		$fayls = [];
 		
 		foreach ($rows as $row) {
-			if (!isset($fayls[$row['producer']])) $fayls[$row['producer']] = [];
-			if (!isset($fayls[$row['producer']][$row['value']])) $fayls[$row['producer']][$row['value']] = [];
-			$fayls[$row['producer']][mb_strtolower($row['value'])][] = $row;
+			if (!isset($fayls[$row['producer_nick']])) $fayls[$row['producer_nick']] = [];
+			if (!isset($fayls[$row['producer_nick']][$row['value']])) $fayls[$row['producer_nick']][$row['value']] = [];
+			$fayls[$row['producer_nick']][mb_strtolower($row['value'])][] = $row;
 		}
 		
 		foreach ($fayls as $prod => $artsyns) {
@@ -762,6 +762,7 @@ class Data {
 				}
 			}
 		}
+
 	}
 	public static function getIndex($dir, $exts = false) {
 		if (!Path::theme($dir)) return array();
