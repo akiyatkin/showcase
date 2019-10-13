@@ -772,8 +772,10 @@ class Data {
 			if ($exts && !in_array($fd['ext'], $exts)) return;
 			if (in_array($fd['ext'], Data::$iexts)) return;
 			$name = $fd['name'];
-			$p = explode(', ',$name);
+
+			$p = explode(',',$name);
 			foreach ($p as $name) {
+				$name = trim($name);
 				$name = preg_replace("/_\d*$/", '',$name);
 				$name = preg_replace("/\s*\(\d*\)*$/", '',$name);
 				$name = mb_strtolower(Path::encode($name));

@@ -2,6 +2,7 @@
 	"name":"akiyatkin/showcase",
 	"require":{
 		"infrajs/excel":"~1",
+		"akiyatkin/seo":"~1",
 		"infrajs/path":"~1",
 		"infrajs/catalog":"~1",
 		"infrajs/rest":"~1",
