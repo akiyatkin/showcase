@@ -449,18 +449,49 @@ class Data {
 	}
 	public static function addFilesIcons() {
 		return Once::func(function(){
+
+			$images = FS::scandir(Showcase::$conf['icons'], function ($file) {
+				$fd = Load::nameInfo($file);
+				if (in_array($fd['ext'], Data::$images)) return true;
+				return false;
+			});
+			$icons = [];
+			$icons = array_reduce($images, function ($icons, $file){
+				$fd = Load::nameInfo($file);
+				$nick = Path::encode($fd['name']);
+				$icons[$nick] = Showcase::$conf['icons'].$file;
+				return $icons;
+			}, $icons);
+
 			$images_id = Data::initProp('images');
 			$root = Data::getGroups();
 			$conf = Showcase::$conf;
-			Xlsx::runGroups($root, function &(&$group) use ($images_id){
+			Xlsx::runGroups($root, function &(&$group) use ($images_id, $icons){
 				//Ищим свою картинку
 				$group['icon'] = null;
 				
-				$icon = Rubrics::find(Showcase::$conf['icons'], $group['group_nick'], Data::$images);
+				$icon = false;
+				if (!$icon) {
+					if (isset($icons[$group['group_nick']])) {
+						$icon = $icons[$group['group_nick']];
+					}
+				}
+				if (!$icon) {
+					$nick = Path::encode($group['group']);
+					if (isset($icons[$nick])) {
+						$icon = $icons[$nick];
+					}
+				}
+				/*if (!$icon) {
+					$icon = Rubrics::find(Showcase::$conf['icons'], $group['group_nick'], Data::$images);
+				}
 				if (!$icon) {
 					$nick = Path::encode($group['group']);
 					$icon = Rubrics::find(Showcase::$conf['icons'], $nick, Data::$images);
-				}
+				}*/
+
+
+
 				if ($icon) {
 					$group['icon'] = $icon;
 				} else {
