@@ -221,6 +221,7 @@ return Rest::get( function () {
 					$child = &$ar[0];
 					if(empty($child['childs'])) $child['childs'] = [];
 					$child['key'] = $key;
+					if (!isset($pos[$key])) return $ar;
 					$val = $pos[$key];
 					$nick = Path::encode($val);
 					if (empty($child['childs'][$nick])) $child['childs'][$nick] = ['value'=>$val,'nick'=>$nick];
