@@ -436,8 +436,8 @@ class Data {
 
 			$ans['Бесхозные файлы'] = array_keys($ans['Бесхозные файлы']);
 			$ans['Найденные файлы'] = array_keys($ans['Найденные файлы']);
-			Data::addFilesIcons();
-			
+			$list = Data::addFilesIcons();
+			$ans['Бесхозные файлы']['Иконки групп'] = $list;
 
 			$db->commit();
 			foreach($ans as $i=>$val){
@@ -466,7 +466,7 @@ class Data {
 			$images_id = Data::initProp('images');
 			$root = Data::getGroups();
 			$conf = Showcase::$conf;
-			Xlsx::runGroups($root, function &(&$group) use ($images_id, $icons){
+			Xlsx::runGroups($root, function &(&$group) use ($images_id, &$icons){
 				//Ищим свою картинку
 				$group['icon'] = null;
 				
@@ -474,12 +474,14 @@ class Data {
 				if (!$icon) {
 					if (isset($icons[$group['group_nick']])) {
 						$icon = $icons[$group['group_nick']];
+						unset($icons[$group['group_nick']]);
 					}
 				}
 				if (!$icon) {
 					$nick = Path::encode($group['group']);
 					if (isset($icons[$nick])) {
 						$icon = $icons[$nick];
+						unset($icons[$nick]);
 					}
 				}
 				/*if (!$icon) {
@@ -489,7 +491,6 @@ class Data {
 					$nick = Path::encode($group['group']);
 					$icon = Rubrics::find(Showcase::$conf['icons'], $nick, Data::$images);
 				}*/
-
 
 
 				if ($icon) {
@@ -554,6 +555,7 @@ class Data {
 					[$prod['logo'], $prod['producer_nick']]
 				);
 			}
+			return $icons;
 		});
 	}
 	public static function initArticle($value) {
