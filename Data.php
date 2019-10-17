@@ -749,8 +749,9 @@ class Data {
 		
 		foreach ($rows as $row) {
 			if (!isset($fotos[$row['producer_nick']])) $fotos[$row['producer_nick']] = [];
-			if (!isset($fotos[$row['producer_nick']][$row['value']])) $fotos[$row['producer_nick']][$row['value']] = [];
-			$fotos[$row['producer_nick']][$row['value']][] = $row;
+			$val = mb_strtolower($row['value']);
+			if (!isset($fotos[$row['producer_nick']][$val])) $fotos[$row['producer_nick']][$val] = [];
+			$fotos[$row['producer_nick']][$val][] = $row;
 		}
 		
 		foreach ($fotos as $prod => $artsyns) {
