@@ -6,13 +6,14 @@
 		{(:/-showcase/producers):link}Производители{:/link} |
 		<!--{(:/-showcase/models):link}Модели{:/link} |-->
 		{(:/-showcase/api):link}API{:/link}
-		<span class="float-right">
-			<!--Загрузить с Яндекс Диска
-		<a class="btn btn-outline-info btn-sm" href="?-ydisk=tables">Данные</a>
-		<a class="btn btn-outline-info btn-sm" href="?-ydisk=prices">Прайсы</a>
-		<a class="btn btn-outline-info btn-sm" href="?-ydisk=true">Всё</a> -->
-		<small><a href="/">{View.getHost()}</a></small>
-		</span>
+		<div class="float-right text-right">
+			<a class="btn btn-outline-info btn-sm" href="?-ydisk=true">Загрузить с Яндекс Диска</a>
+			<!--<a class="btn btn-outline-info btn-sm" href="?-ydisk=tables">Данные</a>
+			<a class="btn btn-outline-info btn-sm" href="?-ydisk=prices">Прайсы</a>
+			<a class="btn btn-outline-info btn-sm" href="?-ydisk=true">Всё</a> -->
+			<small><a href="/">{View.getHost()}</a></small>
+		</div>
+		<div style="clear:both"></div>
 	</div>
 	{res:res}
 	{link:}<a class="{location.pathname=.?:font-weight-bold}" href="{.}">{/link:}</a>
