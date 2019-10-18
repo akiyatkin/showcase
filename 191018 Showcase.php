@@ -257,6 +257,7 @@ class Showcase {
 			if ($type == 'value') {
 				if (isset($vals['no'])) {
 					unset($vals['no']);
+					
 					$join[] = 'LEFT JOIN showcase_mvalues p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
 					if ($vals) {
 						$joinp = [];
@@ -367,21 +368,26 @@ class Showcase {
 			
 			if ($vals) {
 				$un = $prop_id.'v';
-				$joinp = [];
 				if ($type == 'value') {
+					$joinp = [];
 					foreach ($vals as $val => $one) {
 						$value_id = Data::initValue($val);
 						$joinp[] = 'p'.$un.'.value_id = '.$value_id;
 					}
-				} else if ($type == 'number') {
+					$joinp = implode(' OR ', $joinp);
+					$join[] = 'INNER JOIN showcase_mvalues p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.' and ('.$joinp.'))';
+				} else {
+					
+					$joinp = [];
 					foreach ($vals as $val => $one) {
 						$number = (float) $val;
+						
 						$joinp[] = 'p'.$un.'.number = '.$number;
 					}
-				} else if ($type == 'text') {
+					
+					$joinp = implode(' OR ', $joinp);
+					$join[] = 'INNER JOIN showcase_mnumbers p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.' and ('.$joinp.'))';
 				}
-				$joinp = implode(' OR ', $joinp);
-				$join[] = 'INNER JOIN showcase_m'.$type.'s p'.$un.' on (p'.$un.'.model_id = i.model_id and p'.$un.'.item_num = i.item_num and p'.$un.'.prop_id = '.$prop_id.' and ('.$joinp.'))';
 			}
 		}
 
@@ -471,7 +477,7 @@ class Showcase {
 		$models = Data::all($sql, [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id, 
 			':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3]
 		);
-		
+
 		$size = Data::col('SELECT FOUND_ROWS()');
 		foreach ($models as $k=>$m) {
 			$models[$k] = Showcase::getModel($m['producer_nick'], $m['article_nick'], $m['item_nick']);
@@ -480,15 +486,14 @@ class Showcase {
 
 
 		$groups = Data::fetchto('
-			SELECT max(mn3.text) as img, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_items i
-			LEFT JOIN showcase_models m on m.model_id = i.model_id
+			SELECT max(mn3.text) as img, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_models m
 			LEFT JOIN showcase_groups g on g.group_id = m.group_id
 			LEFT JOIN showcase_groups p on g.parent_id = p.group_id
 			LEFT JOIN showcase_producers pr on pr.producer_id = m.producer_id
 			LEFT JOIN showcase_articles a on a.article_id = m.article_id
 			LEFT JOIN showcase_mtexts mn3 on (mn3.model_id = m.model_id and mn3.prop_id = :image_id)
 			'.$join.'
-			WHERE m.model_id = i.model_id '.$grquery.' '.$prquery.' '.$no.'
+			WHERE 1=1 '.$grquery.' '.$prquery.' '.$no.'
 			GROUP BY m.group_id
 			','group_nick',[':image_id' => $image_id]);
 		//Найти общего предка для всех групп
@@ -622,41 +627,36 @@ class Showcase {
 		$item_num = $item['item_num'];
 		//exit;
 		
-		$list1 = Data::all('SELECT p.prop, p.prop_nick, v.value as val, min(smv.order) as `order`
+		$list1 = Data::all('SELECT p.prop, p.prop_nick, v.value as val, smv.order
 			FROM showcase_mvalues smv, showcase_values v, showcase_props p
 			WHERE smv.value_id = v.value_id
 			AND p.prop_id = smv.prop_id
 			AND smv.model_id = ?
 			AND (smv.item_num = 0 or smv.item_num = ?)
-			group by p.prop_nick, v.value_nick
 			',[$data['model_id'], $item_num]);
 		
-		$list2 = Data::all('SELECT p.prop, p.prop_nick, smv.number as val, min(smv.order) as `order`
+		$list2 = Data::all('SELECT p.prop, p.prop_nick, smv.number as val, smv.order
 			FROM showcase_mnumbers smv, showcase_props p
 			WHERE p.prop_id = smv.prop_id
 			AND smv.model_id = ?
 			AND (smv.item_num = 0 or smv.item_num = ?)
-			group by p.prop_nick, val
 		',[$data['model_id'], $item_num]);
 		foreach ($list2 as $i => $row) {
 			$list2[$i]['val'] = (float) $row['val'];
 		}
 		
-		$list3 = Data::all('SELECT p.prop, p.prop_nick, smv.text as val, min(smv.order) as `order`
+		$list3 = Data::all('SELECT p.prop, p.prop_nick, smv.text as val, smv.order
 			FROM showcase_mtexts smv, showcase_props p
 			WHERE p.prop_id = smv.prop_id
 			AND smv.model_id = ?
 			AND (smv.item_num = 0 or smv.item_num = ?)
-			group by p.prop_nick, val
 			',[$data['model_id'], $item_num]);
 		$list = array_merge($list1, $list2, $list3);
 
 		usort($list, function($a, $b){
 			if ($a['order'] > $b['order']) return 1;
 			if ($a['order'] < $b['order']) return -1;
-			return 1;//Фото специфицированная ддля позиции будет выше фото модели
 		});
-		
 		Showcase::makeMore($data, $list);
 		$data += $item;
 		

@@ -376,7 +376,7 @@ class Data {
 			
 
 			Data::addFilesSyns($list, $producer_nick); //Синонимы Фото и Файл для поиска
-
+			
 		
 			$db = &Db::pdo();
 			$db->beginTransaction();
@@ -408,8 +408,9 @@ class Data {
 					if (!$model_id) continue;//Имя файла как артикул не зарегистрировано, даже если удалить производителя из артикула
 					$values = [];
 					
-					$order = 0;
+					
 					foreach ($items as $item_num => $files) {
+						$order = 0;
 						ksort($files);
 						foreach ($files as $src => $type) { //Все эти файлы относятся к найденной модели
 							$order++;
@@ -749,15 +750,15 @@ class Data {
 		
 		foreach ($rows as $row) {
 			if (!isset($fotos[$row['producer_nick']])) $fotos[$row['producer_nick']] = [];
-			$val = mb_strtolower($row['value']);
+			$val = mb_strtolower(Path::encode($row['value']));
 			if (!isset($fotos[$row['producer_nick']][$val])) $fotos[$row['producer_nick']][$val] = [];
 			$fotos[$row['producer_nick']][$val][] = $row;
 		}
+
 		
 		foreach ($fotos as $prod => $artsyns) {
 			foreach ($artsyns as $syn => $syns) {
-				if (!isset($list[$prod][$syn][0])) continue;
-				
+				if (empty($list[$prod][$syn])) continue;
 				foreach ($list[$prod][$syn][0] as $src => $type) { //По синониму может быть несколько файлов
 					foreach ($syns as $row) { //Один синоним может быть для нескольких позиций и каждый файл записываем в каждую позицию
 						if ($type !== 'images') continue;
@@ -781,8 +782,9 @@ class Data {
 		
 		foreach ($rows as $row) {
 			if (!isset($fayls[$row['producer_nick']])) $fayls[$row['producer_nick']] = [];
-			if (!isset($fayls[$row['producer_nick']][$row['value']])) $fayls[$row['producer_nick']][$row['value']] = [];
-			$fayls[$row['producer_nick']][mb_strtolower($row['value'])][] = $row;
+			$art = mb_strtolower($row['value']);
+			if (!isset($fayls[$row['producer_nick']][$art])) $fayls[$row['producer_nick']][$art] = [];
+			$fayls[$row['producer_nick']][$art][] = $row;
 		}
 		
 		foreach ($fayls as $prod => $artsyns) {
@@ -790,13 +792,21 @@ class Data {
 				if (!isset($list[$prod][$syn][0])) continue;
 				foreach ($list[$prod][$syn][0] as $src => $type) { //По синониму может быть несколько файлов
 					foreach ($syns as $row) { //Один синоним может быть для нескольких позиций и каждый файл записываем в каждую позицию
-						if (!isset($list[$prod][$row['article']][$row['item_num']])) $list[$prod][$row['article']][$row['item_num']] = [];
-						$list[$prod][$row['article']][$row['item_num']][$src] = $type;
+						$art = mb_strtolower($row['article']);
+						if (!isset($list[$prod][$art][$row['item_num']])) $list[$prod][$art][$row['item_num']] = [];
+						$list[$prod][$art][$row['item_num']][$src] = $type;
 					}
 				}
 			}
 		}
 
+	}
+	public static function encode($name) {
+		$name = trim($name);
+		$name = preg_replace("/_\d*$/", '',$name);
+		$name = preg_replace("/\s*\(\d*\)*$/", '',$name);
+		$name = mb_strtolower(Path::encode($name));
+		return $name;
 	}
 	public static function getIndex($dir, $exts = false) {
 		if (!Path::theme($dir)) return array();
@@ -809,13 +819,15 @@ class Data {
 
 			$p = explode(',',$name);
 			foreach ($p as $name) {
-				$name = trim($name);
-				$name = preg_replace("/_\d*$/", '',$name);
-				$name = preg_replace("/\s*\(\d*\)*$/", '',$name);
-				$name = mb_strtolower(Path::encode($name));
-				if (!$name) continue;
-				if (empty($list[$name])) $list[$name] = array();
-				$list[$name][] = $src;
+				$name1 = Data::encode($name);
+				if (!$name1) continue;
+				//$name2 = mb_strtolower(Path::encode($name)); //Для фото, когда у itemoв свои номера
+				
+				if (empty($list[$name1])) $list[$name1] = array();
+				$list[$name1][] = $src;
+
+				//if (empty($list[$name2])) $list[$name2] = array();
+				//$list[$name2][] = $src;
 			}
 		}, true);
 		return $list;
