@@ -381,7 +381,7 @@ class Showcase {
 				} else if ($type == 'text') {
 				}
 				$joinp = implode(' OR ', $joinp);
-				$join[] = 'INNER JOIN showcase_m'.$type.'s p'.$un.' on (p'.$un.'.model_id = i.model_id and p'.$un.'.item_num = i.item_num and p'.$un.'.prop_id = '.$prop_id.' and ('.$joinp.'))';
+				$join[] = 'INNER JOIN showcase_m'.$type.'s p'.$un.' on (p'.$un.'.model_id = i.model_id and (p'.$un.'.item_num = i.item_num or p'.$un.'.item_num = 0) and p'.$un.'.prop_id = '.$prop_id.' and ('.$joinp.'))';
 			}
 		}
 
