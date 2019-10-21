@@ -211,16 +211,25 @@ class Prices {
 		foreach ($list as $i => $find) {
 			$model_id = $find['model_id'];
 			$item_num = $find['item_num'];
-			$row = Data::fetch('SELECT p.producer, a.article, i.item FROM showcase_models m
+			/*$row = Data::fetch('SELECT p.producer, a.article, i.item FROM showcase_models m
 				INNER JOIN showcase_producers p on p.producer_id = m.producer_id
 				INNER JOIN showcase_items i on (i.model_id = m.model_id and i.item_num = ?)
 				INNER JOIN showcase_articles a on a.article_id = m.article_id
 				where m.model_id = ?
-				',[$item_num, $model_id]);
+				',[$item_num, $model_id]);*/
 
-			$str=$row['producer'].' '.$row['article'];
+			
+			$row = Data::fetch('SELECT p.producer, a.article, i.item FROM showcase_items i
+				INNER JOIN showcase_models m on i.model_id = m.model_id
+				INNER JOIN showcase_producers p on p.producer_id = m.producer_id
+				INNER JOIN showcase_articles a on a.article_id = m.article_id
+				where i.model_id = ? and i.item_num = ?
+				', [$model_id, $item_num]);
+
+			$str = $row['producer'].' '.$row['article'];
 			if ($row['item']) $str .= ' '.$row['item'];
 			$mposs[] = $str;
+
 			
 
 			//Для этих моделей нужно записать новые свойства из props, но надо чтобы текущие значения не были более приоритеными
@@ -238,6 +247,7 @@ class Prices {
 				VALUES(?,?,?,?,?,?)', [$model_id, $item_num, $p['prop_id'], $value_id, $price_id, $order]);	
 			},[$price_id, $model_id, $item_num]);
 			
+
 
 			$r = false;
 
@@ -448,20 +458,22 @@ class Prices {
 			$ans['Количество позиций в каталоге'] = Data::col('SELECT count(*) from showcase_items i
 					INNER JOIN showcase_models m on m.model_id = i.model_id and m.producer_id=:producer_id',[':producer_id'=>$producer_id]);
 
+			//У всех позиций добавляется свойство Прайс, даже если ничего не внесено
 			$ans['Ошибки каталога'] = Data::all('SELECT * from (SELECT p.producer, a.article, max(mv.price_id) as price_id FROM showcase_models m
 			LEFT JOIN showcase_producers p on m.producer_id = p.producer_id
 			LEFT JOIN showcase_articles a on a.article_id = m.article_id
-			LEFT JOIN showcase_mnumbers mv on (mv.model_id = m.model_id and mv.price_id = :price_id)
+			LEFT JOIN showcase_mvalues mv on (mv.model_id = m.model_id and mv.price_id = :price_id)
 			where m.producer_id = :producer_id
 			GROUP BY m.model_id) t WHERE t.price_id is null
 			', [':producer_id'=> $producer_id, ':price_id' => $option['price_id']]);
 		} else {
 			$ans['Количество позиций в каталоге'] = Data::col('SELECT count(*) from showcase_items i');
+			//У всех позиций добавляется свойство Прайс, даже если ничего не внесено
 			$ans['Ошибки каталога'] = Data::all('SELECT * from (SELECT p.producer, a.article, i.item, max(mv.price_id) as price_id FROM showcase_items i
 			INNER JOIN showcase_models m on m.model_id = i.model_id
 			LEFT JOIN showcase_producers p on m.producer_id = p.producer_id
 			LEFT JOIN showcase_articles a on a.article_id = m.article_id
-			LEFT JOIN showcase_mnumbers mv on (mv.model_id = i.model_id and mv.item_num = i.item_num and mv.price_id = :price_id)
+			LEFT JOIN showcase_mvalues mv on (mv.model_id = i.model_id and mv.item_num = i.item_num and mv.price_id = :price_id)
 			GROUP BY i.model_id, i.item_num) t WHERE t.price_id is null
 			', [':price_id' => $option['price_id']]);
 		}
