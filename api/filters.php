@@ -95,6 +95,37 @@ return Rest::get( function () {
 
 			if ($filtertype == 'value') {
 				if ($type == 'value') {
+
+
+
+					$gs = Showcase::getGroupsIn($md);
+					if ($gs) $grwhere = 'm.group_id in ('.implode(',', $gs).')';
+					else $grwhere = '1=1';
+
+					$sql = 'SELECT v.value, v.value_nick FROM showcase_models m
+					left join showcase_items i on (i.model_id = m.model_id)
+					left join showcase_mvalues mv on ((mv.item_num = i.item_num or mv.item_num = 0) and mv.model_id = m.model_id and mv.prop_id = :prop_id)
+					left join showcase_values v on v.value_id = mv.value_id
+					where '.$grwhere.'
+					group by v.value_id';
+
+					
+					$values = Data::all($sql,[':prop_id'=>$prop_id]);
+					if (isset($values[0]) && empty($values[0]['value'])) {
+						unset($values[0]);
+						$values[] = [
+							'value' => 'Не указано',
+							'value_nick' => 'no'
+						];
+					}
+					/*echo '<pre>';
+					print_r($values);
+					exit;
+					if ($isnull) continue;
+
+					
+
+
 					$values = Data::all('SELECT v.value, v.value_nick, count(*) as count FROM showcase_mvalues mv
 					left join showcase_values v on v.value_id = mv.value_id
 					'.$groups.'
@@ -102,7 +133,9 @@ return Rest::get( function () {
 					group by mv.value_id
 					'.$order.'
 					',[':prop_id'=>$prop_id]);
-					sort($values);
+					print_r($values);*/
+
+					//sort($values);
 				} else if ($type == 'number') {
 					
 					$values = Data::all('
