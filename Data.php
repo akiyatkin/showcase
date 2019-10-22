@@ -442,7 +442,7 @@ class Data {
 
 			$db->commit();
 			foreach($ans as $i=>$val){
-				if (is_array($ans[$i]) && sizeof($ans[$i]) > 700) $ans[$i] = sizeof($ans[$i]);
+				if (is_array($ans[$i]) && sizeof($ans[$i]) > 1000) $ans[$i] = sizeof($ans[$i]);
 			}
 			return $ans;
 		},[$producer_nick]);

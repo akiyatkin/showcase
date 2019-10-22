@@ -656,57 +656,60 @@ class Showcase {
 			if ($a['order'] < $b['order']) return -1;
 			return 1;//Фото специфицированная ддля позиции будет выше фото модели
 		});
+
 		
 		Showcase::makeMore($data, $list);
 		$data += $item;
 		
 		//if ($item_nick) {
-			$its = Data::all('
-					SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, v.value as val from showcase_mvalues mv
-					left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
-					left join showcase_props ps on ps.prop_id = mv.prop_id
-					left join showcase_values v on v.value_id = mv.value_id
-					where mv.model_id = :model_id and mv.item_num > 0 
-					UNION ALL
-					SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, mv.number as val from showcase_mnumbers mv
-					left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
-					left join showcase_props ps on ps.prop_id = mv.prop_id
-					WHERE mv.model_id = :model_id and mv.item_num > 0 
-					UNION ALL
-					SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, mv.text as val from showcase_mtexts mv
-					left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
-					left join showcase_props ps on ps.prop_id = mv.prop_id
-					where mv.model_id = :model_id and mv.item_num > 0 
+		$its = Data::all('
+				SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, v.value as val from showcase_mvalues mv
+				left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
+				left join showcase_props ps on ps.prop_id = mv.prop_id
+				left join showcase_values v on v.value_id = mv.value_id
+				where mv.model_id = :model_id and mv.item_num > 0 
+				UNION ALL
+				SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, mv.number as val from showcase_mnumbers mv
+				left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
+				left join showcase_props ps on ps.prop_id = mv.prop_id
+				WHERE mv.model_id = :model_id and mv.item_num > 0 
+				UNION ALL
+				SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, mv.text as val from showcase_mtexts mv
+				left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
+				left join showcase_props ps on ps.prop_id = mv.prop_id
+				where mv.model_id = :model_id and mv.item_num > 0 
 
-					',[':model_id' => $data['model_id']]);
-			
-			$items = [];
-			foreach ($its as $i) {
-				$itemn = $i['item_nick'];
-				if (!isset($items[$itemn])) $items[$itemn] = ['item'=>$i['item'], 'item_nick'=>$itemn, 'list'=>[]];
-				$items[$itemn]['list'][] = $i;
-			}
-			if ($items) {
-				if ($item_nick) {
-					//unset($items[$data['item_nick']]);
-					foreach ($items as $k=>$item) {
-						$list = $item['list'];
-						unset($items[$k]['list']);
-						Showcase::makeMore($items[$k], $list);
-					}
-				} else {
-					foreach ($items as $k=>$item) break;
-					$data['item'] = $item['item'];
-					$data['item_nick'] = $item['item_nick'];
-					Showcase::makeMore($data, $item['list']);
-					foreach ($items as $k=>$item) {
-						$list = $item['list'];
-						unset($items[$k]['list']);
-						Showcase::makeMore($items[$k], $list);
-					}
+				',[':model_id' => $data['model_id']]);
+		
+		$items = [];
+		foreach ($its as $i) {
+			$itemn = $i['item_nick'];
+			if (!isset($items[$itemn])) $items[$itemn] = ['item'=>$i['item'], 'item_nick'=>$itemn, 'list'=>[]];
+			$items[$itemn]['list'][] = $i;
+		}
+		if ($items) {
+			if ($item_nick) {
+				//unset($items[$data['item_nick']]);
+				foreach ($items as $k=>$item) {
+					$list = $item['list'];
+					unset($items[$k]['list']);
+					Showcase::makeMore($items[$k], $list);
 				}
-				$data['items'] = array_values($items);
+			} else {
+				foreach ($items as $k=>$item) break;
+				$data['item'] = $item['item'];
+				$data['item_nick'] = $item['item_nick'];
+
+
+				//Showcase::makeMore($data, $item['list']);
+				foreach ($items as $k=>$item) {
+					$list = $item['list'];
+					unset($items[$k]['list']);
+					Showcase::makeMore($items[$k], $list);
+				}
 			}
+			$data['items'] = array_values($items);
+		}
 			
 
 		//}
@@ -724,7 +727,9 @@ class Showcase {
 		$conf = Showcase::$conf;
 		$columns = Showcase::getOption(['columns']);
 		
-
+		
+		
+		
 		
 		$more = array();
 		foreach ($list as $row) {
