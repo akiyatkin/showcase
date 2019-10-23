@@ -668,6 +668,7 @@ class Showcase {
 			return 1;//Фото специфицированная ддля позиции будет выше фото модели
 		});
 
+
 		
 		Showcase::makeMore($data, $list);
 		$data += $item;
@@ -712,7 +713,7 @@ class Showcase {
 				foreach ($items as $k => $item) break;
 				$data['item'] = $item['item'];
 				$data['item_nick'] = $item['item_nick'];
-				//Showcase::makeMore($data, $item['list']);
+				Showcase::makeMore($data, $item['list']);
 				foreach ($items as $k=>$item) {
 					$list = $item['list'];
 					unset($items[$k]['list']);
