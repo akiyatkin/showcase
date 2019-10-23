@@ -39,7 +39,7 @@ return Rest::get( function () {
 	$args = array($start, $count);
 	$list = Showcase::getProducers();
 	
-	$ans['menu'] = Load::loadJSON(Showcase::$conf['menu']);
+	//$ans['menu'] = Load::loadJSON(Showcase::$conf['menu']);
 	$ans['list'] = $list;
 
 	$conf = Showcase::$conf;
