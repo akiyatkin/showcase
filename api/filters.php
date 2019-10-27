@@ -101,12 +101,11 @@ return Rest::get( function () {
 					else $grwhere = '1=1';
 
 					$sql = '
-					SELECT v.value, v.value_nick, a.article, count(*) as count
+					SELECT v.value, v.value_nick, m.article, count(*) as count
 					FROM showcase_models m
-					left join showcase_mvalues mv on (mv.model_id = m.model_id and mv.prop_id = :prop_id)
+					left join showcase_iprops mv on (mv.model_id = m.model_id and mv.prop_id = :prop_id)
 
 					left join showcase_values v on v.value_id = mv.value_id
-					left join showcase_articles a on m.article_id = a.article_id
 					where '.$grwhere.'
 					group by v.value_id
 					';
@@ -126,7 +125,7 @@ return Rest::get( function () {
 					
 					$values = Data::all('
 						SELECT mv.number as value, mv.number as value_nick, count(*) as count 
-						FROM showcase_mnumbers mv
+						FROM showcase_iprops mv
 						'.$groups.'
 						WHERE mv.prop_id = :prop_id
 					group by mv.number
@@ -149,7 +148,7 @@ return Rest::get( function () {
 					
 					$row = Data::fetch('
 						SELECT min(mv.number) as min, max(mv.number) as max 
-						FROM showcase_mnumbers mv
+						FROM showcase_iprops mv
 						'.$groups.'
 						WHERE mv.prop_id = :prop_id
 					', [':prop_id' => $prop_id]);

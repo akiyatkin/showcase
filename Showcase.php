@@ -257,7 +257,7 @@ class Showcase {
 			if ($type == 'value') {
 				if (isset($vals['no'])) {
 					unset($vals['no']);
-					$join[] = 'LEFT JOIN showcase_mvalues p'.$un.' on (p'.$un.'.model_id = m.model_id and (p'.$un.'.item_num = i.item_num or p'.$un.'.item_num = 0) and p'.$un.'.prop_id = '.$prop_id.')';
+					$join[] = 'LEFT JOIN showcase_iprops p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
 					if ($vals) {
 						$joinp = [];
 						foreach ($vals as $val => $one) {
@@ -272,12 +272,12 @@ class Showcase {
 					}
 				} else if (isset($vals['yes'])) {
 					unset($vals['yes']);
-					$join[] = 'INNER JOIN showcase_mvalues p'.$un.' on (p'.$un.'.model_id = m.model_id and (p'.$un.'.item_num = i.item_num or p'.$un.'.item_num = 0) and p'.$un.'.prop_id = '.$prop_id.')';
+					$join[] = 'INNER JOIN showcase_iprops p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.item_num = i.item_num and p'.$un.'.prop_id = '.$prop_id.')';
 				}
 			} else if ($type == 'text') {
 				if (!empty($vals['no'])) {
 					
-					$join[] = 'LEFT JOIN showcase_mtexts p'.$un.' on (p'.$un.'.model_id = m.model_id and (p'.$un.'.item_num = i.item_num or p'.$un.'.item_num = 0) and p'.$un.'.prop_id = '.$prop_id.')';
+					$join[] = 'LEFT JOIN showcase_iprops p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.prop_id = '.$prop_id.')';
 
 					
 					$no[] = 'and (p'.$un.'.text is null)';
@@ -298,12 +298,13 @@ class Showcase {
 
 				} else if (isset($vals['yes'])) {
 					unset($vals['yes']);
-					$join[] = 'INNER JOIN showcase_mtexts p'.$un.' on (p'.$un.'.model_id = m.model_id and (p'.$un.'.item_num = i.item_num or p'.$un.'.item_num = 0) and p'.$un.'.prop_id = '.$prop_id.')';
+					$join[] = 'INNER JOIN showcase_iprops p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.item_num = i.item_num and p'.$un.'.prop_id = '.$prop_id.')';
 				}
 			} else if ($type == 'number') {
+
 				if (!empty($vals['no']) || !empty($vals['minmax'])) {
+					$join[] = 'LEFT JOIN showcase_iprops p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.item_num = i.item_num and p'.$un.'.prop_id = '.$prop_id.')';
 					
-					$join[] = 'LEFT JOIN showcase_mnumbers p'.$un.' on (p'.$un.'.model_id = m.model_id and (p'.$un.'.item_num = i.item_num or p'.$un.'.item_num = 0) and p'.$un.'.prop_id = '.$prop_id.')';
 
 					/*if (empty($vals['minmax']) && !empty($vals['no'])) {
 						$no[] = 'and p'.$un.'.number is null';
@@ -358,7 +359,7 @@ class Showcase {
 
 				} else if (isset($vals['yes'])) {
 					unset($vals['yes']);
-					$join[] = 'INNER JOIN showcase_mnumbers p'.$un.' on (p'.$un.'.model_id = m.model_id and (p'.$un.'.item_num = i.item_num or p'.$un.'.item_num = 0) and p'.$un.'.prop_id = '.$prop_id.')';
+					$join[] = 'INNER JOIN showcase_iprops p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.item_num = i.item_num and p'.$un.'.prop_id = '.$prop_id.')';
 				}
 			}
 			//echo '<pre>';
@@ -381,7 +382,7 @@ class Showcase {
 				} else if ($type == 'text') {
 				}
 				$joinp = implode(' OR ', $joinp);
-				$join[] = 'INNER JOIN showcase_m'.$type.'s p'.$un.' on (p'.$un.'.model_id = i.model_id and (p'.$un.'.item_num = i.item_num or p'.$un.'.item_num = 0) and p'.$un.'.prop_id = '.$prop_id.' and ('.$joinp.'))';
+				$join[] = 'INNER JOIN showcase_iprops p'.$un.' on (p'.$un.'.model_id = i.model_id and p'.$un.'.item_num = i.item_num and p'.$un.'.prop_id = '.$prop_id.' and ('.$joinp.'))';
 			}
 		}
 
@@ -393,19 +394,19 @@ class Showcase {
 				$v[$i] = preg_replace("/ы$/","",$s);
 				$s = $v[$i];
 				$str .= 'and (m.model_id in (SELECT smv'.$i.'.model_id from showcase_values sv'.$i.'
-					inner join showcase_mvalues smv'.$i.' on smv'.$i.'.value_id = sv'.$i.'.value_id
+					inner join showcase_iprops smv'.$i.' on smv'.$i.'.value_id = sv'.$i.'.value_id
 					where sv'.$i.'.value_nick like "%'.$s.'%") 
 
-					OR m.model_id in (SELECT svt'.$i.'.model_id from showcase_mtexts svt'.$i.'
+					OR m.model_id in (SELECT svt'.$i.'.model_id from showcase_iprops svt'.$i.'
 					where svt'.$i.'.text like "%'.$s.'%") 
 
-					OR m.model_id in (SELECT svn'.$i.'.model_id from showcase_mnumbers svn'.$i.'
+					OR m.model_id in (SELECT svn'.$i.'.model_id from showcase_iprops svn'.$i.'
 					where svn'.$i.'.number like "%'.$s.'%") 
 
-					OR a.article_nick LIKE "%'.$s.'%" 
+					OR m.article_nick LIKE "%'.$s.'%" 
+					OR i.item_nick LIKE "%'.$s.'%" 
 					OR g.group_nick LIKE "%'.$s.'%" 
 					OR p.group_nick LIKE "%'.$s.'%" 
-					OR m.article_id LIKE "%'.$s.'%" 
 					OR m.model_id LIKE "%'.$s.'%" 
 					OR pr.producer_nick LIKE "%'.$s.'%"
 				)';
@@ -441,37 +442,45 @@ class Showcase {
 		if ($count) $limit = 'limit '.$start.','.$count;
 		else $limit = '';
 		$sql = '
-			SELECT SQL_CALC_FOUND_ROWS max(i.item_nick) as item_nick, GROUP_CONCAT(distinct i.item_nick) as items, mn.number as cost, a.article_nick, pr.producer_nick, GROUP_CONCAT(distinct m.group_id) as groups from showcase_items i
+			SELECT 
+				SQL_CALC_FOUND_ROWS i.model_id, 
+				i.item_num,
+				max(i.item_nick) as item_nick, 
+				GROUP_CONCAT(distinct i.item_nick) as items, 
+				min(mn.number) as cost, 
+				m.article_nick, pr.producer_nick, GROUP_CONCAT(distinct m.group_id) as groups from showcase_items i
 			LEFT JOIN showcase_models m on i.model_id = m.model_id
 			LEFT JOIN showcase_groups g on g.group_id = m.group_id
 			LEFT JOIN showcase_groups p on g.parent_id = p.group_id
 			LEFT JOIN showcase_producers pr on pr.producer_id = m.producer_id
-			LEFT JOIN showcase_articles a on a.article_id = m.article_id
-			LEFT JOIN showcase_mnumbers mn on (mn.model_id = m.model_id and (mn.item_num = i.item_num or mn.item_num = 0) and mn.prop_id = :cost_id)
-			LEFT JOIN showcase_mvalues mn2 on (mn2.model_id = m.model_id and (mn2.item_num = i.item_num or mn2.item_num = 0) and mn2.prop_id = :nalichie_id)
-			LEFT JOIN showcase_mtexts mn3 on (mn3.model_id = m.model_id and (mn3.item_num = i.item_num or mn3.item_num = 0) and mn3.prop_id = :image_id)
+			LEFT JOIN showcase_iprops mn on (mn.model_id = m.model_id and mn.item_num = i.item_num and mn.prop_id = :cost_id)
+			LEFT JOIN showcase_iprops mn2 on (mn2.model_id = m.model_id and mn2.item_num = i.item_num and mn2.prop_id = :nalichie_id)
+			LEFT JOIN showcase_iprops mn3 on (mn3.model_id = m.model_id and mn3.item_num = i.item_num and mn3.prop_id = :image_id)
 			'.$join.'
 			WHERE 1=1 '.$grquery.' '.$prquery.' '.$no.'
-			GROUP BY pr.producer_id, a.article_id
+			GROUP BY m.model_id
 			ORDER BY 
-			'.$sort.'
 			
+			'.$sort.'
 			IF(mn3.text is null,1,0),
 			IF(mn2.value_id = :nal1,0,1),
 			IF(mn2.value_id = :nal2,0,1), 
 			IF(mn2.value_id = :nal3,0,1), 
-			IF(mn.number IS NULL,1,0), 
+			IF(mn.number IS NULL,0,1), 
 			mn.number '.$asc.'
 			'.$limit.'
 			';
 		
-		//pr.producer_id, a.article_id, i.item_num,
+		//pr.producer_id, m.article_id, i.item_num,
 		
 		$models = Data::all($sql, [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id, 
 			':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3]
 		);
-		
 		$size = Data::col('SELECT FOUND_ROWS()');
+		
+		
+		
+		
 		foreach ($models as $k=>$m) {
 
 			/*
@@ -481,19 +490,21 @@ class Showcase {
 			$m['items'] = explode(',',$m['items']);
 			foreach ($m['items'] as $j => $v) if (!$v) unset($m['items'][$j]);
 			
+		
 			$models[$k] = Showcase::getModel($m['producer_nick'], $m['article_nick'], $m['item_nick'], [], $m['items']);
+		
 		}
 		$ans['list'] = $models;
 		
-
+	
+		
 		$groups = Data::fetchto('
 			SELECT max(mn3.text) as img, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_items i
 			LEFT JOIN showcase_models m on m.model_id = i.model_id
 			LEFT JOIN showcase_groups g on g.group_id = m.group_id
 			LEFT JOIN showcase_groups p on g.parent_id = p.group_id
 			LEFT JOIN showcase_producers pr on pr.producer_id = m.producer_id
-			LEFT JOIN showcase_articles a on a.article_id = m.article_id
-			LEFT JOIN showcase_mtexts mn3 on (mn3.model_id = m.model_id and mn3.prop_id = :image_id)
+			LEFT JOIN showcase_iprops mn3 on (mn3.model_id = m.model_id and mn3.prop_id = :image_id)
 			'.$join.'
 			WHERE m.model_id = i.model_id '.$grquery.' '.$prquery.' '.$no.'
 			GROUP BY m.group_id
@@ -612,41 +623,204 @@ class Showcase {
 		Event::fire('Showcase-position.onshow', $pos);
 		return $pos;
 	}
+	public static function setItem($data, $item_nick) {
+		$item = $data['items'][$item_nick];
+		foreach ($data['itemrows'] as $name) {
+			unset($data[$name]);
+			if (isset($data['more'])) unset($data['more'][$name]);
+		}
+		if (isset($item['more'])) {
+			$data['more'] = $item['more'] + $data['more'];
+			unset($item['more']);
+		}
+		$data = $item + $data;
+		return $data;
+	}
 	public static function getModel($producer_nick, $article_nick, $item_nick = '', $catkit = [], $myitems = []) {
 		// $catkit - выбранная комплектация
 		// $myitems - какие позиции будут внутри модели
+		if ($item_nick && $myitems) $myitems[] = $item_nick;
 
-		$data = Data::fetch('SELECT 
-			m.model_id, p.producer_nick, p.logo, g.icon,
-			p.producer, a.article_nick, 
-			a.article, g.group_nick, g.group
-			FROM showcase_models m
-			INNER JOIN showcase_articles a on (a.article_id = m.article_id and a.article_nick = :article)
+		$data = Showcase::getFullModel($producer_nick, $article_nick);
+		
+		if ($item_nick && $data['item_nick'] != $item_nick) {
+			if (empty($data['items'][$item_nick])) {
+				return false;
+			} else {
+				$data = Showcase::setItem($data, $item_nick);
+			}
+		}
+
+		if (!empty($data['items']) && $myitems) {
+			foreach ($data['items'] as $k=>$item) {
+				if (!in_array($item['item_nick'], $myitems)) unset($data['items'][$k]);
+			}
+			if (sizeof($data['items']) == 0) return false;
+			if (sizeof($data['items']) == 1) {
+				unset($data['items']);
+				unset($data['itemrows']);
+				unset($data['itemmore']);
+			}
+		}
+
+
+		if (!empty($data['items'])) {
+			$min = false;
+			$max = false;
+			if (!empty($data['Цена'])) {
+				$min = $data['Цена'];
+				$max = $data['Цена'];
+			}
+			foreach ($data['items'] as $item) {
+				if (empty($item['Цена'])) continue;
+				if (!$min || $min > $item['Цена']) $min = $item['Цена'];
+				if (!$max || $max < $item['Цена']) $max = $item['Цена'];
+			}
+			if ($min != $max) {
+				$data['min'] = $min;
+				$data['max'] = $max;
+			}
+		}
+		
+		if ($catkit) $data['catkit'] = implode('&', $catkit); //Выбраная комплектация
+
+		Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
+		
+
+		return $data;
+
+	}
+	public static function getFullModel($producer_nick, $article_nick) {
+
+		$data = Data::fetchto('SELECT 
+			m.model_id, m.article_nick, m.article, 
+			p.producer_nick, p.logo, p.producer, 
+			i.item_nick, i.item_num, i.item, 
+			g.group_nick, g.group, g.icon
+			FROM showcase_models m 
+			LEFT JOIN showcase_items i on (i.model_id = m.model_id)
 			INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = :producer)
 			INNER JOIN showcase_groups g on (g.group_id = m.group_id)
-			order by m.article_id
-			', [':article'=>$article_nick,':producer'=>$producer_nick]);
+			where m.article_nick = :article
+			order by m.model_id
+			', 'item_num', [':article'=>$article_nick,':producer'=>$producer_nick]);
 		if (!$data) return false;
-		//print_r($data);
-		$item = Data::fetch('SELECT item_num, item, item_nick from showcase_items where model_id = ? and item_nick = ?',[$data['model_id'], $item_nick]);
-		if ($item === false) return false;
-		$item_num = $item['item_num'];
-		//exit;
+		
+		//надо определить itemrows
+		foreach ($data as $pos) break;
+		$list = Data::all('SELECT 
+			p.prop, p.prop_nick, 
+			v.value, 
+			ip.number, ip.text, ip.order as `order`, ip.item_num
+			FROM showcase_iprops ip
+			LEFT JOIN showcase_values v on v.value_id = ip.value_id
+			LEFT JOIN showcase_props p on p.prop_id = ip.prop_id
+			WHERE ip.model_id = ?
+			',[$pos['model_id']]);
+
+		//$calc[prop_nick][value][item_num] = true
+		//Если у prop_nick есть value не указанный у какого-то item_num, prop идёт в itemrows
+		$calc = [];
+		$icount = sizeof($data);
+		$items = [];
+		foreach ($list as $p=>$prop) {
+			if (!is_null($prop['number'])) $list[$p]['val'] = $prop['number'];
+			else if (!is_null($prop['text'])) $list[$p]['val'] = $prop['text'];
+			else if (!is_null($prop['value'])) $list[$p]['val'] = $prop['value'];
+
+			if (!isset($calc[$list[$p]['prop']])) $calc[$list[$p]['prop']] = [];
+			if (isset($calc[$list[$p]['prop']][$list[$p]['val']][$list[$p]['item_num']])) continue; 
+			$calc[$list[$p]['prop']][$list[$p]['val']][$list[$p]['item_num']] = $prop; //Дефолтным считается первое
+	
+		}
+		$itemrows = [];
+		$itemmore = [];
+		foreach ($calc as $prop=>$vals) {
+			foreach ($vals as $item_num => $count) {
+				if ($icount == sizeof($count)) continue;
+				if (!Showcase::isColumn($prop)) $itemmore[] = $prop;
+				$itemrows[] = $prop;
+				break;
+			}
+		}
+
+		$pos['list'] = [];
+		foreach ($list as $p => $prop) {
+			
+			$item_num = $list[$p]['item_num'];
+			if ($item_num == 1) $pos['list'][] = $prop;
+			if (!in_array($prop['prop'], $itemrows)) continue;
+
+			$item_nick = $data[$item_num]['item_nick'];
+			
+			if (empty($items[$item_nick])) $items[$item_nick] = [
+				'item' => $data[$item_num]['item'], 
+				'item_num' => $item_num, 
+				'item_nick' => $item_nick, 
+				'list' => []
+			];
+			$items[$item_nick]['list'][] = $prop;
+		}
+
+		Showcase::makeMore($pos, $pos['list']);
+		foreach ($items as $k => $item) {
+			Showcase::makeMore($items[$k], $item['list']);
+		}
+		if ($itemrows) $pos['itemrows'] = $itemrows;
+		if ($itemmore) $pos['itemmore'] = $itemmore;
+		if ($items) $pos['items'] = $items;
+
+		$g = Showcase::getGroup($pos['group_nick']);
+		$pos += array_intersect_key($g, array_flip(['group_id','parent_id','parent_nick','parent','path']));
+		
+		return $pos;
+	}
+	public static function getModel2($producer_nick, $article_nick, $item_nick = '', $catkit = [], $myitems = []) {
+		// $catkit - выбранная комплектация
+		// $myitems - какие позиции будут внутри модели
+		if ($item_nick && $myitems) $myitems[] = $item_nick;
+		$data = Data::fetchto('SELECT 
+			m.model_id, p.producer_nick, p.logo, g.icon,
+			p.producer, m.article_nick,
+			m.article, i.item_nick, i.item_num, i.item, g.group_nick, g.group
+			FROM showcase_models m 
+			left join showcase_items i on (i.model_id = m.model_id)
+			INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = :producer)
+			INNER JOIN showcase_groups g on (g.group_id = m.group_id)
+			where m.article_nick = :article
+			order by m.model_id
+			', 'item_nick', [':article'=>$article_nick,':producer'=>$producer_nick]);
+		if (!$data) return false;
+
+		if(isset($data[$item_nick])) {
+			$data = $data[$item_nick];
+		} else {
+			foreach ($data as $data) break;
+		}
+		
+		$item_num = $data['item_num'];
+		$item_nick = $data['item_nick'];
+		
+		
 		
 		$list1 = Data::all('SELECT p.prop, p.prop_nick, v.value as val, min(smv.order) as `order`
-			FROM showcase_mvalues smv, showcase_values v, showcase_props p
+			FROM showcase_iprops smv, showcase_values v, showcase_props p
 			WHERE smv.value_id = v.value_id
 			AND p.prop_id = smv.prop_id
 			AND smv.model_id = ?
-			AND (smv.item_num = 0 or smv.item_num = ?)
+			AND smv.item_num = ?
+			AND smv.value_id is not null
 			group by p.prop_nick, v.value_nick
 			',[$data['model_id'], $item_num]);
+
+		
 		
 		$list2 = Data::all('SELECT p.prop, p.prop_nick, smv.number as val, min(smv.order) as `order`
-			FROM showcase_mnumbers smv, showcase_props p
+			FROM showcase_iprops smv, showcase_props p
 			WHERE p.prop_id = smv.prop_id
 			AND smv.model_id = ?
-			AND (smv.item_num = 0 or smv.item_num = ?)
+			AND smv.item_num = ?
+			AND smv.number is not null
 			group by p.prop_nick, val
 		',[$data['model_id'], $item_num]);
 		foreach ($list2 as $i => $row) {
@@ -654,14 +828,15 @@ class Showcase {
 		}
 		
 		$list3 = Data::all('SELECT p.prop, p.prop_nick, smv.text as val, min(smv.order) as `order`
-			FROM showcase_mtexts smv, showcase_props p
+			FROM showcase_iprops smv, showcase_props p
 			WHERE p.prop_id = smv.prop_id
 			AND smv.model_id = ?
-			AND (smv.item_num = 0 or smv.item_num = ?)
+			AND smv.item_num = ?
+			and smv.text is not null
 			group by p.prop_nick, val
 			',[$data['model_id'], $item_num]);
 		$list = array_merge($list1, $list2, $list3);
-
+		
 		usort($list, function($a, $b){
 			if ($a['order'] > $b['order']) return 1;
 			if ($a['order'] < $b['order']) return -1;
@@ -671,29 +846,29 @@ class Showcase {
 
 		
 		Showcase::makeMore($data, $list);
-		$data += $item;
-		
+
 		//if ($item_nick) {
 		$its = Data::all('
-				SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, v.value as val from showcase_mvalues mv
+				SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, v.value as val from showcase_iprops mv
 				left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
 				left join showcase_props ps on ps.prop_id = mv.prop_id
 				left join showcase_values v on v.value_id = mv.value_id
-				where mv.model_id = :model_id and mv.item_num > 0 
+				where mv.model_id = :model_id and mv.value_id is not null
 				UNION ALL
-				SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, mv.number as val from showcase_mnumbers mv
+				SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, mv.number as val from showcase_iprops mv
 				left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
 				left join showcase_props ps on ps.prop_id = mv.prop_id
-				WHERE mv.model_id = :model_id and mv.item_num > 0 
+				WHERE mv.model_id = :model_id and mv.number is not null
 				UNION ALL
-				SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, mv.text as val from showcase_mtexts mv
+				SELECT i.item, i.item_nick, ps.prop, ps.prop_nick, mv.text as val from showcase_iprops mv
 				left join showcase_items i on (i.item_num = mv.item_num and i.model_id = mv.model_id)
 				left join showcase_props ps on ps.prop_id = mv.prop_id
-				where mv.model_id = :model_id and mv.item_num > 0 
+				where mv.model_id = :model_id and mv.text is not null
 
 				',[':model_id' => $data['model_id']]);
 		
-		if ($item_nick && $myitems) $myitems[] = $item_nick;
+		
+		
 		$items = [];
 		foreach ($its as $i) {
 			$itemn = $i['item_nick'];
@@ -701,24 +876,58 @@ class Showcase {
 			if (!isset($items[$itemn])) $items[$itemn] = ['item' => $i['item'], 'item_nick' => $itemn, 'list' => []];
 			$items[$itemn]['list'][] = $i;
 		}
+		
+		$icount = sizeof($items); 
+		$calc = [];
+		foreach ($items as $j => $item) {
+			foreach ($item['list'] as $k => $prop) {
+				$p = $prop['prop_nick'];
+				$v = $prop['val'];
+
+				if (!isset($calc[$p])) {
+					$calc[$p] = $prop;
+					$calc[$p]['val'] = '';
+					$calc[$p]['vals'] = [];
+				}
+				if (!isset($calc[$p]['vals'][$v])) $calc[$p]['vals'][$v] = 0;
+				$calc[$p]['vals'][$v]++;
+				//Надо найти свойства, которые есть у всех item. 
+				//Для этого каждой пары свойства должно быть icount и 
+			}
+		};
+		
+		foreach ($calc as $p => $pp) {
+			foreach ($calc[$p]['vals'] as $v => $kp) {
+				if ($calc[$p]['vals'][$v] == $icount) {
+					unset($calc[$p]['vals'][$v]);
+				}
+			}
+			if (!$calc[$p]['vals']) unset($calc[$p]);
+		}
+		
+		
+		foreach ($items as $j => $item) {
+			$mycalc = $calc;
+			foreach ($item['list'] as $k => $prop) {
+				$p = $prop['prop_nick'];
+				$v = $prop['val'];
+				if (empty($mycalc[$p])) unset($items[$j]['list'][$k]);
+				$mycalc[$p]['ready'] = true;
+			}
+			foreach ($mycalc as $p => $pp) {
+				if (isset($mycalc[$p]['ready'])) continue;
+				unset($mycalc[$p]['ready']);
+				unset($mycalc[$p]['vals']);
+				$items[$j]['list'][] = $mycalc[$p];
+			}
+		}
+		
+
 		if ($items) {
-			if ($item_nick) {
-				//unset($items[$data['item_nick']]);
-				foreach ($items as $k=>$item) {
-					$list = $item['list'];
-					unset($items[$k]['list']);
-					Showcase::makeMore($items[$k], $list);
-				}
-			} else {
-				foreach ($items as $k => $item) break;
-				$data['item'] = $item['item'];
-				$data['item_nick'] = $item['item_nick'];
-				Showcase::makeMore($data, $item['list']);
-				foreach ($items as $k=>$item) {
-					$list = $item['list'];
-					unset($items[$k]['list']);
-					Showcase::makeMore($items[$k], $list);
-				}
+			foreach ($items as $k=>$item) {
+				$list = $item['list'];
+				unset($items[$k]['list']);
+				Showcase::makeMore($items[$k], $list);
 			}
 			$data['items'] = array_values($items);
 			if(sizeof($data['items']) == 1) unset($data['items']);
@@ -733,16 +942,14 @@ class Showcase {
 			}
 			foreach ($data['items'] as $item) {
 				if (empty($item['Цена'])) continue;
-				if ($min > $item['Цена']) $min = $item['Цена'];
-				if ($max < $item['Цена']) $max = $item['Цена'];
+				if (!$min || $min > $item['Цена']) $min = $item['Цена'];
+				if (!$max || $max < $item['Цена']) $max = $item['Цена'];
 			}
 			if ($min != $max) {
 				$data['min'] = $min;
 				$data['max'] = $max;
 			}
 		}
-
-		//}
 		$g = Showcase::getGroup($data['group_nick']);
 		$data += array_intersect_key($g, array_flip(['group_id','parent_id','parent_nick','parent','path']));
 		
@@ -752,21 +959,19 @@ class Showcase {
 		Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
 		return $data;
 	}
-	public static function makeMore(&$data, $list) {
-		$option = Data::getOptions();
-		$conf = Showcase::$conf;
+	public static function isColumn($prop) {
 		$columns = Showcase::getOption(['columns']);
-		
-		
-		
-		
-		
+		$prop_nick = Path::encode($prop);
+		return in_array($prop_nick, $columns) || in_array($prop, $columns);
+	}
+	public static function makeMore(&$data, $list) {
 		$more = array();
 		foreach ($list as $row) {
 			$prop = $row['prop'];
 			$prop_nick = $row['prop_nick'];
-			if (in_array($prop_nick, $columns)) {
+			if (Showcase::isColumn($prop)) {
 				if (!isset($data[$prop])) $data[$prop] = [];
+
 				$data[$prop][] = $row['val'];
 			} else {
 				if (!isset($more[$prop])) $more[$prop] = [];
@@ -774,6 +979,7 @@ class Showcase {
 			}
 		}
 
+		unset($data['list']);
 		//$files = Showcase::getOption(['files']);
 		foreach ($data as $prop => $val) {
 			if (
@@ -784,16 +990,17 @@ class Showcase {
 				$data[$prop] = implode(', ', $val);
 			}
 		}
-		
+		//ksort($data);
 		if ($more) {
-
 			foreach($more as $name => $val) {
 				if (is_array($val)) {
 					$more[$name] = implode(', ', $val);
 				}
 			}
+			ksort($data);
 			$data['more'] = $more;
 		}
+		
 	}
 	public static function numbers($page, $pages, $plen = 11)
 	{

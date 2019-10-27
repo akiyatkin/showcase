@@ -181,7 +181,7 @@ return Rest::get( function () {
 			Showcase::initMark($ans, $producer_nick, $article_nick);
 			$producer_nick = Path::toutf(strip_tags($producer_nick));
 			$article_nick = Path::toutf(strip_tags($article_nick));
-
+			
 			if ($item_nick) {
 				$r = explode('&', $item_nick);
 				$item_nick = array_shift($r);

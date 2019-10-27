@@ -139,7 +139,7 @@
 		{:foot}
 	{time:}<b>{~date(:j F H:i,.)}</b>.
 	{size:}<b>{.}</b> Кб, 
-	{duration:}Загрузка за <b title="{.}">{.<:1?:1?.}</b> сек,
+	{duration:}Загрузка за <b title="{duration}">{duration<:1?:1?duration}</b> сек,  изменено <b>{count}</b> {~words(count,:позиция,:позиции,:позиций)},
 	{icount:}
 		Всего: <b>{ans.Количество позиций в прайсе}</b>, не найдено: <b>{~length(ans.Не найдено соответствий)}</b>, пропущено: <b>{~length(ans.У позиции в прайсе не указан ключ)}</b><br>
 	{ptitle:}{producer?:linkproducer?(:Общий прайс для всех производителей):com}
@@ -159,7 +159,7 @@
 			<i></i><br>{size:size} {mtime:time}
 		</div>
 		<div class="p-2 flex-grow-1">
-			{duration?duration:duration?:noduration} {time?time:time?:notime} {ans?ans:res}
+			{duration?:duration?:noduration} {time?time:time?:notime}. {ans?ans:res}
 		</div>
 		
 		{:pactions}
@@ -182,7 +182,7 @@
 			{size:size} {mtime:time}
 		</div>
 		<div class="p-2 flex-grow-1">
-			{duration?duration:duration?:noduration} {time?time:time?:notime} {ans?ans:res?}
+			{duration?:duration?:noduration} {time?time:time?:notime} {ans?ans:res?}
 		</div>
 		{:cactions}
 	</div>

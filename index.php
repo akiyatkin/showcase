@@ -2,7 +2,9 @@
 use infrajs\load\Load;
 use infrajs\rest\Rest;
 use infrajs\ans\Ans;
+use infrajs\db\Db;
 use infrajs\access\Access;
+use infrajs\update\Update;
 use akiyatkin\showcase\Catalog;
 use akiyatkin\showcase\Prices;
 use akiyatkin\showcase\Data;
@@ -19,21 +21,25 @@ echo Rest::get( function () {
 	$ans['count'] = Data::col('SELECT count(*) as `count` from showcase_models');
 	return Rest::parse('-showcase/index.tpl', $ans);
 }, 'drop', function () {
-	header('location: /-showcase/?-update=true');
 	
-	Data::exec('DROP TABLE showcase_prices');
-	Data::exec('DROP TABLE showcase_catalog');
-	Data::exec('DROP TABLE showcase_groups');
-	Data::exec('DROP TABLE showcase_producers');
-	Data::exec('DROP TABLE showcase_articles');
-	Data::exec('DROP TABLE showcase_props');
-	Data::exec('DROP TABLE showcase_values');
-	Data::exec('DROP TABLE showcase_items');
-	Data::exec('DROP TABLE showcase_models');
-	Data::exec('DROP TABLE showcase_mvalues');
-	Data::exec('DROP TABLE showcase_mnumbers');
-	Data::exec('DROP TABLE showcase_mtexts');
+	Data::exec('DROP TABLE IF EXISTS 
+		showcase_prices,
+		showcase_catalog,
+		showcase_groups,
+		showcase_producers,
+		showcase_articles,
+		showcase_props,
+		showcase_values,
+		showcase_items,
+		showcase_models,
+		showcase_mvalues,
+		showcase_mnumbers,
+		showcase_mtexts,
+		showcase_iprops
+	');
 	
+	Update::exec();
+	header('location: /-showcase/');
 	exit;
 }, 'update', function () {
 	$ans = Catalog::action('table');

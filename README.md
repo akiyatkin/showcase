@@ -5,6 +5,30 @@ Prices - таблицы прайсов
 Catalog - вместе данные и прайсы
 Showcase - frontend API интерфейс
 
+# Новая версия
+Разработать стандарт сущностей и API для работы с ним. 
+
+ENTITIES (Для любой таблицы должно быть понимание её реальной сущность с том числе можо представить сущность представленной связи других сущностей)
+
+- prices (price_id, price, price_nick)						fix - producer_id, time, order, count, duration, ans
+- catalog (catalog_id, catalog, catalog_nick)				fix - producer_id, time, order, count, duration, ans
+
+- groups (group_id, group_nick, group)						fix - parent_id, icon, catalog_id, order
+- producers (producer_id, producer_nick, producer)			fix - logo
+
+- models! (model_id, article, article_nick)					fix - producer_id, group_id, catalog_id
+- items (item_num, item, item_nick)							fix - model_id
+
+- values (value_id, value, value_nick) 
+- props (prop_id, prop, prop_nick) 							fix - type
+
+- iprops! 	[model_id, item_num, prop_id]					fix - number, text, value_id, order, price_id
+
+- mvalues, mnumbers, mtexts
+
+
+
+
 # Структура данных
 
 showcase_prices 		price_id, [name], producer_id, time, order, count, duration, ans
@@ -12,7 +36,7 @@ showcase_catalog 		catalog_id, [name], producer_id, time, order, count, duration
 ===
 showcase_groups			group_id, group, [group_nick], parent_id, icon, catalog_id, order
 showcase_producers 		producer_id, producer, [producer_nick], icon
-showcase_articles 		article_id, article, [article_nick]
+!showcase_articles 		article_id, article, [article_nick]
 
 showcase_props 			prop_id, prop, [prop_nick], type (1 value, 2 number, 3 text) - number и text считаются только те свойство которые указаны в конфиге
 showcase_values 		value_id, value, [value_nick] - value_nick создаётся для тех свойств которые есть в фильтрах конфига
@@ -22,9 +46,9 @@ showcase_values 		value_id, value, [value_nick] - value_nick создаётся 
 showcase_items 			(model_id, item_num), item, [item_nick]
 showcase_models			model_id, catalog_id, [producer_id, article_id], group_id, time (1 актив, 2 удалена - для сохранения ид)
 
-showcase_mvalues		[model_id, item_num, prop_id, value_id], price_id, order
-showcase_mnumbers		[model_id, item_num, prop_id, number], price_id, order
-showcase_mtexts			[model_id, item_num, prop_id], text, price_id, order
+!showcase_mvalues		[model_id, item_num, prop_id, value_id], price_id, order
+!showcase_mnumbers		[model_id, item_num, prop_id, number], price_id, order
+!showcase_mtexts		[model_id, item_num, prop_id], text, price_id, order
 
 
 Если удалили колонку и у айтема пропал props - удаляются все пропсы модели, кроме тех у которых price_id

@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS `showcase_props` (
 	`prop_id` SMALLINT unsigned NOT NULL AUTO_INCREMENT COMMENT '',
 	`prop` varchar(255) NOT NULL COMMENT '',
 	`prop_nick` varchar(255) NOT NULL COMMENT '',
-	`type` TINYINT unsigned NOT NULL COMMENT '1 value, 2 number, 3 text',
+	`type` SET("value","number","text") NOT NULL COMMENT 'В какой колонке и как хранятся значения',
 	PRIMARY KEY (`prop_id`),
 	UNIQUE INDEX (prop_nick)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
@@ -101,6 +101,7 @@ CREATE TABLE IF NOT EXISTS `showcase_values` (
 END;
 scexec($sql);
 
+/*
 $sql = <<<END
 CREATE TABLE IF NOT EXISTS `showcase_articles` (
 	`article_id` MEDIUMINT unsigned NOT NULL AUTO_INCREMENT COMMENT '',
@@ -110,7 +111,7 @@ CREATE TABLE IF NOT EXISTS `showcase_articles` (
 	UNIQUE INDEX (`article_nick`)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
-scexec($sql);
+scexec($sql);*/
 
 $sql = <<<END
 CREATE TABLE IF NOT EXISTS `showcase_producers` (
@@ -126,17 +127,18 @@ scexec($sql);
 
 
 //MODELS
-
+//- !models (model_id, article, article_nick)					fix - producer_id, group_id, catalog_id
 $sql = <<<END
 CREATE TABLE IF NOT EXISTS `showcase_models` (
 	`model_id` MEDIUMINT unsigned NOT NULL AUTO_INCREMENT COMMENT '',
 	`catalog_id` SMALLINT unsigned COMMENT '',
 	`producer_id` SMALLINT unsigned COMMENT '',
-	`article_id` MEDIUMINT unsigned COMMENT '',
+	`article` varchar(255) NOT NULL COMMENT '',
+	`article_nick` varchar(255) NOT NULL COMMENT '',
 	`time` DATETIME NULL DEFAULT NULL COMMENT '',
 	`group_id` SMALLINT unsigned NOT NULL COMMENT '',
 	PRIMARY KEY (`model_id`),
-	UNIQUE INDEX (`article_id`, `producer_id`),
+	UNIQUE INDEX (`producer_id`,`article_nick`),
 	INDEX (group_id, producer_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1 ;
 END;
@@ -154,8 +156,24 @@ CREATE TABLE IF NOT EXISTS `showcase_items` (
 END;
 scexec($sql);
 
-
 $sql = <<<END
+CREATE TABLE IF NOT EXISTS `showcase_iprops` (
+	`model_id` MEDIUMINT unsigned NOT NULL COMMENT '',
+	`item_num` SMALLINT unsigned NOT NULL COMMENT '',
+	`prop_id` SMALLINT unsigned NOT NULL COMMENT '65 тыс',
+	`value_id` MEDIUMINT unsigned NULL COMMENT '16 млн',
+	`number` DECIMAL(19,2) NULL COMMENT '',
+	`text` mediumtext NULL COMMENT '',
+	`price_id` SMALLINT unsigned NULL COMMENT '65 тыс',
+	`order` SMALLINT unsigned NOT NULL COMMENT '',
+	UNIQUE (`model_id`, `item_num`, `prop_id`, `value_id`),
+	INDEX (model_id),
+	INDEX (value_id, prop_id)
+) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+END;
+scexec($sql);
+
+/*$sql = <<<END
 CREATE TABLE IF NOT EXISTS `showcase_mvalues` (
 	`model_id` MEDIUMINT unsigned NOT NULL COMMENT '',
 	`item_num` SMALLINT unsigned NOT NULL COMMENT '',
@@ -197,3 +215,4 @@ CREATE TABLE IF NOT EXISTS `showcase_mtexts` (
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 END;
 scexec($sql);
+*/

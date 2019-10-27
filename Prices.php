@@ -17,86 +17,17 @@ Event::$classes['Showcase-prices'] = function (&$obj) {
 class Prices {
 	public static function getPrice($name) {
 		$option = Prices::getOptions($name);
-
-		/*$data = Prices::readPrice($name, Showcase::$conf['prices'].$option['file']);
-		if ($option['producer']) {
-			$producer_id = Data::col('SELECT producer_id from showcase_producers where producer_nick = ?', [$option['producer']]);
-		} else {
-			$producer_id = false;
-		}
-
-		$priceprop = $option['priceprop'];
-		$catalogprop = $option['catalogprop'];
-		$catalogprop_nick = Path::encode($catalogprop);
-		$catalogprop_type = Data::checkType($catalogprop_nick);
-		$catalogprop_id = Data::col('SELECT prop_id from showcase_props where prop_nick = ?',[$catalogprop_nick]);
-		if (!$catalogprop_id && $catalogprop_type != 'article') return $option;
-		
-		
-		
-		$list = [];
-		Xlsx::runPoss($data, function(&$pos) use ($option, $name, &$list, $priceprop, $producer_id, $catalogprop_id, $catalogprop_type) {
-			Prices::checkSynonyms($pos, $option);
-			$r = null;
-			$obj = [
-				'option' => $option,
-				'name' => $name,
-				'pos' => &$pos
-			];
-			if (empty($pos[$option['priceprop']])) return $r;
-			Event::tik('Showcase-prices.oncheck');
-			$res = Event::fire('Showcase-prices.oncheck', $obj); //В событии дописываем нужное свойство которое уже есть в props
-			if ($res === false) return $r;
-			
-			$value = $pos[$priceprop];
-			$items = Prices::getMyItems($catalogprop_type, $producer_id, $catalogprop_id, $value);	
-			if ($items) return $r;
-			$list[] = $pos;
-		});
-		$option['missdata'] = $list;
-		
-
-		//$catalogprop_type
-		//$catalogprop_id //Должен быть установлен у всех позиций данного производителя
-		//if ($catalogprop_type == 'number') {
-
-		$rows = Data::all('select * from (SELECT p.producer_nick, a.article_nick, i.item_nick, max(mv.price_id) as price_id FROM showcase_items i
-			INNER JOIN showcase_models m on m.model_id = i.model_id and m.producer_id = :producer_id
-			LEFT JOIN showcase_producers p on m.producer_id = p.producer_id
-			LEFT JOIN showcase_articles a on a.article_id = m.article_id
-			LEFT JOIN showcase_mnumbers mv on (mv.model_id = i.model_id and mv.item_num = i.item_num and mv.price_id = :price_id)
-			GROUP BY i.model_id, i.item_num) t WHERE t.price_id is null
-			', [':producer_id'=> $producer_id, ':price_id' => $option['price_id']]);
-		//}
-		foreach($rows as $i=>$row) {
-			$rows[$i] = Showcase::getModel($row['producer_nick'],$row['article_nick'], $row['item_nick']);
-		}
-		$option['missprice'] = $rows;*/
 		return $option;
 	}
 	public static function getList() {
 		$options = Prices::getOptions();
-
+		
 		$savedlist = Data::fetchto('
-			SELECT ps.name, ps.ans, count(DISTINCT t.model_id, t.item_num) as icount FROM (
-				SELECT p.price_id, v.model_id, v.item_num
-				from showcase_mnumbers v, showcase_prices p
-				WHERE p.price_id = v.price_id and v.price_id is not null
-				
-				UNION ALL
-				SELECT p.price_id, v.model_id, v.item_num
-				from showcase_mtexts v, showcase_prices p
-				WHERE p.price_id = v.price_id and v.price_id is not null
-				
-				UNION ALL
-				SELECT p.price_id, v.model_id, v.item_num
-				from showcase_mvalues v, showcase_prices p
-				WHERE p.price_id = v.price_id and v.price_id is not null
-			) t
-			RIGHT JOIN showcase_prices ps ON ps.price_id = t.price_id
-			GROUP BY ps.name
+			SELECT p.name, p.ans, count(distinct i.model_id, i.item_num) as icount from showcase_prices p
+			LEFT JOIN showcase_iprops i ON i.price_id = p.price_id
+			GROUP by p.name
     	','name');
-
+    	
 		foreach ($savedlist as $name => $row) {
 			$row['ans'] = Load::json_decode($row['ans'], true);
 			if ($name) $options[$name] += $row;
@@ -129,6 +60,7 @@ class Prices {
 		$conf = Showcase::$conf;
 		
 		$options = Data::getOptions('prices');
+
 		$list = Data::getFileList($conf['prices']);
 		$order = 0;
 		foreach ($list as $filename => $val) {
@@ -139,6 +71,7 @@ class Prices {
 			}
 			Prices::activatePrice($filename, $producer, $order);
 		}
+		
 	}
 	public static function activatePrice($name, $producer, $order) {
 		$producer_id = Data::initProducer($producer);
@@ -161,39 +94,41 @@ class Prices {
 			$row = Showcase::getValue($value_nick);
 
 			$id = $row['value_id'];
-			$mainprop = 'value_id';
-			$t = 'mvalues'; 
-		} else if ($type == 'article') {
-			$nick = Path::encode($value);
-			$article_id = Data::col('SELECT article_id from showcase_articles where article_nick = ?', [$nick]);
-			if (!$article_id) return [];
-			if ($producer_id) {
-				$list = Data::fetchto('SELECT model_id, "0" as item_num FROM showcase_models WHERE article_id = ? and producer_id = ?',
-					'model_id', [$article_id, $producer_id]);
-			} else {
-				$list = Data::fetchto('SELECT model_id, "0" as item_num FROM showcase_models WHERE article_id = ?',
-					'model_id', [$article_id]);
-			}
-			return $list;
+			$mainprop = 'n.value_id';
 		} else if ($type == 'number') {
 			$id = round($value, 2);
-			$mainprop = 'number';
-			$t = 'mnumbers'; 
+			$mainprop = 'n.number';
+		} else if ($type == 'article') {
+			$id = Path::encode($value);
+			if ($producer_id) {
+				$sql = 'SELECT i.model_id, i.item_num
+					FROM showcase_items i
+					INNER JOIN showcase_models m on (m.model_id = i.model_id and m.article_nick = ? and m.producer_id = ?)';
+				$list = Data::all($sql, [$id,$producer_id]);
+			} else {
+				$sql = 'SELECT i.model_id, i.item_num
+					FROM showcase_items i
+					INNER JOIN showcase_models m on (m.model_id = i.model_id and m.article_nick = ?)';
+				$list = Data::all($sql, [$id]);
+			}
+			return $list;
 		}
+
 		if ($producer_id) {
 			$list = Data::fetchto('SELECT m.model_id, n.item_num
-				FROM showcase_'.$t.' n 
+				FROM showcase_iprops n 
 				RIGHT JOIN showcase_models m ON m.model_id = n.model_id AND m.producer_id = ?
 				WHERE n.prop_id = ?
-				AND n.'.$mainprop.' = ?
-			','model_id', [$producer_id, $prop_id, $id]);
+				AND '.$mainprop.' = ?
+			','item_num', [$producer_id, $prop_id, $id]);
+
 		} else {
 			$sql = 'SELECT n.model_id, n.item_num
-				FROM showcase_'.$t.' n
+				FROM showcase_iprops n
 				WHERE n.prop_id = ?
-				AND n.'.$mainprop.' = ?
+				AND '.$mainprop.' = ?
 				';
-			$list = Data::fetchto($sql,'model_id', [$prop_id, $id]);
+			$list = Data::fetchto($sql,'item_num', [$prop_id, $id]);
 		}
 
 		return $list;
@@ -211,18 +146,11 @@ class Prices {
 		foreach ($list as $i => $find) {
 			$model_id = $find['model_id'];
 			$item_num = $find['item_num'];
-			/*$row = Data::fetch('SELECT p.producer, a.article, i.item FROM showcase_models m
-				INNER JOIN showcase_producers p on p.producer_id = m.producer_id
-				INNER JOIN showcase_items i on (i.model_id = m.model_id and i.item_num = ?)
-				INNER JOIN showcase_articles a on a.article_id = m.article_id
-				where m.model_id = ?
-				',[$item_num, $model_id]);*/
 
 			
-			$row = Data::fetch('SELECT p.producer, a.article, i.item FROM showcase_items i
+			$row = Data::fetch('SELECT p.producer, m.article, i.item FROM showcase_items i
 				INNER JOIN showcase_models m on i.model_id = m.model_id
 				INNER JOIN showcase_producers p on p.producer_id = m.producer_id
-				INNER JOIN showcase_articles a on a.article_id = m.article_id
 				where i.model_id = ? and i.item_num = ?
 				', [$model_id, $item_num]);
 
@@ -243,7 +171,7 @@ class Prices {
 				$p['prop_id'] = Data::initProp($p['prop'], $p['type']);
 
 				$value_id = Data::initValue($name);
-				Data::exec('INSERT showcase_mvalues (model_id, item_num, prop_id, value_id, price_id, `order`)
+				Data::exec('INSERT showcase_iprops (model_id, item_num, prop_id, value_id, price_id, `order`)
 				VALUES(?,?,?,?,?,?)', [$model_id, $item_num, $p['prop_id'], $value_id, $price_id, $order]);	
 			},[$price_id, $model_id, $item_num]);
 			
@@ -257,7 +185,7 @@ class Prices {
 				$oldorder = 0;
 				$t = 'm'.$p['type'].'s';	//mvalues
 				
-				$row = Data::fetch('SELECT p.order from showcase_'.$t.' v
+				$row = Data::fetch('SELECT p.order from showcase_iprops v
 					left join showcase_prices p on p.price_id = v.price_id
 					WHERE
 					model_id = ? 
@@ -321,7 +249,7 @@ class Prices {
 		foreach ($ar as $v) {
 			$v = trim($v);
 			$value_id = ($ptype == 'value') ? Data::initValue($v) : $v;
-			Data::exec('INSERT showcase_'.$table.' (model_id, item_num, prop_id, '.$mainprop.', price_id, `order`)
+			Data::exec('INSERT showcase_iprops (model_id, item_num, prop_id, '.$mainprop.', price_id, `order`)
 			VALUES(?,?,?,?,?,?)', [$model_id, $item_num, $pid, $value_id, $price_id, $oldorder]);
 		}
 		return true;
@@ -389,6 +317,7 @@ class Prices {
 		$ans['Найдено соответствий'] = [];
 		$ans['Количество позиций в каталоге'] = 0;
 		$ans['Изменено моделей в каталоге'] = [];
+		$ans['Изменено позиций в каталоге'] = 0;
 		$ans['Ошибки каталога'] = [];
 		
 		
@@ -442,6 +371,7 @@ class Prices {
 				}
 
 				list($c, $modified, $mposs) = Prices::updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value, $name);
+				$ans['Изменено позиций в каталоге']+=$modified;
 				if ($c == 0) {
 					$ans['Ошибки прайса'][] = $value;
 					return $r;
@@ -459,21 +389,19 @@ class Prices {
 					INNER JOIN showcase_models m on m.model_id = i.model_id and m.producer_id=:producer_id',[':producer_id'=>$producer_id]);
 
 			//У всех позиций добавляется свойство Прайс, даже если ничего не внесено
-			$ans['Ошибки каталога'] = Data::all('SELECT * from (SELECT p.producer, a.article, max(mv.price_id) as price_id FROM showcase_models m
+			$ans['Ошибки каталога'] = Data::all('SELECT * from (SELECT p.producer, m.article, max(mv.price_id) as price_id FROM showcase_models m
 			LEFT JOIN showcase_producers p on m.producer_id = p.producer_id
-			LEFT JOIN showcase_articles a on a.article_id = m.article_id
-			LEFT JOIN showcase_mvalues mv on (mv.model_id = m.model_id and mv.price_id = :price_id)
+			LEFT JOIN showcase_iprops mv on (mv.model_id = m.model_id and mv.price_id = :price_id)
 			where m.producer_id = :producer_id
 			GROUP BY m.model_id) t WHERE t.price_id is null
 			', [':producer_id'=> $producer_id, ':price_id' => $option['price_id']]);
 		} else {
 			$ans['Количество позиций в каталоге'] = Data::col('SELECT count(*) from showcase_items i');
 			//У всех позиций добавляется свойство Прайс, даже если ничего не внесено
-			$ans['Ошибки каталога'] = Data::all('SELECT * from (SELECT p.producer, a.article, i.item, max(mv.price_id) as price_id FROM showcase_items i
+			$ans['Ошибки каталога'] = Data::all('SELECT * from (SELECT p.producer, m.article, i.item, max(mv.price_id) as price_id FROM showcase_items i
 			INNER JOIN showcase_models m on m.model_id = i.model_id
 			LEFT JOIN showcase_producers p on m.producer_id = p.producer_id
-			LEFT JOIN showcase_articles a on a.article_id = m.article_id
-			LEFT JOIN showcase_mvalues mv on (mv.model_id = i.model_id and mv.item_num = i.item_num and mv.price_id = :price_id)
+			LEFT JOIN showcase_iprops mv on (mv.model_id = i.model_id and mv.item_num = i.item_num and mv.price_id = :price_id)
 			GROUP BY i.model_id, i.item_num) t WHERE t.price_id is null
 			', [':price_id' => $option['price_id']]);
 		}
@@ -492,31 +420,25 @@ class Prices {
 
 		$jsonans = Load::json_encode($ans);
 		
-		$r = Data::exec('UPDATE showcase_prices SET `time` = from_unixtime(?), `duration` = ?, `count` = ?, ans = ? WHERE price_id = ?', [$time, $duration, null, $jsonans, $price_id]);
+		$r = Data::exec('UPDATE showcase_prices SET `time` = from_unixtime(?), `duration` = ?, `count` = ?, ans = ? WHERE price_id = ?', [$time, $duration, $ans['Изменено позиций в каталоге'], $jsonans, $price_id]);
 		$db->commit();
 		return $ans;
 	}
-	/*public static function removePrice($price_id) {
-		Data::exec('DELETE mv, mn, mt
-			FROM showcase_mvalues mv
-			LEFT JOIN showcase_mnumbers mn ON mv.price_id = mn.price_id
-			LEFT JOIN showcase_mtexts mt ON mv.model_id = mt.price_id
-			WHERE mv.price_id = ?',[$price_id]);
-	}*/
+	
 	public static function deleteProp($model_id, $item_num, $prop) {
 		$prop_id = Data::initProp($prop);
 		if (!$prop_id) return;
 		foreach (Data::$types as $type) {
-			Data::exec('DELETE FROM showcase_m'.$type.'s WHERE model_id = ? and item_num = ? and prop_id =?', 
+			Data::exec('DELETE FROM showcase_iprops WHERE model_id = ? and item_num = ? and prop_id =?', 
 				[$model_id, $item_num, $prop_id]);	
 		}
 	}
 	public static function actionRemove($name, $src) {
-		foreach (Data::$types as $type) {
-			Data::exec('DELETE t FROM showcase_m'.$type.'s t, showcase_prices p
-			WHERE t.price_id = p.price_id 
-			AND p.name =?', [$name]);	
-		}
+		
+		Data::exec('DELETE t FROM showcase_iprops t, showcase_prices p
+		WHERE t.price_id = p.price_id 
+		AND p.name =?', [$name]);	
+		
 		if (FS::is_file($src)) { //ФАйл есть запись остаётся
 			Data::exec('UPDATE showcase_prices SET time = null WHERE name = ?', [$name]);
 		} else {
@@ -537,13 +459,19 @@ class Prices {
 		$savedlist = Data::fetchto('SELECT price_id, unix_timestamp(time) as time, `order`, ans, duration, name, `count` 
 			FROM showcase_prices','name');
 		foreach ($savedlist as $name => $val) { // По файлам
-			if (!isset($list[$name])) $list[$name] = array();
+			if (!isset($list[$name])) {
+				//Есть запись в бд, но нет файла. 
+				//Надо проверить вносился ли раньеш файл, которого нет. 
+				if (!$val['time']) {
+					Data::exec('DELETE FROM showcase_prices WHERE price_id = ?', [$val['price_id']]);
+					continue;
+				}
+				$list[$name] = array();
+			}
 			$list[$name] += $savedlist[$name];
 			if (isset($list[$name]['ans'])) $list[$name]['ans'] = Load::json_decode($val['ans'], true);
 			if (!$savedlist[$name]['time']) continue;// Данные ещё не вносились
-			$list[$name]['isdata'] = true;
-
-			
+			$list[$name]['isdata'] = true;	
 		}
 		
 		foreach ($list as $name => $opt) { // По опциям

@@ -53,8 +53,7 @@ class Catalog {
 			if ($action == 'remove') $res = Prices::actionRemove($name, $src);
 			if ($action == 'loadAll') $res = Prices::actionLoadAll();
 		}
-		//echo $name;
-		//exit;
+		
 		if ($action == 'loadproducer') $res = Catalog::actionLoadProducer($name);
 		if ($action == 'clearAll') $res = Data::actionClearAll();
 		if ($action == 'addFiles') $res = Data::actionAddFiles($name);
@@ -182,7 +181,6 @@ class Catalog {
 	
 	public static function init() {
 		Data::init();
-
 		$conf = Showcase::$conf;
 		$options = Catalog::getOptions();
 		$list = Data::getFileList($conf['tables']);
@@ -233,13 +231,11 @@ class Catalog {
 	public static function actionRemove($name, $src = false) {
 		//Удаляются ключи model_id, mitem_id
 
-		Data::exec('DELETE m, i, mv, mn, mt
+		Data::exec('DELETE m, i, mv
 			FROM showcase_catalog c 
 			LEFT JOIN showcase_models m ON m.catalog_id = c.catalog_id
 			LEFT JOIN showcase_items i ON i.model_id = m.model_id
-			LEFT JOIN showcase_mvalues mv ON mv.model_id = m.model_id
-			LEFT JOIN showcase_mnumbers mn ON mn.model_id = m.model_id
-			LEFT JOIN showcase_mtexts mt ON mt.model_id = m.model_id
+			LEFT JOIN showcase_iprops mv ON mv.model_id = m.model_id
 			WHERE c.name = ?', [$name]);	
 
 		//Можно удалить группы, которые созданы этими данными и которые пустые, точней те группы у которых нет существующего catalog_id, так как мы его только что удалили.
@@ -296,25 +292,27 @@ class Catalog {
 		$db->beginTransaction();
 		
 
-		$prop_id = Data::initProp('Иллюстрации','value'); //Для событий в цикле
+		//$prop_id = Data::initProp('Иллюстрации','value'); //Для событий в цикле
 		Xlsx::runPoss( $data, function (&$pos) use ($name, &$ans, &$filters, &$devcolumns, &$props, $catalog_id, $order, $time, &$count) {
 			$count++;
 			if (isset($pos['items'])) $count += sizeof($pos['items']); //Считаем с позициями. В items одного items нет - он уже в описании модели.
-			$article_id = Data::initArticle($pos['Артикул']);
+
+			//$article_id = Data::initArticle($pos['Артикул']);
+			//exit;
 			$producer_id = Data::initProducer($pos['Производитель']);
 
 			//Длинное имя группы, например: "Автомобильные регистраторы #avtoreg" берётся из Наименования в descr. Id encod(всё) title то что до решётки. Из title нельзя получить id.
 			$group_nick = $pos['gid'];
 			$group_id = Data::col('SELECT group_id FROM showcase_groups WHERE group_nick = ?',[$group_nick]);
 
-			$model_id = Catalog::initModel($name, $producer_id, $article_id, $catalog_id, $order, $time, $group_id); //У существующей модели указывается time
+			$model_id = Catalog::initModel($producer_id, $pos['Артикул'], $catalog_id, $order, $time, $group_id); //У существующей модели указывается time
 
 			if (!$model_id) {
 				//$ans['Пропущено из-за конфликта с другими данными']++;
 				return; //Каталог не может управлять данной моделью, так как есть более приоритетный источник
 			}
 		
-			Catalog::initItem($model_id, 0, '');
+			
 
 			if (isset($pos['items'])) { //1 item уже в модели надо его вынести в отдельный items и удалить из модели
 				$item = array();
@@ -336,20 +334,23 @@ class Catalog {
 			//Срабатывает только для моделей. МОжно добавить недостающие свойства. 
 			//Сгенерировать id для items
 			
-			$r = Catalog::writeProps($model_id, $pos, 0);
 
+			
+			//Catalog::writeProps($model_id, $pos, 0);
 			$ans['Принято моделей']++;
-			$ans['Принято позиций']++;
 			if (isset($pos['items'])) {
 				$item_num = 0;
 				foreach ($pos['items'] as $item) {
 					$item_num++;
-					Catalog::initItem($model_id, $item_num, $item['id']); //itemrows и id
-					$r = Catalog::writeProps($model_id, $item, $item_num);
+					Catalog::initItem($model_id, $item_num, $item['id']);
+					Catalog::writeProps($model_id, $pos, $item_num);
+					Catalog::writeProps($model_id, $item, $item_num);
 					$ans['Принято позиций']++;
 				}
-				
-				//$ans['Принято позиций']--;
+			} else {
+				$ans['Принято позиций']++;
+				Catalog::initItem($model_id, 1, '');
+				Catalog::writeProps($model_id, $pos, 1);
 			}
 		});
 		Catalog::removeOldModels($time, $catalog_id);
@@ -371,13 +372,13 @@ class Catalog {
 			$type = Data::checkType($prop);
 			$prop_id = Data::initProp($prop, $type);
 
-			$isprice = Data::col('SELECT price_id from `showcase_m'.$type.'s` where prop_id = ? and model_id = ?',[$prop_id, $model_id]);//Если этой свойство у модели установлено из прайса, пропускаем
+			$isprice = Data::col('SELECT price_id from `showcase_iprops` where prop_id = ? and model_id = ? and item_num = ?',[$prop_id, $model_id, $item_num]);//Если этой свойство у модели установлено из прайса, пропускаем
 			if ($isprice) continue;
 
 			if ($type == 'text') {
 				$order++;
 				$r = true;
-				Data::lastId('INSERT INTO `showcase_mtexts`(model_id, item_num, `prop_id`,`text`,`order`) VALUES(?,?,?,?,?)',
+				Data::lastId('INSERT INTO `showcase_iprops`(model_id, item_num, `prop_id`,`text`,`order`) VALUES(?,?,?,?,?)',
 					[$model_id, $item_num, $prop_id, $val, $order]
 				);
 				
@@ -394,7 +395,7 @@ class Catalog {
 					$propvals[$test] = true;
 					$r = true;
 
-					Data::lastId('INSERT INTO `showcase_m'.$type.'s`(model_id, item_num, `prop_id`,'.$strid.',`order`) VALUES(?,?,?,?,?)',
+					Data::lastId('INSERT INTO `showcase_iprops`(model_id, item_num, `prop_id`,'.$strid.',`order`) VALUES(?,?,?,?,?)',
 						[$model_id, $item_num, $prop_id, $v, $order]
 					);
 				}	
@@ -408,8 +409,6 @@ class Catalog {
 		return $row;
 	}
 	
-	
-	
 	public static function initItem($model_id, $item_num, $value) {
 		$nick = Path::encode($value);
 		Data::exec(
@@ -420,51 +419,34 @@ class Catalog {
 	public static function clearCatalog($catalog_id) {
 
 		//Удалить все свойства у всех моделей
-		Data::exec('DELETE p FROM showcase_mvalues p
+		Data::exec('DELETE p FROM showcase_iprops p
 			INNER JOIN showcase_models m ON m.model_id = p.model_id
 			WHERE p.price_id is null and m.catalog_id = ?', [$catalog_id]);
 
-		Data::exec('DELETE p FROM showcase_mnumbers p
-			INNER JOIN showcase_models m ON m.model_id = p.model_id
-			WHERE p.price_id is null and m.catalog_id = ?', [$catalog_id]);
-
-		Data::exec('DELETE p FROM showcase_groups p
-			INNER JOIN showcase_models m ON m.model_id = p.model_id
-			WHERE p.price_id is null and m.catalog_id = ?', [$catalog_id]);
-
-		Data::exec('DELETE p FROM showcase_mtexts p
-			INNER JOIN showcase_models m ON m.model_id = p.model_id
-			WHERE p.price_id is null and m.catalog_id = ?', [$catalog_id]);
-		/*echo $catalog_id;
-		echo '<br>';
-		echo $count;
-		exit;*/
-		
+		Data::exec('UPDATE showcase_groups SET `catalog_id` = null WHERE catalog_id = ?',[$catalog_id]);
 	}
 	public static function clearModel($model_id) {
 		$files = '("'.implode('","', Data::$files).'")';
-		/*$sql = 'DELETE t FROM showcase_mvalues t, showcase_props p
-			WHERE p.prop_id = t.prop_id AND p.prop_nick not in '.$files.' AND 
-			t.model_id = ? AND t.price_id is null';
-		Data::exec($sql, [$model_id]);*/
-		$where1 = 'p.prop_id = t.prop_id AND (t.item_num != 0 OR (p.prop_nick not in '.$files.' AND t.model_id = ? and t.price_id is null))';
-		
-		$where1 = 'p.prop_id = t.prop_id AND t.model_id = ? and t.price_id is null';
-		$where2 = 'p.prop_id = t.prop_id AND t.model_id = ? and t.price_id is null AND p.prop_nick not in '.$files;
-		Data::exec('DELETE t FROM showcase_mvalues t, showcase_props p WHERE '.$where1, [$model_id]);
-		Data::exec('DELETE t FROM showcase_mnumbers t, showcase_props p WHERE '.$where1, [$model_id]);
-		Data::exec('DELETE t FROM showcase_mtexts t, showcase_props p WHERE '.$where2, [$model_id]);
+
+		Data::exec('DELETE t FROM showcase_iprops t, showcase_props p 
+			WHERE p.prop_id = t.prop_id 
+				AND t.model_id = ? 
+				AND t.price_id IS NULL 
+				AND p.prop_nick not in '.$files, [$model_id]);
+
 		Data::exec('DELETE t FROM showcase_items t WHERE t.model_id = ?', [$model_id]);
-		//Может остаться свойство с айтемом которого нет
+
+		//Может остаться свойство с айтемом которое не появилось при внесение и свойство зависнит. 
+		//Порядок не должен меняться у item-ов иначе надо перевнести прайс! Не на item_nick с неизменностью свойств
 	}
-	public static function initModel($name, $producer_id, $article_id, $catalog_id, $order, $time, $group_id) {
-		//$name только для кэша, чтобы модели-дубли заменяли друг друга.
-		
-		$model_id = Once::func( function ($name, $producer_id, $article_id) use ($catalog_id, $order, $time, $group_id) {
+	public static function initModel($producer_id, $article, $catalog_id, $order, $time, $group_id) {
+		//$catalog_id для кэша, чтобы модели-дубли заменяли друг друга. Тогда зачем кэш, для позиций?
+		$article_nick = Path::encode($article);
+		$model_id = Once::func( function ($catalog_id, $producer_id, $article_nick) use ($article, $order, $time, $group_id) {
 		
 			$row = Data::fetch('SELECT sm.model_id, sm.catalog_id, sc.order, sm.group_id
 				FROM showcase_models sm, showcase_catalog sc 
-				WHERE sc.catalog_id = sm.catalog_id And sm.producer_id = ? AND sm.article_id = ?', [$producer_id, $article_id]);
+				WHERE sc.catalog_id = sm.catalog_id And sm.producer_id = ? AND sm.article_nick = ?', [$producer_id, $article_nick]);
 			if ($row) {
 				$model_id = $row['model_id'];
 				if ($catalog_id != $row['catalog_id']) { //Модель появилась из другого каталога
@@ -475,12 +457,12 @@ class Catalog {
 				return $model_id;
 			}
 			$model_id = Data::lastId(
-				'INSERT INTO showcase_models (producer_id, article_id, catalog_id, `time`, group_id) VALUES(?,?,?,from_unixtime(?),?)',
-				[$producer_id, $article_id, $catalog_id, $time, $group_id]
+				'INSERT INTO showcase_models (producer_id, article, article_nick, catalog_id, `time`, group_id) VALUES(?,?,?,?,from_unixtime(?),?)',
+				[$producer_id, $article, $article_nick, $catalog_id, $time, $group_id]
 			);
 			
 			return $model_id;
-		}, [$name, $producer_id, $article_id]);
+		}, [$catalog_id, $producer_id, $article_nick]);
 		
 		return $model_id;
 	}
@@ -505,13 +487,16 @@ class Catalog {
 	}
 	
 	public static function removeOldModels($time, $catalog_id) {
-		Data::exec('DELETE m, i, mv, mn, mt
+		Data::exec('DELETE m, i, mv
 			FROM showcase_models m 
-			LEFT JOIN showcase_mvalues mv ON mv.model_id = m.model_id
-			LEFT JOIN showcase_mnumbers mn ON mn.model_id = m.model_id
-			LEFT JOIN showcase_mtexts mt ON mt.model_id = m.model_id
+			LEFT JOIN showcase_iprops mv ON mv.model_id = m.model_id
 			LEFT JOIN showcase_items i ON i.model_id = m.model_id
 			WHERE m.time != from_unixtime(?) and catalog_id = ?',[$time, $catalog_id]);
+
+		//Если позиций у модели стало меньше, надо удалить свободные свойства. Чтобы не было ошибки. Но всё равно нужно внести прайс повторно.
+		$r = Data::exec('DELETE ip FROM `showcase_iprops` ip 
+			left join showcase_items i on (i.model_id = ip.model_id and i.item_num = ip.item_num)
+			where i.item_num is null');
 	}
 	
 	public static function getGroupId($group_nick) {
@@ -528,14 +513,7 @@ class Catalog {
 		$groups = array();
 		$ans['Найдено групп'] = 0;
 		$ans['Новых групп'] = 0;
-		/*echo '<pre>';
-		Xlsx::runGroups($data, function &(&$group){
-			unset($group['data']);
-			$r = null;
-			return $r;
-		});
-		print_r($data);
-		exit;*/
+		
 		$gorder = 0;
 		Xlsx::runGroups($data, function &($group) use ($catalog_id, &$groups, $order, &$ans, &$gorder){
 			$gorder++;

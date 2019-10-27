@@ -187,20 +187,14 @@ class Data {
 	
 	public static function actionClearAll() {
 		Data::exec('TRUNCATE `showcase_prices`');
-		Data::exec('TRUNCATE `showcase_catalog`');
-		
+		Data::exec('TRUNCATE showcase_catalog');
 		Data::exec('TRUNCATE `showcase_producers`');
-		Data::exec('TRUNCATE `showcase_articles`');
 		//Data::exec('TRUNCATE `showcase_groups`'); Нельзя сбрасывать id для Директа
 		Data::exec('TRUNCATE `showcase_props`');
 		Data::exec('TRUNCATE `showcase_values`');
-		
 		Data::exec('TRUNCATE `showcase_models`');
 		Data::exec('TRUNCATE `showcase_items`');
-		Data::exec('TRUNCATE `showcase_mvalues`');
-		Data::exec('TRUNCATE `showcase_mnumbers`');
-		Data::exec('TRUNCATE `showcase_mtexts`');
-		
+		Data::exec('TRUNCATE `showcase_iprops`');
 	}
 	
 	public static function initValue($value) {
@@ -221,7 +215,6 @@ class Data {
 	}
 	public static function initProp($prop, $type = false) {
 		if ($type == 'article') return false;
-		if ($type) $type = ["value"=>1, "number"=>2, "text"=>3][$type];
 		return Once::func( function ($prop, $type) {
 			if (!$prop) return null;
 			
@@ -231,13 +224,8 @@ class Data {
 
 			if ($row) {
 				if ($type && $type != $row['type']) {
-					if ($row['type'] == 'number') { //Удаляем старые значения
-						Data::exec('DELETE FROM showcase_mnumbers WHERE prop_id = ?', [$row['prop_id']]);
-					} else if ($row['type'] == 'text') {
-						Data::exec('DELETE FROM showcase_mtexts WHERE prop_id = ?', [$row['prop_id']]);
-					} else {
-						Data::exec('DELETE FROM showcase_mvalues WHERE prop_id = ?', [$row['prop_id']]);
-					}
+					echo $prop.'<br>';
+					Data::exec('DELETE FROM showcase_iprops WHERE prop_id = ?', [$row['prop_id']]);
 					Data::exec('UPDATE showcase_props SET type = ? WHERE prop_id = ?', [$type, $row['prop_id']]);
 				}
 				return $row['prop_id'];
@@ -265,19 +253,17 @@ class Data {
 		return 'value';
 	}
 	public static function clearProp($prop_id) {
-		Data::exec('DELETE FROM `showcase_mvalues` where prop_id = ?', [$prop_id]);
-		Data::exec('DELETE FROM `showcase_mnumbers` where prop_id = ?', [$prop_id]);
-		Data::exec('DELETE FROM `showcase_mtexts` where prop_id = ?', [$prop_id]);
+		Data::exec('DELETE FROM `showcase_iprops` where prop_id = ?', [$prop_id]);
 	}
 	public static function init() {
 		$props = Data::fetchto("SELECT prop_id, prop, type from showcase_props", "prop");
+
 		$options = Data::loadShowcaseConfig();
+
 		//1 value, 2 number, 3 text
 		foreach ($props as $prop => $p) {
 			$type = Data::checkType($p['prop']);
-			if ($p['type'] == 1 && $type == 'value') continue;
-			if ($p['type'] == 2 && $type == 'number') continue;
-			if ($p['type'] == 3 && $type == 'text') continue;
+			if ($p['type'] == $type) continue;
 			//По умолчанию свойство считается values
 
 			Data::initProp($prop, $type);
@@ -297,14 +283,14 @@ class Data {
 		if ($producer_nick) {
 			foreach (Data::$files as $type) {
 				$prop_id = Data::initProp($type, 'text'); //Удаляем все параметры связаные с файлами images, files, texts
-				$r = Data::exec('DELETE mv FROM showcase_mtexts mv, showcase_models m, showcase_producers pr
+				$r = Data::exec('DELETE mv FROM showcase_iprops mv, showcase_models m, showcase_producers pr
 					WHERE m.model_id = mv.model_id and m.producer_id = pr.producer_id and pr.producer_nick = ?
 					and mv.prop_id = ?', [$producer_nick, $prop_id]);	
 			}
 		} else {
 			foreach (Data::$files as $type) {
 				$prop_id = Data::initProp($type, 'text'); //Удаляем все параметры связаные с файлами images, files, texts
-				Data::exec('DELETE FROM `showcase_mtexts` where prop_id = ?', [$prop_id]);	
+				Data::exec('DELETE FROM `showcase_iprops` where prop_id = ?', [$prop_id]);	
 			}
 		}
 		
@@ -312,14 +298,14 @@ class Data {
 	public static function applyIllustracii($producer_nick) {
 		$prop_id = Data::initProp('Иллюстрации','text');
 		if ($producer_nick) {
-			$images = Data::all('SELECT p.prop, mv.text, mv.model_id, mv.item_num FROM showcase_mtexts mv
+			$images = Data::all('SELECT p.prop, mv.text, mv.model_id, mv.item_num FROM showcase_iprops mv
 				INNER JOIN showcase_models m on (m.model_id = mv.model_id)
 				INNER JOIN showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = ?)
 				INNER JOIN showcase_props p on (mv.prop_id = p.prop_id and p.prop_id = ?)
 			',[$producer_nick, $prop_id]);
 			
 		} else {
-			$images = Data::all('SELECT mv.text, mv.model_id, mv.item_num FROM showcase_mtexts mv
+			$images = Data::all('SELECT mv.text, mv.model_id, mv.item_num FROM showcase_iprops mv
 				INNER JOIN showcase_props p on mv.prop_id = p.prop_id
 				where p.prop_id = ?
 			',[$prop_id]);
@@ -327,7 +313,7 @@ class Data {
 		$prop_id = Data::initProp('images','text');
 		foreach ($images as $pos) {
 			Data::exec(
-				'INSERT INTO showcase_mtexts (model_id, item_num, prop_id, `text`) VALUES(?,?,?,?)',
+				'INSERT INTO showcase_iprops (model_id, item_num, prop_id, `text`) VALUES(?,?,?,?)',
 				[$pos['model_id'], $pos['item_num'], $prop_id, $pos['text']]
 			);
 		}
@@ -394,6 +380,7 @@ class Data {
 				},$ak);
 			}, []);
 			$ans['Файлов'] = sizeof($ans['Бесхозные файлы']);
+			
 			foreach ($list as $prod => $arts) {
 				//$producer_id = Data::initProducer($prod);
 				$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$prod]);
@@ -403,8 +390,8 @@ class Data {
 					$altart = Path::encode($altart);
 					$model_id = Data::col('SELECT m.model_id
 						FROM showcase_models m
-						INNER JOIN showcase_articles a on (m.article_id = a.article_id and (a.article_nick = ? or a.article_nick = ?))
-						where m.producer_id = ?', [$art, $altart, $producer_id]);
+						where (m.article_nick = ? or m.article_nick = ?) and m.producer_id = ?', [$art, $altart, $producer_id]);
+
 					if (!$model_id) continue;//Имя файла как артикул не зарегистрировано, даже если удалить производителя из артикула
 					$values = [];
 					
@@ -422,11 +409,21 @@ class Data {
 							}
 							$values[$value_id] = true;*/
 							$prop_id = Data::initProp($type, 'text');
-
-							Data::exec(
-								'INSERT INTO showcase_mtexts (model_id, item_num, prop_id, `text`, `order`) VALUES(?,?,?,?,?)',
-								[$model_id, $item_num, $prop_id, $src, $order]
-							);
+							if ($item_num) {
+								Data::exec(
+									'INSERT INTO showcase_iprops (model_id, item_num, prop_id, `text`, `order`) VALUES(?,?,?,?,?)',
+									[$model_id, $item_num, $prop_id, $src, $order]
+								);
+							} else {
+								$icount = Data::col('SELECT count(*) FROM showcase_items where model_id = ?',[$model_id]);
+								while ($icount > 0) {
+									Data::exec(
+										'INSERT INTO showcase_iprops (model_id, item_num, prop_id, `text`, `order`) VALUES(?,?,?,?,?)',
+										[$model_id, $icount, $prop_id, $src, $order]
+									);
+									$icount--;
+								}
+							}
 
 							//print_r([$producer_id, $article_id, $num, $value_id]);
 							//echo $prod.':'.$art.':'.$num.' '.$type.':'.$src.'<br>';
@@ -500,7 +497,7 @@ class Data {
 					//Ищим картинку своей позииции
 					$row = Data::fetch('SELECT g.group_nick, g.group, g.group_id, mv.text as icon from showcase_groups g
 						inner join showcase_models m on (m.group_id = g.group_id)	
-						inner join showcase_mtexts mv on (mv.model_id = m.model_id and mv.prop_id = :images_id)
+						inner join showcase_iprops mv on (mv.model_id = m.model_id and mv.prop_id = :images_id)
 						where g.group_nick = :group_nick
 						', [':images_id' => $images_id, ':group_nick' => $group['group_nick']]);
 
@@ -559,7 +556,7 @@ class Data {
 			return $icons;
 		});
 	}
-	public static function initArticle($value) {
+	/*public static function initArticle($value) {
 		return Once::func( function ($value) {
 			if (!$value) return null;
 			$strid = 'article_id';
@@ -574,7 +571,7 @@ class Data {
 				[$value, $nick]
 			);	
 		}, [$value]);
-	}
+	}*/
 	public static function addFilesFS(&$list, $prod) {
 		if ($prod) {
 			Data::addFilesFSproducer($list, $prod, Showcase::$conf['folders'].$prod.'/');
@@ -686,19 +683,17 @@ class Data {
 		$fayliid = Data::initProp('Файлы', 'value');//Пути. Могут быть несколько (pr.producer, a.article, pr.item_num)
 		if ($producer) {
 			$producer_id = Data::initProducer($producer);
-			$fayli = Data::all('SELECT pr.producer, a.article, a.article_nick, mv.item_num, v.value from showcase_mvalues mv
+			$fayli = Data::all('SELECT pr.producer, m.article, m.article_nick, mv.item_num, v.value from showcase_iprops mv
 				INNER JOIN showcase_values v ON v.value_id = mv.value_id
 				INNER JOIN showcase_models m ON m.model_id = mv.model_id and m.producer_id = ?
 				INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
-				INNER JOIN showcase_articles a ON a.article_id = m.article_id
 				WHERE mv.prop_id = ?',
 			[$producer_id, $fayliid]);
 		} else {
-			$fayli = Data::all('SELECT pr.producer, a.article, a.article_nick, mv.item_num, v.value from showcase_mvalues mv
+			$fayli = Data::all('SELECT pr.producer, m.article, m.article_nick, mv.item_num, v.value from showcase_iprops mv
 				INNER JOIN showcase_values v ON v.value_id = mv.value_id
 				INNER JOIN showcase_models m ON m.model_id = mv.model_id
 				INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
-				INNER JOIN showcase_articles a ON a.article_id = m.article_id
 				WHERE mv.prop_id = ? ',
 			[$fayliid]);	
 		}
@@ -739,10 +734,9 @@ class Data {
 		$fotoid = Data::initProp('Фото', 'value');//Имя файла который считать images. producer не отменяется
 		
 		//!!!!Имя файла может содержать имя производителя
-		$rows = Data::all('SELECT pr.producer_nick, pr.producer, a.article, mv.item_num, v.value from showcase_mvalues mv
+		$rows = Data::all('SELECT pr.producer_nick, pr.producer, m.article, mv.item_num, v.value from showcase_iprops mv
 			INNER JOIN showcase_values v ON v.value_id = mv.value_id
 			INNER JOIN showcase_models m ON mv.model_id = m.model_id
-			INNER JOIN showcase_articles a ON a.article_id = m.article_id
 			INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
 			WHERE prop_id = ?',[$fotoid]);
 		
@@ -772,10 +766,9 @@ class Data {
 		}
 
 		$faylid = Data::initProp('Файл', 'value');//Имя файла тип которого надо ещё определить.  producer не отменяется
-		$rows = Data::all('SELECT pr.producer_nick, pr.producer, a.article, mv.item_num, v.value from showcase_mvalues mv
+		$rows = Data::all('SELECT pr.producer_nick, pr.producer, m.article, mv.item_num, v.value from showcase_iprops mv
 			INNER JOIN showcase_values v ON v.value_id = mv.value_id
 			INNER JOIN showcase_models m ON mv.model_id = m.model_id
-			INNER JOIN showcase_articles a ON a.article_id = m.article_id
 			INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
 			WHERE prop_id = ?',[$faylid]);
 		$fayls = [];
@@ -835,13 +828,17 @@ class Data {
 	public static function getGroups($group_nick = false) {
 		$root = Once::func(function (){
 			$cost_id = Data::initProp("Цена");
+
 			$list = Data::fetchto('SELECT g.group_id, g.parent_id, g.group_nick, g.icon, g.order, g.group, c.name as catalog, count(distinct m.model_id) as count, max(m.model_id) as notempty, min(mn.number) as min, max(mn.number) as max, g2.group_nick as parent_nick, g2.group as parent FROM showcase_groups g
 			left JOIN showcase_models m ON g.group_id = m.group_id
-			left JOIN showcase_mnumbers mn ON (m.model_id = mn.model_id and mn.prop_id = ?)
+			left JOIN showcase_iprops mn ON (m.model_id = mn.model_id and mn.prop_id = ?)
 			left JOIN showcase_catalog c ON c.catalog_id = g.catalog_id
 			left JOIN showcase_groups g2 ON g2.group_id = g.parent_id
 			GROUP BY group_nick
 			order by c.order, g.order','group_nick',[$cost_id]);
+
+
+
 			
 			$parents = [];
 			foreach ($list as $i=>&$group) {
@@ -925,9 +922,9 @@ class Data {
 		if (empty($skip['Без цен'])) $skip['Без цен'] = 0;
 		if (empty($skip['Ошибки каталога'])) $skip['Ошибки каталога'] = 0;
 		//if (empty($skip['Ошибки каталога'])) $skip['Ошибки каталога'] = 0;
-
-		$costs = $prod['Без картинок'] - $skip['Без картинок'];
-		$images = $prod['Без цен'] - $skip['Без цен'];
+		
+		$images = $prod['Без картинок'] - $skip['Без картинок'];
+		$costs = $prod['Без цен'] - $skip['Без цен'];
 		$tables = $prod['Ошибки каталога'] - $skip['Ошибки каталога'];
 
 		$errs = ($images!=0?1:0) + ($costs!=0?1:0) + ($tables!=0?1:0);
@@ -948,7 +945,7 @@ class Data {
 				from showcase_models m
 				INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = :producer_nick)
 				INNER JOIN showcase_catalog c on c.catalog_id = m.catalog_id
-				LEFT JOIN showcase_mnumbers n on (m.model_id = n.model_id and n.prop_id = :cost_id)
+				LEFT JOIN showcase_iprops n on (m.model_id = n.model_id and n.prop_id = :cost_id)
 				LEFT JOIN showcase_prices pp on (n.price_id = pp.price_id)
 				GROUP BY producer',[':producer_nick'=>$producer_nick,':cost_id'=>$cost_id]);
 			if (!$list) $list = [];
@@ -957,17 +954,38 @@ class Data {
 				INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = ?)
 				',[$producer_nick]);
 
+			$list['icount'] = Data::col('SELECT count(*) FROM showcase_models m
+				left join showcase_items i on (i.model_id = m.model_id)
+				INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = ?)
+				',[$producer_nick]);
 
-			$costs = Data::col('SELECT count(DISTINCT m.model_id) FROM showcase_models m 
-				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)
-				inner join showcase_mnumbers n on (n.model_id = m.model_id and n.prop_id = :cost_id)
+
+			$costs = Data::col('SELECT count(distinct i.model_id) FROM showcase_items i
+				left join showcase_models m on (m.model_id = i.model_id)
+				left join showcase_producers pr on (m.producer_id = pr.producer_id)
+				left join showcase_iprops ip on (i.model_id = ip.model_id and i.item_num = ip.item_num and ip.prop_id = :cost_id)
+				WHERE 
+					ip.number is null
+					and pr.producer_nick = :producer_nick	
+				',[':cost_id' => $cost_id,':producer_nick' => $producer_nick]);
+			$list['Без цен'] = $costs;
+
+			/*$costs = Data::col('SELECT count(distinct m.model_id) FROM showcase_items i 
+				left join showcase_models m on (i.model_id = m.model_id)
+				left join showcase_producers pr on (m.producer_id = pr.producer_id)
+				
+				left join showcase_iprops n on (n.model_id = i.model_id and i.item_num = n.item_num and n.prop_id = :cost_id)
+				where n.number is null and pr.producer_nick = :producer_nick
 				',[':cost_id'=>$cost_id,':producer_nick'=>$producer_nick]);
-			$list['Без цен'] = $list['count'] - $costs;
+			$list['Без цен'] = $list['count'] - $costs;*/
 
+			//echo '<pre>';
+			//print_r($list);
+			//exit;
 
 			$images = Data::col('SELECT count(DISTINCT m.model_id) FROM showcase_models m
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)
-				inner join showcase_mtexts n on (n.model_id = m.model_id and n.prop_id = :image_id)
+				inner join showcase_iprops n on (n.model_id = m.model_id and n.prop_id = :image_id)
 				',[':image_id'=>$image_id,':producer_nick'=>$producer_nick]);
 			$list['Без картинок'] = $list['count'] - $images;
 
@@ -982,7 +1000,7 @@ class Data {
 			//Есть в каталоге, но нет в прайсе
 			$prices = Data::col('SELECT count(DISTINCT m.model_id) FROM showcase_models m
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)
-				inner join showcase_mvalues n on (n.model_id = m.model_id and n.prop_id = :price_id)
+				inner join showcase_iprops n on (n.model_id = m.model_id and n.prop_id = :price_id)
 				',[':price_id'=>$price_id,':producer_nick'=>$producer_nick]);
 			$list['Ошибки каталога'] = $list['count'] - $prices;
 
@@ -1001,39 +1019,38 @@ class Data {
 			return $list;
 			
 		} else {
-			$list = Data::all('SELECT p.producer, p.logo, p.producer_nick, count(*) as `count`,
+			$list = Data::all('SELECT p.producer, p.logo, p.producer_nick, count(distinct m.model_id) as `count`,
 				GROUP_CONCAT(DISTINCT c.name SEPARATOR \', \') as catalog, 
 				GROUP_CONCAT(DISTINCT pp.name SEPARATOR \', \') as price
 				from showcase_models m
 				INNER JOIN showcase_producers p on p.producer_id = m.producer_id
 				INNER JOIN showcase_catalog c on c.catalog_id = m.catalog_id
-				LEFT JOIN showcase_mnumbers n on m.model_id = n.model_id and n.prop_id = :cost_id
+				LEFT JOIN showcase_iprops n on m.model_id = n.model_id
 				LEFT JOIN showcase_prices pp on (n.price_id = pp.price_id)
-				GROUP BY producer
-				order by count DESC',[':cost_id'=>$cost_id]);
-			
+				GROUP BY p.producer
+				order by count DESC');
+
 			$listcost = Data::fetchto('SELECT p.producer_nick, count(*) as count FROM showcase_models m
 				INNER JOIN showcase_producers p on (p.producer_id = m.producer_id)
 				GROUP BY p.producer_nick
 				','producer_nick');
 
-
-			$costs = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
-				inner join showcase_producers pr on (m.producer_id = pr.producer_id)
-				inner join showcase_mnumbers n on (n.model_id = m.model_id and n.prop_id = :cost_id)
+			$costs = Data::fetchto('SELECT pr.producer_nick, count(distinct i.model_id) as count FROM showcase_items i
+				left join showcase_models m on (m.model_id = i.model_id)
+				left join showcase_producers pr on (m.producer_id = pr.producer_id)
+				left join showcase_iprops ip on (i.model_id = ip.model_id and i.item_num = ip.item_num and ip.prop_id = :cost_id)
+				WHERE ip.number is null
 				GROUP BY m.producer_id
-				','producer_nick', [':cost_id'=>$cost_id]);
+				','producer_nick',[':cost_id' => $cost_id]);
+
 			foreach($list as $i => $row) {
-				if(isset($costs[$row['producer_nick']])) {
-					$list[$i]['Без цен'] = $listcost[$row['producer_nick']]['count'] - $costs[$row['producer_nick']]['count'];	
-				} else {
-					$list[$i]['Без цен'] = $listcost[$row['producer_nick']]['count'];
-				}
+				if (empty($costs[$row['producer_nick']])) $list[$i]['Без цен'] = 0;
+				else $list[$i]['Без цен'] = $costs[$row['producer_nick']]['count'];	
 			}
 
 			$images = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id)
-				inner join showcase_mtexts n on (n.model_id = m.model_id and n.prop_id = :image_id)
+				inner join showcase_iprops n on (n.model_id = m.model_id and n.prop_id = :image_id)
 				GROUP BY m.producer_id
 				','producer_nick', [':image_id'=>$image_id]);
 			foreach($list as $i => $row) {
@@ -1046,7 +1063,7 @@ class Data {
 
 			$prices = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id)
-				inner join showcase_mvalues n on (n.model_id = m.model_id and n.prop_id = :price_id)
+				inner join showcase_iprops n on (n.model_id = m.model_id and n.prop_id = :price_id)
 				GROUP BY m.producer_id
 				','producer_nick', [':price_id'=>$price_id]);
 			
@@ -1057,6 +1074,7 @@ class Data {
 					$list[$i]['Ошибки каталога'] = $listcost[$row['producer_nick']]['count'];
 				}
 			}
+			
 
 
 
@@ -1090,21 +1108,20 @@ class Data {
 	}
 	public static function getModels() {
 		
-		$list = Data::all('SELECT p.producer, p.producer_nick, g.group, g.group_nick, a.article_nick, a.article, count(*) as `count`, c.name  as catalog, 
+		$list = Data::all('SELECT p.producer, p.producer_nick, g.group, g.group_nick, m.article_nick, m.article, count(*) as `count`, c.name  as catalog, 
 			n.number as Цена,
 			iv.value as img
 			FROM showcase_models m
 			INNER JOIN showcase_producers p on p.producer_id = m.producer_id
 			INNER JOIN showcase_groups g on g.group_id = m.group_id
 			LEFT JOIN showcase_props ps on (ps.prop_nick = "Цена")
-			LEFT JOIN showcase_mnumbers n on (n.model_id = m.model_id and n.prop_id = ps.prop_id)
+			LEFT JOIN showcase_iprops n on (n.model_id = m.model_id and n.prop_id = ps.prop_id)
 
 			LEFT JOIN showcase_props ps2 on (ps2.prop_nick = "images")
-			LEFT JOIN showcase_mvalues im on (im.model_id = m.model_id and im.prop_id = ps2.prop_id)
+			LEFT JOIN showcase_iprops im on (im.model_id = m.model_id and im.prop_id = ps2.prop_id)
 			LEFT JOIN showcase_values iv on (iv.value_id = im.value_id)
 			
 			LEFT JOIN showcase_items i on i.model_id = m.model_id
-			INNER JOIN showcase_articles a on a.article_id = m.article_id
 			INNER JOIN showcase_catalog c on c.catalog_id = m.catalog_id
 			GROUP BY m.model_id
 			order by m.model_id');
