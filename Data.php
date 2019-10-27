@@ -703,7 +703,7 @@ class Data {
 			$num = $fayl['item_num'];
 
 			if (!isset($list[$prod])) $list[$prod] = array();
-			if (!isset($list[$prod][$art])) $list[$prod][$art] = array();
+			if (!isset($list[$prod][$art])) $list[$prod][$art] = array(0=>[]);
 			if (!isset($list[$prod][$art][$num])) $list[$prod][$art][$num] = array();
 
 			if (preg_match('/http::/',$fayl['value'])) {
