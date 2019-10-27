@@ -466,7 +466,7 @@ class Showcase {
 			IF(mn2.value_id = :nal1,0,1),
 			IF(mn2.value_id = :nal2,0,1), 
 			IF(mn2.value_id = :nal3,0,1), 
-			IF(mn.number IS NULL,0,1), 
+			IF(mn.number IS NULL,1,0), 
 			mn.number '.$asc.'
 			'.$limit.'
 			';
