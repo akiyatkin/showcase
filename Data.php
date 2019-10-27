@@ -224,7 +224,6 @@ class Data {
 
 			if ($row) {
 				if ($type && $type != $row['type']) {
-					echo $prop.'<br>';
 					Data::exec('DELETE FROM showcase_iprops WHERE prop_id = ?', [$row['prop_id']]);
 					Data::exec('UPDATE showcase_props SET type = ? WHERE prop_id = ?', [$type, $row['prop_id']]);
 				}
