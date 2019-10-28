@@ -452,6 +452,7 @@ class Data {
 				if (in_array($fd['ext'], Data::$images)) return true;
 				return false;
 			});
+
 			$icons = [];
 			$icons = array_reduce($images, function ($icons, $file){
 				$fd = Load::nameInfo($file);
@@ -469,9 +470,10 @@ class Data {
 				
 				$icon = false;
 				if (!$icon) {
-					if (isset($icons[$group['group_nick']])) {
-						$icon = $icons[$group['group_nick']];
-						unset($icons[$group['group_nick']]);
+					$nick = $group['group_nick'];
+					if (isset($icons[$nick])) {
+						$icon = $icons[$nick];
+						unset($icons[$nick]);
 					}
 				}
 				if (!$icon) {
@@ -481,6 +483,7 @@ class Data {
 						unset($icons[$nick]);
 					}
 				}
+				
 				/*if (!$icon) {
 					$icon = Rubrics::find(Showcase::$conf['icons'], $group['group_nick'], Data::$images);
 				}
@@ -526,8 +529,23 @@ class Data {
 			}, true);
 
 			
-			$list = Data::all('SELECT producer_nick FROM showcase_producers');
+			$list = Data::all('SELECT producer_nick, producer FROM showcase_producers');
 			foreach ($list as $k => $prod) {
+				$icon = false;
+				if (!$icon) {
+					$nick = Path::encode($prod['producer']);
+					if (isset($icons[$nick])) {
+						$icon = $icons[$nick];
+						unset($icons[$nick]);
+					}
+				}
+				if (!$icon) {
+					$nick = $prod['producer'];
+					if (isset($icons[$nick])) {
+						$icon = $icons[$nick];
+						unset($icons[$nick]);
+					}
+				}
 				$list[$k]['logo'] = null;
 				//Посмотрели в иконках
 				$logo = Rubrics::find($conf['icons'], $prod['producer_nick'], Data::$images);
