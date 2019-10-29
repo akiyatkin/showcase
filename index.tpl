@@ -24,30 +24,18 @@
 			Всего в каталоге <b>{count} {~words(count,:модель,:модели,:моделей)}</b>.<br>
 		</div>
 	</div>
-	<ul class="mt-5">
-		<li>
-			<a href="/catalog?m=:sort=items">Показать вначале с несколькими позициями</a>
-		</li>
-		<li>
-			<a href="/catalog/actions">Показать только акции</a>
-		</li>
-		<li>
-			<a href="/catalog/?m=:more.images.no=1">Без картинок</a>
-		</li>
-		<li>
-			<a href="/catalog/?m=:more.images.yes=1">С картинками</a>
-		</li>
-		<li>
-			<a href="/catalog/?m=:more.Цена.no=1">Без цены</a>
-		</li>
-		<li>
-			<a href="/catalog/?m=:more.Цена.yes=1">С ценой</a>
-		</li>
-		
-	</ul>
-
 	<hr class="mt-5">
 	<h1>Технические команды</h1>
+	<ul class="mb-5">
+		<li><a href="/catalog?m=:sort=items">Показать вначале модели с несколькими позициями</a></li>
+		<li><a href="/catalog/?m=:sort=source">Сортировка, как и в Excel с данными</a></li>
+		<li><a href="/catalog/?m=:sort=name">Сортировка по наименованию</a></li>
+		<li><a href="/catalog/actions">Показать только акции</a></li>
+		<li><a href="/catalog/?m=:more.images.no=1">Без картинок</a></li>
+		<li><a href="/catalog/?m=:more.images.yes=1">С картинками</a></li>
+		<li><a href="/catalog/?m=:more.Цена.no=1">Без цены</a></li>
+		<li><a href="/catalog/?m=:more.Цена.yes=1">С ценой</a></li>
+	</ul>
 	<a class="btn btn-secondary" href="/-showcase/drop">Удалить данные и пересоздать базу данных</a>
 	<hr>
 {res:}<div class=""><pre><code>{::reskeys}</code></pre></div>

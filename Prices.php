@@ -363,7 +363,11 @@ class Prices {
 
 
 				Event::tik('Showcase-prices.onload');
-				Event::fire('Showcase-prices.onload', $obj); //В событии дописываем нужное свойство которое уже есть в props
+				$res = Event::fire('Showcase-prices.onload', $obj); //В событии дописываем нужное свойство которое уже есть в props
+				if ($res === false) {
+					$ans['Позиции в прайсе игнорируется в результате обработки'][] = $pos;
+					return $r;
+				}
 
 				$value = $pos[$option['priceprop']];
 				if (!empty($option['cleararticle']) && $option['producer_nick']) {

@@ -171,6 +171,7 @@ class Showcase {
 		else $count = $md['count'];
 
 		$cost_id = Data::initProp("Цена");
+		$name_id = Data::initProp("Наименование");
 		$image_id = Data::initProp("images");
 		$nalichie_id = Data::initProp("Наличие на складе");
 		$ans['filters'] = [];
@@ -421,26 +422,70 @@ class Showcase {
 
 
 		
-		$join = implode(' ', $join);
 		
+		
+		
+		
+		//sort нужно регистрировать 
+		$sort = '';
+
+		if ($md['sort'] == 'items') {
+			$sort = 'IF(i.item_nick = "",1,0),';
+		}
+		
+		$sort .= 'ORDER BY
+			'.$sort.'
+			IF(mn3.text is null,1,0),
+			IF(mn2.value_id = :nal1,0,1),
+			IF(mn2.value_id = :nal2,0,1), 
+			IF(mn2.value_id = :nal3,0,1), 
+			IF(mn.number IS NULL,1,0), 
+			mn.number';
+		$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3];
+		$groupbinds = [];
+		if ($md['sort'] == 'source') {
+			$sort = '';
+			$binds = [];
+		}
+		if ($md['sort'] == 'art') {
+			$md['reverse'] = !$md['reverse'];
+			$sort = 'ORDER BY m.article_nick';
+			$binds = [];
+		}
+		if ($md['sort'] == 'name') {
+			$join[] = '
+			LEFT JOIN showcase_iprops ipn on (ipn.model_id = m.model_id and ipn.item_num = i.item_num and ipn.prop_id = :name_id)';
+
+			$md['reverse'] = !$md['reverse'];
+			if($md['reverse']) {
+				$sort = 'ORDER BY IF(ipn.text is null,1,0), ipn.text';
+			}else {
+				//null всегда снизу внезависимости от сортировки
+				$sort = 'ORDER BY IF(ipn.text is null,0,1), ipn.text';
+			}
+			$binds = [':name_id' => $name_id];
+			$groupbinds = [':name_id' => $name_id];
+		}
+		
+
+		if ($sort) {
+			if ($md['reverse']) {
+				$asc = "ASC";
+			} else {
+				$asc = "DESC";
+			}
+			$sort .= ' '.$asc;
+		}
+
+
+
+
 		$no = implode(' ', $no);	
 		$start = ($page-1)*$count;
-
-		if (!empty($md['sort']) && $md['sort'] == 'items') {
-			$sort = 'IF(i.item_nick = "",1,0),';
-		} else {
-			$sort = '';
-		}
-
-		if ($md['reverse']) {
-			$asc = "ASC";
-		} else {
-			$asc = "DESC";
-		}
-		
-
 		if ($count) $limit = 'limit '.$start.','.$count;
 		else $limit = '';
+
+		$join = implode(' ', $join);
 		$sql = '
 			SELECT 
 				SQL_CALC_FOUND_ROWS i.model_id, 
@@ -456,28 +501,20 @@ class Showcase {
 			LEFT JOIN showcase_iprops mn on (mn.model_id = m.model_id and mn.item_num = i.item_num and mn.prop_id = :cost_id)
 			LEFT JOIN showcase_iprops mn2 on (mn2.model_id = m.model_id and mn2.item_num = i.item_num and mn2.prop_id = :nalichie_id)
 			LEFT JOIN showcase_iprops mn3 on (mn3.model_id = m.model_id and mn3.item_num = i.item_num and mn3.prop_id = :image_id)
+			
 			'.$join.'
 			WHERE 1=1 '.$grquery.' '.$prquery.' '.$no.'
 			GROUP BY m.model_id
-			ORDER BY 
-			
 			'.$sort.'
-			IF(mn3.text is null,1,0),
-			IF(mn2.value_id = :nal1,0,1),
-			IF(mn2.value_id = :nal2,0,1), 
-			IF(mn2.value_id = :nal3,0,1), 
-			IF(mn.number IS NULL,1,0), 
-			mn.number '.$asc.'
 			'.$limit.'
 			';
+
+			
 		
-		//pr.producer_id, m.article_id, i.item_num,
+		$binds += [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id];
 		
-		$models = Data::all($sql, [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id, 
-			':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3]
-		);
+		$models = Data::all($sql, $binds);
 		$size = Data::col('SELECT FOUND_ROWS()');
-		
 		
 		
 		
@@ -496,7 +533,7 @@ class Showcase {
 		}
 		$ans['list'] = $models;
 		
-	
+		$groupbinds += [':image_id' => $image_id];
 		
 		$groups = Data::fetchto('
 			SELECT max(mn3.text) as img, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_items i
@@ -508,7 +545,7 @@ class Showcase {
 			'.$join.'
 			WHERE m.model_id = i.model_id '.$grquery.' '.$prquery.' '.$no.'
 			GROUP BY m.group_id
-			','group_nick',[':image_id' => $image_id]);
+			','group_nick',$groupbinds);
 		//Найти общего предка для всех групп
 		//Пропустить 1 вложенную группу
 		//Отсортировать группы по их order
