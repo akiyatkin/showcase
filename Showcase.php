@@ -427,14 +427,13 @@ class Showcase {
 		
 		
 		//sort нужно регистрировать 
-		$sort = '';
+		$sort = 'ORDER BY';
 
 		if ($md['sort'] == 'items') {
-			$sort = 'IF(i.item_nick = "",1,0),';
+			$sort = 'ORDER BY IF(i.item_nick = "",1,0),';
 		}
 		
-		$sort .= 'ORDER BY
-			'.$sort.'
+		$sort .= '
 			IF(mn3.text is null,1,0),
 			IF(mn2.value_id = :nal1,0,1),
 			IF(mn2.value_id = :nal2,0,1), 
