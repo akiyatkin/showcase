@@ -356,6 +356,7 @@ class Data {
 			}
 			$list = [];
 			Data::addFilesFaylov($list, $producer_nick); //Файлы
+			
 
 			Data::addFilesFS($list, $producer_nick); //Из папок
 			
@@ -706,6 +707,7 @@ class Data {
 				INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
 				WHERE mv.prop_id = ?',
 			[$producer_id, $fayliid]);
+
 		} else {
 			$fayli = Data::all('SELECT pr.producer, m.article, m.article_nick, mv.item_num, v.value from showcase_iprops mv
 				INNER JOIN showcase_values v ON v.value_id = mv.value_id
@@ -729,10 +731,12 @@ class Data {
 				continue;
 			} 
 			$src = $dir.$fayl['value'];
+			
 			if (!Path::theme($src)) $src = $fayl['value'];
 			if (!Path::theme($src)) continue; //В Файлы путь указывается от корня data
 			
 			if (FS::is_dir($src)) {
+				$list[$prod][$art][$num][$src] = 'folders';
 				$fs = [];
 				FS::scandir($src, function($file) use(&$fs, $src) {
 					if (!Path::theme($src.$file)) return;
@@ -742,7 +746,7 @@ class Data {
 				$fs = [$src];
 			}
 			foreach ($fs as $src) {
-				$list[$prod][$art][$num][$src] = Data::fileType($src);	
+				$list[$prod][$art][$num][$src] = Data::fileType($src);
 			}
 		}
 	}
@@ -931,7 +935,6 @@ class Data {
 	}
 	public static function checkCls(&$prod) {
 		$prod['cls'] = 'danger';
-
 		if (empty($prod['skip'])) $skip = [];
 		else $skip = $prod['skip'];
 		if (empty($skip['Пояснения'])) $skip['Пояснения'] = ['Сообщение и сколько позиций оно затрагивает'=>1];
@@ -956,6 +959,7 @@ class Data {
 		$price_id = Data::initProp("Прайс");
 		$opt = Data::getOptions();
 		if ($producer_nick) {
+			
 			$list = Data::fetch('SELECT p.producer, p.logo, p.producer_nick, 
 				GROUP_CONCAT(DISTINCT c.name SEPARATOR \', \') as catalog, 
 				GROUP_CONCAT(DISTINCT pp.name SEPARATOR \', \') as price
@@ -1010,9 +1014,10 @@ class Data {
 			if (isset($opt['producers'][$producer_nick])) {
 				$list += $opt['producers'][$producer_nick];
 			}
-
-			
-
+			$producer = $list['producer'];
+			if (isset($opt['producers'][$producer])) {
+				$list += $opt['producers'][$producer];
+			}
 
 			//Есть в каталоге, но нет в прайсе
 			$prices = Data::col('SELECT count(DISTINCT m.model_id) FROM showcase_models m
@@ -1101,7 +1106,10 @@ class Data {
 				if (isset($opt['producers'][$row['producer_nick']])) {
 					$list[$i] += $opt['producers'][$row['producer_nick']];
 				}
-				
+				$producer = $row['producer'];
+				if (isset($opt['producers'][$producer])) {
+					$list[$i] += $opt['producers'][$producer];
+				}
 				/*$list[$i]['Ошибки прайсов'] = 0;
 				foreach($options as $name => $p) {
 					if (empty($p['ans']['Ошибки прайсов'])) continue;
