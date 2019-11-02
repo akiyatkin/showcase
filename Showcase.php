@@ -442,10 +442,32 @@ class Showcase {
 			mn.number';
 		$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3];
 		$groupbinds = [];
+
 		if ($md['sort'] == 'source') {
 			$sort = '';
 			$binds = [];
 		}
+		if ($md['sort'] == 'isimage') {
+			$sort = 'ORDER BY IF(mn3.text is null,0,1)';
+			$binds = [];
+		}
+		if ($md['sort'] == 'iscost') {
+			$sort = 'ORDER BY IF(mn.number IS NULL,0,1)';
+			$binds = [];
+		}
+		if ($md['sort'] == 'is') {
+
+			$sort = 'ORDER BY 
+				IF(mn3.text is null,1,0), 
+				IF(mn.number IS NULL,1,0),
+				IF(mn2.value_id = :nal1,1,0),
+				IF(mn2.value_id = :nal2,1,0), 
+				IF(mn2.value_id = :nal3,1,0)
+				';
+			$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3];
+		}
+
+
 		if ($md['sort'] == 'art') {
 			$md['reverse'] = !$md['reverse'];
 			$sort = 'ORDER BY m.article_nick';

@@ -26,9 +26,11 @@ Showcase::add('reverse', function () {
 	return true;
 });
 Showcase::add('sort', function () {
-	return '';
+	$conf = Showcase::$conf;
+	return $conf['sort'];
 }, function ($val) {
-	return in_array($val, array('name', 'art', 'group', 'source', 'change', 'cost', 'items'));
+	return in_array($val, array('source', 'isimage', 'iscost', 'is', 
+	 'name', 'art', 'group', 'change', 'items'));
 });
 
 Showcase::add('producer', function () {
