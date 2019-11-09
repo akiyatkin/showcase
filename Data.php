@@ -435,7 +435,7 @@ class Data {
 			$ans['Бесхозные файлы'] = array_keys($ans['Бесхозные файлы']);
 			$ans['Найденные файлы'] = array_keys($ans['Найденные файлы']);
 			$list = Data::addFilesIcons();
-			$ans['Бесхозные файлы']['Иконки групп'] = $list;
+			if ($list) $ans['Бесхозные файлы']['Иконки групп'] = $list;
 
 			$db->commit();
 			foreach($ans as $i=>$val){
@@ -590,13 +590,26 @@ class Data {
 			);	
 		}, [$value]);
 	}*/
+	public static function getFolderName($dir, $prod) {
+		$prodname = false;
+		FS::scandir($dir, function ($pr) use ($prod, &$prodname) {
+			if ($prod == Path::encode($pr)) {
+				$prodname = $pr;
+				return false;
+			}
+		});
+		return $prodname;
+	}
 	public static function addFilesFS(&$list, $prod) {
 		if ($prod) {
-			Data::addFilesFSproducer($list, $prod, Showcase::$conf['folders'].$prod.'/');
+			$prodname = Data::getFolderName(Showcase::$conf['folders'], $prod);
+			if ($prodname) Data::addFilesFSproducer($list, $prod, Showcase::$conf['folders'].$prodname.'/');
 			foreach (Data::$files as $type) {
 				if (!isset(Showcase::$conf[$type])) continue;
-				Data::addFilesFStype(Showcase::$conf[$type].$prod.'/', $list, $prod, $type);
+				$prodname = Data::getFolderName(Showcase::$conf[$type], $prod);
+				if ($prodname) Data::addFilesFStype(Showcase::$conf[$type].$prodname.'/', $list, $prod, $type);
 			}
+
 		} else {
 			$dir = Showcase::$conf['folders'];
 			FS::scandir($dir, function ($prod) use (&$list) {
