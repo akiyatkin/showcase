@@ -437,8 +437,7 @@ class Data {
 			$ans['Найденные файлы'] = array_keys($ans['Найденные файлы']);
 
 			$list = Data::addFilesIcons();
-
-			$ans['Бесхозные файлы']['Иконки групп'] = $list;
+			if ($list) $ans['Бесхозные файлы']['Иконки групп'] = $list;
 
 			$db->commit();
 
