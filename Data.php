@@ -171,15 +171,17 @@ class Data {
 	public static function initProducer($value) {
 		return Once::func( function ($value) {
 			if (!$value) return null;
-			$strid = 'producer_id';
-			$strnick = 'producer_nick';
-			$strval = 'producer';
-			$table = 'showcase_producers';
 			$nick = Path::encode($value);
-			$id = Data::col('SELECT '.$strid.' from '.$table.' where '.$strnick.' = ?', [$nick]);
-			if ($id) return $id;
+			$row = Data::fetch('SELECT producer_id, producer from showcase_producers where producer_nick = ?', [$nick]);
+			if ($row) {
+				if ($row['producer'] != $value) {
+					$row['producer'] = $value;
+					Data::exec('UPDATE showcase_producers SET producer = ? WHERE producer_id = ?', [$value, $row['producer_id']]);
+				}
+				return $row['producer_id'];
+			}
 			return Data::lastId(
-				'INSERT INTO '.$table.' ('.$strval.','.$strnick.') VALUES(?,?)',
+				'INSERT INTO showcase_producers (producer, producer_nick) VALUES(?,?)',
 				[$value, $nick]
 			);	
 		}, [$value]);
@@ -435,7 +437,7 @@ class Data {
 			$ans['Бесхозные файлы'] = array_keys($ans['Бесхозные файлы']);
 			$ans['Найденные файлы'] = array_keys($ans['Найденные файлы']);
 			$list = Data::addFilesIcons();
-			if ($list) $ans['Бесхозные файлы']['Иконки групп'] = $list;
+			$ans['Бесхозные файлы']['Иконки групп'] = $list;
 
 			$db->commit();
 			foreach($ans as $i=>$val){
@@ -590,26 +592,13 @@ class Data {
 			);	
 		}, [$value]);
 	}*/
-	public static function getFolderName($dir, $prod) {
-		$prodname = false;
-		FS::scandir($dir, function ($pr) use ($prod, &$prodname) {
-			if ($prod == Path::encode($pr)) {
-				$prodname = $pr;
-				return false;
-			}
-		});
-		return $prodname;
-	}
 	public static function addFilesFS(&$list, $prod) {
 		if ($prod) {
-			$prodname = Data::getFolderName(Showcase::$conf['folders'], $prod);
-			if ($prodname) Data::addFilesFSproducer($list, $prod, Showcase::$conf['folders'].$prodname.'/');
+			Data::addFilesFSproducer($list, $prod, Showcase::$conf['folders'].$prod.'/');
 			foreach (Data::$files as $type) {
 				if (!isset(Showcase::$conf[$type])) continue;
-				$prodname = Data::getFolderName(Showcase::$conf[$type], $prod);
-				if ($prodname) Data::addFilesFStype(Showcase::$conf[$type].$prodname.'/', $list, $prod, $type);
+				Data::addFilesFStype(Showcase::$conf[$type].$prod.'/', $list, $prod, $type);
 			}
-
 		} else {
 			$dir = Showcase::$conf['folders'];
 			FS::scandir($dir, function ($prod) use (&$list) {
@@ -1027,9 +1016,11 @@ class Data {
 			if (isset($opt['producers'][$producer_nick])) {
 				$list += $opt['producers'][$producer_nick];
 			}
-			$producer = $list['producer'];
-			if (isset($opt['producers'][$producer])) {
-				$list += $opt['producers'][$producer];
+			if (isset($list['producer'])) {
+				$producer = $list['producer'];
+				if (isset($opt['producers'][$producer])) {
+					$list += $opt['producers'][$producer];
+				}
 			}
 
 			//Есть в каталоге, но нет в прайсе
