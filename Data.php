@@ -172,11 +172,11 @@ class Data {
 		if (!$value) return null;
 		$nick = Path::encode($value);
 		return Once::func( function ($nick) use ($value) {
-			$row = Data::fetch('SELECT producer_id, producer from showcase_producers where producer_nick = ?', [$nick]);
+			$row = Data::fetch('SELECT producer_id, producer, producer_nick from showcase_producers where producer_nick = ?', [$nick]);
 			if ($row) {
-				if ($row['producer'] != $value) {
+				if ($row['producer'] != $value || $row['producer_nick'] != $nick) {
 					$row['producer'] = $value;
-					Data::exec('UPDATE showcase_producers SET producer = ? WHERE producer_id = ?', [$value, $row['producer_id']]);
+					Data::exec('UPDATE showcase_producers SET producer = ?, producer_nick = ? WHERE producer_id = ?', [$value, $nick, $row['producer_id']]);
 				}
 				return $row['producer_id'];
 			}
