@@ -169,9 +169,9 @@ class Data {
 	}
 
 	public static function initProducer($value) {
-		return Once::func( function ($value) {
-			if (!$value) return null;
-			$nick = Path::encode($value);
+		if (!$value) return null;
+		$nick = Path::encode($value);
+		return Once::func( function ($nick) use ($value) {
 			$row = Data::fetch('SELECT producer_id, producer from showcase_producers where producer_nick = ?', [$nick]);
 			if ($row) {
 				if ($row['producer'] != $value) {
@@ -184,7 +184,7 @@ class Data {
 				'INSERT INTO showcase_producers (producer, producer_nick) VALUES(?,?)',
 				[$value, $nick]
 			);	
-		}, [$value]);
+		}, [$nick]);
 	}
 	
 	public static function actionClearAll() {
@@ -343,8 +343,7 @@ class Data {
 
 		return Once::func( function ($producer_nick) {
 			$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$producer_nick]);
-			
-			//$producer_id = ($producer_nick) ? Data::initProducer($producer_nick): false; //Собираем файлы определённого производителя
+		
 			$ans = [];
 			if ($producer_nick) {
 				if ($producer_id) {
@@ -384,7 +383,7 @@ class Data {
 			$ans['Файлов'] = sizeof($ans['Бесхозные файлы']);
 			
 			foreach ($list as $prod => $arts) {
-				//$producer_id = Data::initProducer($prod);
+				
 				$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$prod]);
 				foreach ($arts as $art => $items) {
 					
@@ -433,13 +432,16 @@ class Data {
 					}
 				}
 			}
-
+			
 			$ans['Бесхозные файлы'] = array_keys($ans['Бесхозные файлы']);
 			$ans['Найденные файлы'] = array_keys($ans['Найденные файлы']);
+
 			$list = Data::addFilesIcons();
+
 			$ans['Бесхозные файлы']['Иконки групп'] = $list;
 
 			$db->commit();
+
 			foreach($ans as $i=>$val){
 				if (is_array($ans[$i]) && sizeof($ans[$i]) > 1000) $ans[$i] = sizeof($ans[$i]);
 			}
@@ -448,6 +450,7 @@ class Data {
 
 	}
 	public static function addFilesIcons() {
+
 		return Once::func(function(){
 
 			$images = FS::scandir(Showcase::$conf['icons'], function ($file) {
@@ -465,6 +468,7 @@ class Data {
 			}, $icons);
 
 			$images_id = Data::initProp('images');
+			
 			$root = Data::getGroups();
 			$conf = Showcase::$conf;
 			Xlsx::runGroups($root, function &(&$group) use ($images_id, &$icons){
@@ -849,9 +853,11 @@ class Data {
 		return $list;
 	}
 	public static function getGroups($group_nick = false) {
-		$root = Once::func(function (){
-			$cost_id = Data::initProp("Цена");
 
+		$root = Once::func(function (){
+
+			$cost_id = Data::initProp("Цена");
+			
 			$list = Data::fetchto('SELECT g.group_id, g.parent_id, g.group_nick, g.icon, g.order, g.group, c.name as catalog, count(distinct m.model_id) as count, max(m.model_id) as notempty, min(mn.number) as min, max(mn.number) as max, g2.group_nick as parent_nick, g2.group as parent FROM showcase_groups g
 			left JOIN showcase_models m ON g.group_id = m.group_id
 			left JOIN showcase_iprops mn ON (m.model_id = mn.model_id and mn.prop_id = ?)
@@ -870,16 +876,18 @@ class Data {
 				if (empty($parent[$group['parent_nick']])) $parent[$group['parent_nick']] = [];
 				$parents[$group['parent_nick']][] = &$group;
 			}
-
-		
+			
 			$p = null;
 			foreach ($list as $i => &$group) {
 				if (!isset($parents[$group['group_nick']])) continue;
 				$group['childs'] = $parents[$group['group_nick']];
 			}
+			
 			if (!$parents || !isset($parents[''])) return array('childs'=>[], 'group_nick'=>false, 'group'=>'Группа не найдена');
 			$childs = $parents[''];
 			$root = $childs[0];
+
+
 
 			Xlsx::runGroups($root, function &(&$group, $i, $parent) {
 				$r = null;
@@ -892,6 +900,7 @@ class Data {
 				$group['path'][] = $group['group_nick'];
 				return $r;
 			});
+
 			$opt = Data::getOptions();
 			Xlsx::runGroups($root, function &(&$group, $i, $parent) use ($opt) {
 
@@ -924,6 +933,7 @@ class Data {
 			}, true);
 			return $root;
 		});
+		
 		$root['path'] = [];
 		if ($group_nick) {
 			return Xlsx::runGroups($root, function &($group) use ($group_nick){

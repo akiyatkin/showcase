@@ -280,7 +280,7 @@ class Catalog {
 		$ans = array('Данные' => $src);
 		if ($option['producer']) $ans['Производитель'] = '<a href="/-showcase/producers/'.$option['producer_nick'].'">'.$option['producer'].'</a>';
 		$data = Catalog::readCatalog($name, $src);
-		
+	
 		$groups = Catalog::applyGroups($data, $catalog_id, $order, $ans);
 		$props = array();
 		$count = 0;
@@ -554,7 +554,6 @@ class Catalog {
 			return $r;
 		});
 
-		
 		return $groups;
 	}
 }
