@@ -12,7 +12,7 @@ return Rest::get( function () {
 	
 	$ans = array();
 	$md = Showcase::initMark($ans);
-
+	
 	$arlist = array();
 		
 		//depricated
@@ -36,11 +36,14 @@ return Rest::get( function () {
 	} else {
 		$ar = [];
 	}
-	
+
 	for ($i = sizeof($ans['group']['path'])-1; $i >= 0; $i--) {
 		$g = $ans['group']['path'][$i];
 		if (!isset($arlist[$g])) continue;
-		$ar = array_merge($arlist[$g],$ar);
+		$tempar = array_intersect($arlist[$g], $ar);
+		
+		$tempar = array_diff($arlist[$g], $tempar);
+		$ar = array_merge($ar, $tempar);
 	}
 
 	$props = Ans::get('props','string');
@@ -48,6 +51,8 @@ return Rest::get( function () {
 		$props = explode(',', $props);
 		$ar = array_merge($ar, $props);
 	}
+
+
 	$params = [];
 	
 	$columns = Showcase::getOption(['columns']);

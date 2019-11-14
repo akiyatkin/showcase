@@ -97,7 +97,6 @@ Showcase::add('more', function () {
 }, function (&$val) {
 	if (!is_array($val)) return;
 
-	 
 	foreach ($val as $k => $v){
 		if (!is_array($v)) {
 			unset($val[$k]);
@@ -110,7 +109,7 @@ Showcase::add('more', function () {
 				//Не противоречит no и minmax, yes и minmax
 				
 				if ($last == 'minmax') {
-					if (!empty($val['no'])) {
+					if (!empty($val[$k]['no'])) {
 						$val[$k] = [ 'no' => 1, 'minmax' => $val[$k]['minmax']];
 					} else if (!empty($val['yes'])) {
 						$val[$k] = [ 'yes' => 1, 'minmax' => $val[$k]['minmax']];	
@@ -118,10 +117,13 @@ Showcase::add('more', function () {
 						$val[$k] = ['minmax' => $val[$k]['minmax']];
 					}
 				} else if ($last == 'yes') { //Показывать позиции с ценой
+
 					unset($val[$k]['no']);
 				} else if ($last == 'no') {
 					unset($val[$k]['yes']);
 				}
+
+
 				/*if (!empty($val[$k]['minmax'])) {
 					$new = ['minmax' => $val[$k]['minmax']];
 					if (!empty($new['no'])) $new['no'] = 1;
@@ -147,6 +149,7 @@ Showcase::add('more', function () {
 			
 		}		
 	}
+
 	return !!$val;
 });
 Path::reqif(Showcase::$conf['phpoptions']);
