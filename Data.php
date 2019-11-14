@@ -709,7 +709,7 @@ class Data {
 		$fayliid = Data::initProp('Файлы', 'value');//Пути. Могут быть несколько (pr.producer, a.article, pr.item_num)
 		if ($producer) {
 			$producer_id = Data::initProducer($producer);
-			$fayli = Data::all('SELECT pr.producer, pr.producer_nick m.article, m.article_nick, mv.item_num, v.value from showcase_iprops mv
+			$fayli = Data::all('SELECT pr.producer, pr.producer_nick, m.article, m.article_nick, mv.item_num, v.value from showcase_iprops mv
 				INNER JOIN showcase_values v ON v.value_id = mv.value_id
 				INNER JOIN showcase_models m ON m.model_id = mv.model_id and m.producer_id = ?
 				INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
