@@ -600,20 +600,23 @@ class Data {
 			Data::addFilesFSproducer($list, $prod, Showcase::$conf['folders'].$prod.'/');
 			foreach (Data::$files as $type) {
 				if (!isset(Showcase::$conf[$type])) continue;
-				Data::addFilesFStype(Showcase::$conf[$type].$prod.'/', $list, $prod, $type);
+				$prod_nick = Path::encode($prod);
+				Data::addFilesFStype(Showcase::$conf[$type].$prod.'/', $list, $prod_nick, $type);
 			}
 		} else {
 			$dir = Showcase::$conf['folders'];
 			FS::scandir($dir, function ($prod) use (&$list) {
 				//В списке производителей могут быть некоторые левые папки depricated
 				if (in_array($prod,['groups', 'articles', 'tables'])) return; //Относится к группам
-				Data::addFilesFSproducer($list, $prod, Showcase::$conf['folders'].$prod.'/');
+				$prod_nick = Path::encode($prod);
+				Data::addFilesFSproducer($list, $prod_nick, Showcase::$conf['folders'].$prod.'/');
 			});
 			foreach (Data::$files as $type) {
 				if (!isset(Showcase::$conf[$type])) continue;
 				$dir = Showcase::$conf[$type];
 				FS::scandir($dir, function ($prod) use (&$list, $type) {
-					Data::addFilesFStype(Showcase::$conf[$type].$prod.'/', $list, $prod, $type);
+					$prod_nick = Path::encode($prod);
+					Data::addFilesFStype(Showcase::$conf[$type].$prod.'/', $list, $prod_nick, $type);
 				});
 			}
 		}
@@ -706,7 +709,7 @@ class Data {
 		$fayliid = Data::initProp('Файлы', 'value');//Пути. Могут быть несколько (pr.producer, a.article, pr.item_num)
 		if ($producer) {
 			$producer_id = Data::initProducer($producer);
-			$fayli = Data::all('SELECT pr.producer, m.article, m.article_nick, mv.item_num, v.value from showcase_iprops mv
+			$fayli = Data::all('SELECT pr.producer, pr.producer_nick m.article, m.article_nick, mv.item_num, v.value from showcase_iprops mv
 				INNER JOIN showcase_values v ON v.value_id = mv.value_id
 				INNER JOIN showcase_models m ON m.model_id = mv.model_id and m.producer_id = ?
 				INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
@@ -714,7 +717,7 @@ class Data {
 			[$producer_id, $fayliid]);
 
 		} else {
-			$fayli = Data::all('SELECT pr.producer, m.article, m.article_nick, mv.item_num, v.value from showcase_iprops mv
+			$fayli = Data::all('SELECT pr.producer, pr.producer_nick, m.article, m.article_nick, mv.item_num, v.value from showcase_iprops mv
 				INNER JOIN showcase_values v ON v.value_id = mv.value_id
 				INNER JOIN showcase_models m ON m.model_id = mv.model_id
 				INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
@@ -723,16 +726,16 @@ class Data {
 		}
 		
 		foreach ($fayli as $fayl) {
-			$prod = $fayl['producer'];
+			$prod_nick = $fayl['producer_nick'];
 			$art = mb_strtolower($fayl['article_nick']);
 			$num = $fayl['item_num'];
 
-			if (!isset($list[$prod])) $list[$prod] = array();
-			if (!isset($list[$prod][$art])) $list[$prod][$art] = array(0=>[]);
-			if (!isset($list[$prod][$art][$num])) $list[$prod][$art][$num] = array();
+			if (!isset($list[$prod_nick])) $list[$prod_nick] = array();
+			if (!isset($list[$prod_nick][$art])) $list[$prod_nick][$art] = array(0=>[]);
+			if (!isset($list[$prod_nick][$art][$num])) $list[$prod_nick][$art][$num] = array();
 
 			if (preg_match('/http::/',$fayl['value'])) {
-				$list[$prod][$art][$num][$src] = 'images';
+				$list[$prod_nick][$art][$num][$src] = 'images';
 				continue;
 			} 
 			$src = $dir.$fayl['value'];
@@ -741,7 +744,7 @@ class Data {
 			if (!Path::theme($src)) continue; //В Файлы путь указывается от корня data
 			
 			if (FS::is_dir($src)) {
-				$list[$prod][$art][$num][$src] = 'folders';
+				$list[$prod_nick][$art][$num][$src] = 'folders';
 				$fs = [];
 				FS::scandir($src, function($file) use(&$fs, $src) {
 					if (!Path::theme($src.$file)) return;
@@ -751,7 +754,7 @@ class Data {
 				$fs = [$src];
 			}
 			foreach ($fs as $src) {
-				$list[$prod][$art][$num][$src] = Data::fileType($src);
+				$list[$prod_nick][$art][$num][$src] = Data::fileType($src);
 			}
 		}
 	}
@@ -760,7 +763,7 @@ class Data {
 		$fotoid = Data::initProp('Фото', 'value');//Имя файла который считать images. producer не отменяется
 		
 		//!!!!Имя файла может содержать имя производителя
-		$rows = Data::all('SELECT pr.producer_nick, pr.producer, m.article, mv.item_num, v.value from showcase_iprops mv
+		$rows = Data::all('SELECT pr.producer_nick, pr.producer, m.article, m.article_nick, mv.item_num, v.value from showcase_iprops mv
 			INNER JOIN showcase_values v ON v.value_id = mv.value_id
 			INNER JOIN showcase_models m ON mv.model_id = m.model_id
 			INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
@@ -782,7 +785,7 @@ class Data {
 				foreach ($list[$prod][$syn][0] as $src => $type) { //По синониму может быть несколько файлов
 					foreach ($syns as $row) { //Один синоним может быть для нескольких позиций и каждый файл записываем в каждую позицию
 						if ($type !== 'images') continue;
-						$art = mb_strtolower($row['article']);
+						$art = mb_strtolower($row['article_nick']);
 						if (!isset($list[$prod][$art][$row['item_num']])) $list[$prod][$art][$row['item_num']] = [];
 						$list[$prod][$art][$row['item_num']][$src] = $type;
 					}
@@ -792,7 +795,7 @@ class Data {
 		}
 
 		$faylid = Data::initProp('Файл', 'value');//Имя файла тип которого надо ещё определить.  producer не отменяется
-		$rows = Data::all('SELECT pr.producer_nick, pr.producer, m.article, mv.item_num, v.value from showcase_iprops mv
+		$rows = Data::all('SELECT pr.producer_nick, pr.producer, m.article, m.article_nick, mv.item_num, v.value from showcase_iprops mv
 			INNER JOIN showcase_values v ON v.value_id = mv.value_id
 			INNER JOIN showcase_models m ON mv.model_id = m.model_id
 			INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
@@ -811,7 +814,7 @@ class Data {
 				if (!isset($list[$prod][$syn][0])) continue;
 				foreach ($list[$prod][$syn][0] as $src => $type) { //По синониму может быть несколько файлов
 					foreach ($syns as $row) { //Один синоним может быть для нескольких позиций и каждый файл записываем в каждую позицию
-						$art = mb_strtolower($row['article']);
+						$art = mb_strtolower($row['article_nick']);
 						if (!isset($list[$prod][$art][$row['item_num']])) $list[$prod][$art][$row['item_num']] = [];
 						$list[$prod][$art][$row['item_num']][$src] = $type;
 					}
