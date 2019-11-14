@@ -597,12 +597,18 @@ class Data {
 	}*/
 	public static function addFilesFS(&$list, $prod) {
 		if ($prod) {
-			Data::addFilesFSproducer($list, $prod, Showcase::$conf['folders'].$prod.'/');
-			foreach (Data::$files as $type) {
-				if (!isset(Showcase::$conf[$type])) continue;
-				$prod_nick = Path::encode($prod);
-				Data::addFilesFStype(Showcase::$conf[$type].$prod.'/', $list, $prod_nick, $type);
-			}
+			$dir = Showcase::$conf['folders'];
+			$prod_nick = Path::encode($prod);
+			FS::scandir($dir, function ($prod_fs) use (&$list, $prod_nick) {
+				$nick = Path::encode($prod_fs);
+				if ($nick != $prod_nick) return;
+				Data::addFilesFSproducer($list, $prod_nick, Showcase::$conf['folders'].$prod_fs.'/');
+				foreach (Data::$files as $type) {
+					if (!isset(Showcase::$conf[$type])) continue;
+					Data::addFilesFStype(Showcase::$conf[$type].$prod_fs.'/', $list, $prod_nick, $type);
+				}
+			});
+			
 		} else {
 			$dir = Showcase::$conf['folders'];
 			FS::scandir($dir, function ($prod) use (&$list) {
