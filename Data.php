@@ -595,38 +595,39 @@ class Data {
 			);	
 		}, [$value]);
 	}*/
-	public static function addFilesFS(&$list, $prod) {
-		if ($prod) {
-			$dir = Showcase::$conf['folders'];
-			$prod_nick = Path::encode($prod);
-			FS::scandir($dir, function ($prod_fs) use (&$list, $prod_nick) {
-				$nick = Path::encode($prod_fs);
-				if ($nick != $prod_nick) return;
-				Data::addFilesFSproducer($list, $prod_nick, Showcase::$conf['folders'].$prod_fs.'/');
-				foreach (Data::$files as $type) {
-					if (!isset(Showcase::$conf[$type])) continue;
-					Data::addFilesFStype(Showcase::$conf[$type].$prod_fs.'/', $list, $prod_nick, $type);
-				}
-			});
-			
-		} else {
-			$dir = Showcase::$conf['folders'];
-			FS::scandir($dir, function ($prod) use (&$list) {
-				//В списке производителей могут быть некоторые левые папки depricated
-				if (in_array($prod,['groups', 'articles', 'tables'])) return; //Относится к группам
-				$prod_nick = Path::encode($prod);
-				Data::addFilesFSproducer($list, $prod_nick, Showcase::$conf['folders'].$prod.'/');
-			});
+	public static function getProdFS(){
+		return Once::func( function () {
+			$prodsfs = [];
 			foreach (Data::$files as $type) {
-				if (!isset(Showcase::$conf[$type])) continue;
-				$dir = Showcase::$conf[$type];
-				FS::scandir($dir, function ($prod) use (&$list, $type) {
-					$prod_nick = Path::encode($prod);
-					Data::addFilesFStype(Showcase::$conf[$type].$prod.'/', $list, $prod_nick, $type);
+				if (empty(Showcase::$conf[$type])) continue;
+				FS::scandir(Showcase::$conf[$type], function ($prod_fs) use (&$prodsfs) {
+					if (in_array($prod_fs, Data::$files)) return;
+					$nick = Path::encode($prod_fs);
+					$prodsfs[$nick] = $prod_fs;
 				});
 			}
+			return $prodsfs;
+		});
+	}
+	public static function addFilesFS(&$list, $prod) {
+		$prodsfs = Data::getProdFS();
+		
+		if ($prod) {
+			$prod_nick = Path::encode($prod);
+			if (empty($prodsfs[$prod_nick])) return;
+			$prodsfs = array_intersect_key($prodsfs, array_flip([$prod_nick]));
 		}
-		foreach ($list as $prod => $arts) if (!$arts) unset($list[$prod]); 
+
+		foreach ($prodsfs as $prod_nick => $prod_fs) {
+			foreach (Data::$files as $type) {
+				if (!isset(Showcase::$conf[$type])) continue;
+				Data::addFilesFStype(Showcase::$conf[$type].$prod_fs.'/', $list, $prod_nick, $type);
+			}
+		}
+		//echo '<pre>';
+		//print_r($list);
+		//exit;
+		//foreach ($list as $prod => $arts) if (!$arts) unset($list[$prod]); 
 	}
 	public static function addFilesFStype($dir, &$list, $prod, $type) { //files, texts, images, videos
 		if (!Path::theme($dir)) return; //Подходят только папки
@@ -636,6 +637,7 @@ class Data {
 		$exts = $type == 'folders' ? false : Data::$$type;
 		$index = Data::getIndex($dir, $exts);
 		foreach ($index as $art => $files) {
+			if (!$art) continue;
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
 			$files = array_fill_keys($files, $type);
 			$list[$prod][$art][0] += $files;
