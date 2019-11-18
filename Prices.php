@@ -89,10 +89,10 @@ class Prices {
 	}
 	public static function getMyItems($type, $producer_id, $prop_id, $value) {
 		//Вообщедолжна быть одна модель. Прайс связываеся с этими моделями по prop_id и value
+
 		if ($type == 'value') {
 			$value_nick = Path::encode($value);
 			$row = Showcase::getValue($value_nick);
-
 			$id = $row['value_id'];
 			$mainprop = 'n.value_id';
 		} else if ($type == 'number') {
@@ -113,14 +113,14 @@ class Prices {
 			}
 			return $list;
 		}
-
+		
 		if ($producer_id) {
-			$list = Data::fetchto('SELECT m.model_id, n.item_num
+			$list = Data::all('SELECT m.model_id, n.item_num
 				FROM showcase_iprops n 
 				RIGHT JOIN showcase_models m ON m.model_id = n.model_id AND m.producer_id = ?
 				WHERE n.prop_id = ?
 				AND '.$mainprop.' = ?
-			','item_num', [$producer_id, $prop_id, $id]);
+			', [$producer_id, $prop_id, $id]);
 
 		} else {
 			$sql = 'SELECT n.model_id, n.item_num
@@ -128,12 +128,13 @@ class Prices {
 				WHERE n.prop_id = ?
 				AND '.$mainprop.' = ?
 				';
-			$list = Data::fetchto($sql,'item_num', [$prop_id, $id]);
+			$list = Data::all($sql, [$prop_id, $id]);
 		}
 
 		return $list;
 	}
 	public static function updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value, $name) {
+
 
 		$list = Prices::getMyItems($type, $producer_id, $prop_id, $value);
 
@@ -335,7 +336,7 @@ class Prices {
 		if ($option['isaccurate']) {
 			Xlsx::runPoss( $data, function &(&$pos, $i, &$group) use ($props, $name, &$ans, &$option, $prop_id, $type, $producer_id, $order, $price_id){
 				$r = null;
-				
+
 				Prices::checkSynonyms($pos, $option);
 
 				
@@ -373,7 +374,7 @@ class Prices {
 				if (!empty($option['cleararticle']) && $option['producer_nick']) {
 					$value = str_ireplace($option['producer_nick'], '', $value); //Удалили из кода продусера
 				}
-
+				
 				list($c, $modified, $mposs) = Prices::updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value, $name);
 				$ans['Изменено позиций в каталоге']+=$modified;
 				if ($c == 0) {

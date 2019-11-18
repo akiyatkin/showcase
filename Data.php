@@ -981,8 +981,8 @@ class Data {
 		$price_id = Data::initProp("Прайс");
 		$opt = Data::getOptions();
 		if ($producer_nick) {
-			
-			$list = Data::fetch('SELECT p.producer, p.logo, p.producer_nick, 
+
+			$list = Data::fetch('SELECT p.producer, p.producer_id, p.logo, p.producer_nick, 
 				GROUP_CONCAT(DISTINCT c.name SEPARATOR \', \') as catalog, 
 				GROUP_CONCAT(DISTINCT pp.name SEPARATOR \', \') as price
 				from showcase_models m
