@@ -15,21 +15,22 @@ return Rest::get( function () {
 	
 	$arlist = array();
 		
-		//depricated
-		$arlist2 = Showcase::getOptions()['filters']['groups'];
-		foreach ($arlist2 as $k=>$v) {
-			$arlist[Path::encode($k)] = [];
-			foreach ($v as $vv) $arlist[Path::encode($k)][] = Path::encode($vv);
-		}
+	//depricated
+	$arlist2 = Showcase::getOptions()['filters']['groups'];
+	foreach ($arlist2 as $k=>$v) {
+		$arlist[Path::encode($k)] = [];
+		foreach ($v as $vv) $arlist[Path::encode($k)][] = Path::encode($vv);
+	}
 
 	$arlist2 = Showcase::getOptions()['groups'];
+
 	foreach ($arlist2 as $k=>$v) {
 		$k = Path::encode($k);
 		if (empty($v['filters'])) continue;
 		$arlist[$k] = [];
 		foreach ($v['filters'] as $vv) $arlist[$k][] = Path::encode($vv);
 	}
-
+	
 	$title_nick = Path::encode(Showcase::$conf['title']);
 	if(isset($arlist[$title_nick])) {
 		$ar = $arlist[$title_nick];
@@ -51,7 +52,6 @@ return Rest::get( function () {
 		$props = explode(',', $props);
 		$ar = array_merge($ar, $props);
 	}
-
 
 	$params = [];
 	
@@ -97,6 +97,8 @@ return Rest::get( function () {
 			$def = ($type == 'number')? 'range':'value';
 			$filtertype = $def;
 			//$filtertype = Showcase::getOption(['props', $prop_nick, 'filter'], $def);
+			
+
 
 			if ($filtertype == 'value') {
 				if ($type == 'value') {
@@ -203,7 +205,7 @@ return Rest::get( function () {
 			);
 		}
 	}
-
+	
 	$columns = ['producer'];//Showcase::getOption(['columns']);
 	/*
 	Обработка параметров в showcase.json каждого фильтра
@@ -267,7 +269,6 @@ return Rest::get( function () {
 			unset($params[$k]);
 		}
 	}
-	
 	$ans['list'] = $params;
 	return Ans::ret($ans);
 });
