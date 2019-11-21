@@ -539,9 +539,10 @@ class Showcase {
 		$ans['count'] = (int) $size;
 		
 		$limit = 500;
-		$showlist = $limit < $count || (!empty($ans['group']['count'])) || (sizeof($ans['filters']) && $ans['count'] < $limit);
-		$ans['showlist'] = $showlist;
-		if ($showlist) {
+		
+		$ans['showlist'] = $limit < $count || (!empty($ans['group']['count'])) || (sizeof($ans['filters']) && $ans['count'] < $limit);
+
+		if ($ans['showlist']) {
 			foreach ($models as $k=>$m) {
 
 				/*
@@ -636,7 +637,7 @@ class Showcase {
 		
 
 
-		if ($showlist && $count) {
+		if ($ans['showlist'] && $count) {
 			$pages = ceil($size / $count);
 			if ($pages < $page) $page = $pages;
 			
