@@ -536,24 +536,28 @@ class Showcase {
 		
 		$models = Data::all($sql, $binds);
 		$size = Data::col('SELECT FOUND_ROWS()');
+		$ans['count'] = (int) $size;
 		
-		
-		
-		foreach ($models as $k=>$m) {
+		$limit = 500;
+		$showlist = $ans['group']['count'] || (sizeof($ans['filters']) && $ans['count'] < $limit);
+		$ans['showlist'] = $showlist;
+		if ($showlist) {
+			foreach ($models as $k=>$m) {
 
-			/*
-				Подготовили список items внутри найденой позиции
-				Модель в результатах поиска будет выглядеть иначе. Кликаем и видим друое количество позиций.
-			*/
-			$m['items'] = explode(',',$m['items']);
-			foreach ($m['items'] as $j => $v) if (!$v) unset($m['items'][$j]);
+				/*
+					Подготовили список items внутри найденой позиции
+					Модель в результатах поиска будет выглядеть иначе. Кликаем и видим друое количество позиций.
+				*/
+				$m['items'] = explode(',',$m['items']);
+				foreach ($m['items'] as $j => $v) if (!$v) unset($m['items'][$j]);
+				
 			
-		
-			$models[$k] = Showcase::getModel($m['producer_nick'], $m['article_nick'], $m['item_nick'], [], $m['items']);
-		
+				$models[$k] = Showcase::getModel($m['producer_nick'], $m['article_nick'], $m['item_nick'], [], $m['items']);
+			
+			}
+			$ans['list'] = $models;
 		}
-		$ans['list'] = $models;
-		
+
 		$groupbinds += [':image_id' => $image_id];
 		
 		$groups = Data::fetchto('
@@ -629,10 +633,13 @@ class Showcase {
 				unset($ans['childs']);
 			}
 		}
-		if ($count) {
+		
+
+
+		if ($showlist && $count) {
 			$pages = ceil($size / $count);
 			if ($pages < $page) $page = $pages;
-			$ans['count'] = (int) $size;
+			
 
 			$ans['numbers'] = Showcase::numbers($page, $pages, 7);
 		}
