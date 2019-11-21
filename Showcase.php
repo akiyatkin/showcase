@@ -539,7 +539,7 @@ class Showcase {
 		$ans['count'] = (int) $size;
 		
 		$limit = 500;
-		$showlist = $ans['group']['count'] || (sizeof($ans['filters']) && $ans['count'] < $limit);
+		$showlist = $limit < $count || (!empty($ans['group']['count'])) || (sizeof($ans['filters']) && $ans['count'] < $limit);
 		$ans['showlist'] = $showlist;
 		if ($showlist) {
 			foreach ($models as $k=>$m) {
