@@ -147,7 +147,7 @@ return Rest::get( function () {
 		} else $ans['title'] = $pos['producer'].' '.$pos['article'];
 		
 
-		if (!empty($pos['Описание'])) $ans['description'] = $pos['Описание'];
+		if (!empty($pos['Описание'])) $ans['description'] = preg_replace("/[\s\n\t]+/u"," ",strip_tags($pos['Описание']));
 		
 		//if (!empty($pos['Наименование'])) $ans['description'] = 'Купить '.$pos['Наименование'];
 		//if (Showcase::$conf['cleanname']) { //Если в наименовании нет артикула, добавляем
