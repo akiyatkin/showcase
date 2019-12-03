@@ -1,7 +1,11 @@
 <?php
 use infrajs\path\Path;
+use infrajs\ans\Ans;
 use akiyatkin\showcase\Showcase;
-
+use akiyatkin\ydisk\Ydisk;
+use akiyatkin\showcase\Data;
+use akiyatkin\showcase\Prices;
+use akiyatkin\showcase\Catalog;
 
 /*
 Всё что добавляется в общий адресный параметр "m" как криетрий поиска, сортировки, вывода должно быть обработано 
@@ -10,7 +14,17 @@ use akiyatkin\showcase\Showcase;
 в шаблонах вывода. 
 Критерии такие, чтобы при передачи ссылки кому-то и он должен увидеть то что нужно.
 */
-
+if (isset($_GET['-showcase'])) {
+	$is = Ans::get('-showcase',['true']);
+	if ($is) {
+		Ydisk::replaceAll();
+		Catalog::init();
+		Prices::init();
+		$res = Catalog::actionLoadAll();
+		$res = Prices::actionLoadAll();
+		$res = Data::actionAddFiles();
+	}
+}
 Showcase::add('count', function () {
 	$conf = Showcase::$conf;
 	return 24;
