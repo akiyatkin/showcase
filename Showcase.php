@@ -166,7 +166,7 @@ class Showcase {
 		return $groups;
 		
 	}
-	public static function search($md = false, &$ans = array(), $page = 1) {
+	public static function search($md = false, &$ans = array(), $page = 1, $showlist = false) {
 		if (empty($md['count'])) $count = 0;
 		else $count = $md['count'];
 
@@ -539,8 +539,8 @@ class Showcase {
 		$ans['count'] = (int) $size;
 		
 		$limit = 500;
-		
-		$ans['showlist'] = $limit < $count || (!empty($ans['group']['count'])) || (sizeof($ans['filters']) && $ans['count'] < $limit);
+
+		$ans['showlist'] = $showlist ? $showlist : $limit < $count || (!empty($ans['group']['count'])) || (sizeof($ans['filters']) && $ans['count'] < $limit);
 
 		if ($ans['showlist']) {
 			foreach ($models as $k=>$m) {

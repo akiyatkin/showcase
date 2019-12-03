@@ -57,10 +57,9 @@ return Rest::get( function () {
 
 		return Ans::ans($ans);	
 }], 'search', [function (){
-
 		$md = Showcase::initMark($ans);
-		
 		$ans['page'] = Ans::GET('p','integer',1);
+		$ans['showlist'] = Ans::GET('showlist','bool', false);
 		if ($ans['page'] < 1) $ans['page'] = 1;
 		
 		$ans['is'] = ''; //group producer search Что было найдено по запросу val (Отдельный файл is:change)
@@ -76,7 +75,7 @@ return Rest::get( function () {
 
 		Showcase::makeBreadcrumb($md, $ans, $ans['page']);
 
-		Showcase::search($md, $ans, $ans['page']);
+		Showcase::search($md, $ans, $ans['page'], $ans['showlist']);
 
 		$src  =  Rubrics::find(Showcase::$conf['groups'], $ans['title']);
 		if ($src) {
