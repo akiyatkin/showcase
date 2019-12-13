@@ -703,6 +703,7 @@ class Showcase {
 		return $data;
 	}
 	public static function getModel($producer_nick, $article_nick, $item_nick = '', $catkit = [], $myitems = []) {
+
 		// $catkit - выбранная комплектация
 		// $myitems - какие позиции будут внутри модели
 		if ($item_nick && $myitems) $myitems[] = $item_nick;
@@ -749,9 +750,8 @@ class Showcase {
 		}
 		
 		if ($catkit) $data['catkit'] = implode('&', $catkit); //Выбраная комплектация
-
-		Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
 		
+		Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
 
 		return $data;
 

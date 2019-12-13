@@ -197,6 +197,7 @@ return Rest::get( function () {
 				$catkit = [];
 			}
 			$ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick, $item_nick, $catkit);
+
 			if ($item_nick && !$ans['pos']) $ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick, '', $catkit);
 			
 			$active = $ans['pos']['article'];
