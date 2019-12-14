@@ -553,7 +553,7 @@ class Showcase {
 				foreach ($m['items'] as $j => $v) if (!$v) unset($m['items'][$j]);
 				
 			
-				$models[$k] = Showcase::getModel($m['producer_nick'], $m['article_nick'], $m['item_nick'], [], $m['items']);
+				$models[$k] = Showcase::getModel($m['producer_nick'], $m['article_nick'], $m['item_nick'], false, $m['items']);
 			
 			}
 			$ans['list'] = $models;
@@ -667,7 +667,7 @@ class Showcase {
 		return $options;
 	}
 	
-	public static function getModelShow($producer_nick, $article_nick, $item_nick = '', $catkit = [], $items = []) {
+	public static function getModelShow($producer_nick, $article_nick, $item_nick = '', $catkit = false, $items = []) {
 		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nick, $catkit, $items);
 		if (!$pos) return $pos;
 		$pos['show'] = true;
@@ -702,8 +702,8 @@ class Showcase {
 		$data = $item + $data;
 		return $data;
 	}
-	public static function getModel($producer_nick, $article_nick, $item_nick = '', $catkit = [], $myitems = []) {
-
+	public static function getModel($producer_nick, $article_nick, $item_nick = '', $catkit = false, $myitems = []) {
+		
 		// $catkit - выбранная комплектация
 		// $myitems - какие позиции будут внутри модели
 		if ($item_nick && $myitems) $myitems[] = $item_nick;
@@ -749,7 +749,8 @@ class Showcase {
 			}
 		}
 		
-		if ($catkit) $data['catkit'] = implode('&', $catkit); //Выбраная комплектация
+		//if ($catkit) $data['catkit'] = implode('&', $catkit); //Выбраная комплектация
+		if ($catkit) $data['catkit'] = $catkit; //Выбраная комплектация
 		
 		Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
 
@@ -841,7 +842,7 @@ class Showcase {
 		
 		return $pos;
 	}
-	public static function getModel2($producer_nick, $article_nick, $item_nick = '', $catkit = [], $myitems = []) {
+	/*public static function getModel2($producer_nick, $article_nick, $item_nick = '', $catkit = [], $myitems = []) {
 		// $catkit - выбранная комплектация
 		// $myitems - какие позиции будут внутри модели
 		if ($item_nick && $myitems) $myitems[] = $item_nick;
@@ -1024,7 +1025,7 @@ class Showcase {
 
 		Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
 		return $data;
-	}
+	}*/
 	public static function isColumn($prop) {
 		$columns = Showcase::getOption(['columns']);
 		$prop_nick = Path::encode($prop);

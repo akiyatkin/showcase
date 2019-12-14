@@ -193,8 +193,9 @@ return Rest::get( function () {
 						return $art;
 					}
 				}, $r);
+				$catkit = implode('&', $catkit);
 			} else {
-				$catkit = [];
+				$catkit = false;
 			}
 			$ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick, $item_nick, $catkit);
 
