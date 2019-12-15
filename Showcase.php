@@ -642,7 +642,7 @@ class Showcase {
 			if ($pages < $page) $page = $pages;
 			
 
-			$ans['numbers'] = Showcase::numbers($page, $pages, 7);
+			$ans['numbers'] = Showcase::numbers($page, $pages, 6);
 		}
 		return $ans;
 	}
