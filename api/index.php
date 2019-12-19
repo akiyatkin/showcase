@@ -182,6 +182,7 @@ return Rest::get( function () {
 			$article_nick = Path::toutf(strip_tags($article_nick));
 			
 			if ($item_nick) {
+				//Полученные от пользователя данные надо проверить
 				$r = explode('&', $item_nick);
 				$item_nick = array_shift($r);
 				$catkit = array_map(function ($r){
