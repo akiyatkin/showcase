@@ -2,6 +2,7 @@
 namespace akiyatkin\showcase;
 use akiyatkin\fs\FS;
 use infrajs\load\Load;
+use infrajs\event\Event;
 use infrajs\path\Path;
 use infrajs\once\Once;
 use infrajs\rubrics\Rubrics;
@@ -9,6 +10,9 @@ use infrajs\excel\Xlsx;
 use infrajs\db\Db;
 use infrajs\config\Config;
 
+Event::$classes['Showcase'] = function (&$obj) {
+	return '';
+};
 
 class Data {
 	public static $timer;
@@ -47,7 +51,6 @@ class Data {
 		return $db->lastInsertId();
 	}
 	public static function fetchto($sql, $name, $args = []) { //Колонки в аргументах $func
-		$db = &Db::pdo();
 		$stmt = Db::stmt($sql);
 		$stmt->execute($args);
 		$list = array();
@@ -74,6 +77,7 @@ class Data {
 	}
 	public static function loadShowcaseConfig(){
 		$opt = Load::loadJSON(Showcase::$conf['jsonoptions']);
+		
 		if(!$opt) $opt = [];
 		$opt += array(
 			'catalog'=>[],
@@ -117,7 +121,8 @@ class Data {
 			$keys[Path::encode($k)] = $v;
 		}
 		$opt['filters'] = $keys;
-		
+		Event::tik('Showcase.onconfig');
+		Event::fire('Showcase.onconfig', $opt);
 		return $opt;
 	}
 	

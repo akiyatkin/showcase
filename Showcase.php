@@ -759,7 +759,7 @@ class Showcase {
 	}
 	public static function getFullModel($producer_nick, $article_nick) {
 
-		$data = Data::fetchto('SELECT 
+		$sql = 'SELECT 
 			m.model_id, m.article_nick, m.article, 
 			p.producer_nick, p.logo, p.producer, 
 			i.item_nick, i.item_num, i.item, 
@@ -770,8 +770,25 @@ class Showcase {
 			INNER JOIN showcase_groups g on (g.group_id = m.group_id)
 			where m.article_nick = :article
 			order by m.model_id
-			', 'item_num', [':article'=>$article_nick,':producer'=>$producer_nick]);
+			';
+		$data = Data::fetchto($sql, 'item_num', [':article'=>$article_nick,':producer'=>$producer_nick]);
 		if (!$data) return false;
+		
+		/*
+		echo '<pre>';
+		//print_r([':article'=>$article_nick,':producer'=>$producer_nick]);
+		//print_r($sql);
+		print_r($data);
+		echo '</pre>';
+		if ($model_id = 148) {
+			//if ($article_nick == 'x8-power-source-400') {
+			$r = Data::all('SELECT * from showcase_items where model_id = 148');
+			echo '<pre>';
+			print_r($r);
+			echo '</pre>';
+			//exit;
+		}
+		*/
 		
 		//надо определить itemrows
 		foreach ($data as $pos) break;
@@ -828,6 +845,8 @@ class Showcase {
 			];
 			$items[$item_nick]['list'][] = $prop;
 		}
+		
+		
 
 		Showcase::makeMore($pos, $pos['list']);
 		foreach ($items as $k => $item) {

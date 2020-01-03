@@ -330,11 +330,12 @@ class Catalog {
 				'pos' => &$pos,
 				'name' => $name
 			];
+
 			Event::fire('Showcase-catalog.onload', $obj); 
 			//Срабатывает только для моделей. МОжно добавить недостающие свойства. 
 			//Сгенерировать id для items
 			
-
+			
 			
 			//Catalog::writeProps($model_id, $pos, 0);
 			$ans['Принято моделей']++;
@@ -348,10 +349,16 @@ class Catalog {
 					$ans['Принято позиций']++;
 				}
 			} else {
+				$item_num = 1;
 				$ans['Принято позиций']++;
-				Catalog::initItem($model_id, 1, '');
+				Catalog::initItem($model_id, $item_num, '');
 				Catalog::writeProps($model_id, $pos, 1);
+
 			}
+			//Надо удалить всё после $item_num вместе со значениями в том числе файлов
+			Data::exec('DELETE i, ip FROM showcase_items i, showcase_iprops ip 
+				WHERE i.model_id = ip.model_id and i.item_num = ip.item_num
+					and i.model_id = ? and i.item_num > ?', [$model_id, $item_num]);
 		});
 		Catalog::removeOldModels($time, $catalog_id);
 		$duration = (time() - $time);
@@ -411,6 +418,7 @@ class Catalog {
 	
 	public static function initItem($model_id, $item_num, $value) {
 		$nick = Path::encode($value);
+		Data::exec('DELETE FROM showcase_items WHERE model_id = ? and item_num = ?', [$model_id, $item_num]);
 		Data::exec(
 			'INSERT INTO showcase_items (model_id, item_num, item_nick, item) VALUES(?,?,?,?)',
 			[$model_id, $item_num, $nick, $value]
@@ -427,21 +435,18 @@ class Catalog {
 	}
 	public static function clearModel($model_id) {
 		$files = '("'.implode('","', Data::$files).'")';
-
 		Data::exec('DELETE t FROM showcase_iprops t, showcase_props p 
 			WHERE p.prop_id = t.prop_id 
 				AND t.model_id = ? 
 				AND t.price_id IS NULL 
 				AND p.prop_nick not in '.$files, [$model_id]);
-
-		Data::exec('DELETE t FROM showcase_items t WHERE t.model_id = ?', [$model_id]);
-
-		//Может остаться свойство с айтемом которое не появилось при внесение и свойство зависнит. 
 		//Порядок не должен меняться у item-ов иначе надо перевнести прайс! Не на item_nick с неизменностью свойств
 	}
 	public static function initModel($producer_id, $article, $catalog_id, $order, $time, $group_id) {
 		//$catalog_id для кэша, чтобы модели-дубли заменяли друг друга. Тогда зачем кэш, для позиций?
 		$article_nick = Path::encode($article);
+		
+
 		$model_id = Once::func( function ($catalog_id, $producer_id, $article_nick) use ($article, $order, $time, $group_id) {
 		
 			$row = Data::fetch('SELECT sm.model_id, sm.catalog_id, sc.order, sm.group_id

@@ -25,6 +25,7 @@ if (isset($_GET['-showcase'])) {
 		$res = Data::actionAddFiles();
 	}
 }
+
 Showcase::add('count', function () {
 	$conf = Showcase::$conf;
 	return 24;
