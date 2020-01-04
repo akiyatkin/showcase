@@ -356,9 +356,9 @@ class Catalog {
 
 			}
 			//Надо удалить всё после $item_num вместе со значениями в том числе файлов
-			Data::exec('DELETE i, ip FROM showcase_items i, showcase_iprops ip 
-				WHERE i.model_id = ip.model_id and i.item_num = ip.item_num
-					and i.model_id = ? and i.item_num > ?', [$model_id, $item_num]);
+			Data::exec('DELETE i, ip FROM showcase_items i
+				left join showcase_iprops ip on (i.model_id = ip.model_id and i.item_num = ip.item_num)
+				WHERE i.model_id = ? and i.item_num > ?', [$model_id, $item_num]);
 		});
 		Catalog::removeOldModels($time, $catalog_id);
 		$duration = (time() - $time);
