@@ -478,9 +478,9 @@ class Showcase {
 			LEFT JOIN showcase_iprops ipn on (ipn.model_id = m.model_id and ipn.item_num = i.item_num and ipn.prop_id = :name_id)';
 
 			$md['reverse'] = !$md['reverse'];
-			if($md['reverse']) {
+			if ($md['reverse']) {
 				$sort = 'ORDER BY IF(ipn.text is null,1,0), ipn.text';
-			}else {
+			} else {
 				//null всегда снизу внезависимости от сортировки
 				$sort = 'ORDER BY IF(ipn.text is null,0,1), ipn.text';
 			}
