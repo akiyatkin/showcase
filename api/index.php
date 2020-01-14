@@ -12,6 +12,7 @@ use infrajs\view\View;
 use infrajs\each\Each;
 use infrajs\layer\seojson\Seojson;
 use infrajs\rubrics\Rubrics;
+use infrajs\once\Once;
 //ob_start();
 date_default_timezone_set("Europe/Samara");
 return Rest::get( function () {
@@ -174,33 +175,36 @@ return Rest::get( function () {
 			];
 			return Ans::err($ans);
 		},
-		[function ($a, $producer_nick, $article_nick, $item_nick = false) {
+		[function ($a, $producer_nick, $article_nick, $item_nicknum = false, $catkit = false) {
 			$ans = array();
-
 			Showcase::initMark($ans, $producer_nick, $article_nick);
 			$producer_nick = Path::toutf(strip_tags($producer_nick));
 			$article_nick = Path::toutf(strip_tags($article_nick));
-			
-			if ($item_nick) {
-				//Полученные от пользователя данные надо проверить
-				$r = explode('&', $item_nick);
-				$item_nick = array_shift($r);
-				$catkit = array_map(function ($r){
-					$r = explode(':', $r);
-					$art = Path::encode($r[0]);
-					if (isset($r[1])) {
-						return $art.':'.Path::encode($r[1]);
-					} else {
-						return $art;
-					}
-				}, $r);
-				$catkit = implode('&', $catkit);
-			} else {
-				$catkit = false;
-			}
-			$ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick, $item_nick, $catkit);
 
-			if ($item_nick && !$ans['pos']) $ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick, '', $catkit);
+			if ($item_nicknum) {
+				if (!$catkit) {
+					//Полученные от пользователя данные надо проверить
+					$r = explode('&', $item_nicknum);
+					$item_nicknum = array_shift($r);
+					$catkit = array_map(function ($r){
+						$r = explode(':', $r);
+						$art = Path::encode($r[0]);
+						if (isset($r[1])) {
+							return $art.':'.Path::encode($r[1]);
+						} else {
+							return $art;
+						}
+					}, $r);
+					$catkit = implode('&', $catkit);
+				}
+			}
+
+			$ans['pos'] = Once::func(function ($producer_nick, $article_nick, $item_nicknum, $catkit){
+				$pos = Showcase::getModelShow($producer_nick, $article_nick, $item_nicknum, $catkit);
+				if ($item_nicknum && !$pos) $pos = Showcase::getModelShow($producer_nick, $article_nick, '', $catkit);	
+				return $pos;
+			},[$producer_nick, $article_nick, $item_nicknum, $catkit]);
+			
 			
 			$active = $ans['pos']['article'];
 

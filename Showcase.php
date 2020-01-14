@@ -18,7 +18,7 @@ use infrajs\mark\Mark as Marker;
 
 Event::$classes['Showcase-position'] = function ($pos) {
 	$id = $pos['producer_nick'].' '.$pos['article_nick'];
-	if (!empty($pos['item_nick'])) $id .= ' '.$pos['item_nick'];
+	$id .= ' '.($pos['item_num']?$pos['item_num']:1);
 	if (!empty($pos['catkit'])) $id .= ' '.$pos['catkit'];
 	return $id;
 };
@@ -669,6 +669,7 @@ class Showcase {
 	
 	public static function getModelShow($producer_nick, $article_nick, $item_nick = '', $catkit = false, $items = []) {
 		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nick, $catkit, $items);
+
 		if (!$pos) return $pos;
 		$pos['show'] = true;
 		if (isset($pos['texts'])) {
@@ -686,6 +687,7 @@ class Showcase {
 			} 
 		}
 		//Event::tik('Showcase-position.onshow'); //Позиция вызывается в двух слоях по разным запросам - ошибка в этом
+
 		Event::fire('Showcase-position.onshow', $pos);
 		return $pos;
 	}
@@ -702,20 +704,41 @@ class Showcase {
 		$data = $item + $data;
 		return $data;
 	}
-	public static function getModel($producer_nick, $article_nick, $item_nick = '', $catkit = false, $myitems = []) {
+	public static function isInt($id) {
+		if ($id === '') {
+			return false;
+		}
+		if (!$id) {
+			$id = 0;
+		}
+		$idi = (float) $id;
+		$idi = (string) $idi; //12 = '12 asdf' а если и то и то строка '12'!='12 asdf'
+		return $id == $idi;
+	}
+	public static function getModel($producer_nick, $article_nick, $item_nicknum = '', $catkit = false, $myitems = []) {
 		
 		// $catkit - выбранная комплектация
 		// $myitems - какие позиции будут внутри модели
-		if ($item_nick && $myitems) $myitems[] = $item_nick;
+		if ($item_nicknum && $myitems) $myitems[] = $item_nicknum;
 
 		$data = Showcase::getFullModel($producer_nick, $article_nick);
-		
-		if ($item_nick && $data['item_nick'] != $item_nick) {
-			if (empty($data['items'][$item_nick])) {
-				return false;
-			} else {
+
+		if ($item_nicknum && $data['item_nick'] != $item_nicknum && $data['item_num'] != $item_nicknum) {
+			//Первая позиция не подходим ищим в items
+
+			if (empty($data['items'])) return false;
+			$item_nick = false;
+			if (Showcase::isInt($item_nicknum) && $item_nicknum <= sizeof($data['items'])) {
+				$keys = array_keys($data['items']);
+				$item_nick = $keys[--$item_nicknum];
 				$data = Showcase::setItem($data, $item_nick);
+			} else if (isset($data['items'][$item_nicknum])) {
+				$data = Showcase::setItem($data, $item_nicknum);	
+			} else {
+				return false;
 			}
+			
+			
 		}
 
 		if (!empty($data['items']) && $myitems) {
@@ -751,9 +774,13 @@ class Showcase {
 		
 		//if ($catkit) $data['catkit'] = implode('&', $catkit); //Выбраная комплектация
 		if ($catkit) $data['catkit'] = $catkit; //Выбраная комплектация
-		
+		//Event::tik('Showcase-position.onsearch');
 		Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
-
+		/*if ($data['article_nick'] == 'x8-mig-welder' && empty($data['catkit'])) {
+			echo '<pre>';
+			print_r($data);
+			exit;
+		}*/
 		return $data;
 
 	}
