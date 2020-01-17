@@ -800,7 +800,7 @@ class Showcase {
 			';
 		$data = Data::fetchto($sql, 'item_num', [':article'=>$article_nick,':producer'=>$producer_nick]);
 		if (!$data) return false;
-		
+
 		/*
 		echo '<pre>';
 		//print_r([':article'=>$article_nick,':producer'=>$producer_nick]);
@@ -827,6 +827,7 @@ class Showcase {
 			LEFT JOIN showcase_values v on v.value_id = ip.value_id
 			LEFT JOIN showcase_props p on p.prop_id = ip.prop_id
 			WHERE ip.model_id = ?
+			order by ip.item_num
 			',[$pos['model_id']]);
 
 		//$calc[prop_nick][value][item_num] = true
