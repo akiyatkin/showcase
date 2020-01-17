@@ -412,7 +412,6 @@ class Data {
 							}
 						}
 					}
-					
 
 					foreach ($items as $item_num => $files) {
 						$order = 0;
@@ -434,7 +433,7 @@ class Data {
 							} else {
 								$icount = Data::col('SELECT count(*) FROM showcase_items where model_id = ?',[$model_id]);
 								while ($icount > 0) {
-									if (isset($items[$icount])) {
+									if (!isset($items[$icount])) {
 										//Записываем для тех кто не упоминался в items, для тех кто уже был для сортировки src был объединён со своими картинками позиции
 										Data::exec(
 											'INSERT INTO showcase_iprops (model_id, item_num, prop_id, `text`, `order`) VALUES(?,?,?,?,?)',
