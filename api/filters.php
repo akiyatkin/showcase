@@ -269,6 +269,23 @@ return Rest::get( function () {
 			unset($params[$k]);
 		}
 	}
+	
+
+	$data = Load::loadJSON('-excel/get/group/Help/?src=~pages/Параметры.xlsx');
+	if (!empty($data['data']['data'])) {
+		$data = $data['data']['data'];
+		$options = [];
+		foreach ($data as $row) {
+			if (Path::encode($row['Группа']) == $ans['group']['group_nick'] ) {
+				$options[Path::encode($row['Параметр'])] = $row;
+			}
+		}
+		foreach($params as $nick=>$param) {
+			if (!isset($options[$nick])) continue;
+			$options[$nick]['help'] = $options[$nick]['Описание'];
+		}
+	}
+	
 	$ans['list'] = $params;
 	return Ans::ret($ans);
 });
