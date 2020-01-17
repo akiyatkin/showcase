@@ -835,7 +835,7 @@ class Showcase {
 		$icount = sizeof($data);
 		$items = [];
 		foreach ($list as $p=>$prop) {
-			if (!is_null($prop['number'])) $list[$p]['val'] = $prop['number'];
+			if (!is_null($prop['number'])) $list[$p]['val'] = (float)$prop['number'];
 			else if (!is_null($prop['text'])) $list[$p]['val'] = $prop['text'];
 			else if (!is_null($prop['value'])) $list[$p]['val'] = $prop['value'];
 
