@@ -365,7 +365,7 @@ class Data {
 			
 
 			Data::addFilesFS($list, $producer_nick); //Из папок
-			
+
 
 			Data::addFilesSyns($list, $producer_nick); //Синонимы Фото и Файл для поиска
 			
@@ -808,20 +808,23 @@ class Data {
 		}
 
 		$faylid = Data::initProp('Файл', 'value');//Имя файла тип которого надо ещё определить.  producer не отменяется
+
 		$rows = Data::all('SELECT pr.producer_nick, pr.producer, m.article, m.article_nick, mv.item_num, v.value from showcase_iprops mv
 			INNER JOIN showcase_values v ON v.value_id = mv.value_id
 			INNER JOIN showcase_models m ON mv.model_id = m.model_id
 			INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
 			WHERE prop_id = ?',[$faylid]);
 		$fayls = [];
+
 		
+
 		foreach ($rows as $row) {
 			if (!isset($fayls[$row['producer_nick']])) $fayls[$row['producer_nick']] = [];
-			$art = mb_strtolower($row['value']);
+			$art = mb_strtolower(Path::encode($row['value']));
 			if (!isset($fayls[$row['producer_nick']][$art])) $fayls[$row['producer_nick']][$art] = [];
 			$fayls[$row['producer_nick']][$art][] = $row;
 		}
-		
+
 		foreach ($fayls as $prod => $artsyns) {
 			foreach ($artsyns as $syn => $syns) {
 				if (!isset($list[$prod][$syn][0])) continue;
@@ -834,7 +837,6 @@ class Data {
 				}
 			}
 		}
-
 	}
 	public static function encode($name) {
 		$name = trim($name);
