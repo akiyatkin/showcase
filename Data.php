@@ -365,11 +365,11 @@ class Data {
 			
 
 			Data::addFilesFS($list, $producer_nick); //Из папок
-
-
+			
+			
 			Data::addFilesSyns($list, $producer_nick); //Синонимы Фото и Файл для поиска
 			
-		
+			
 			$db = &Db::pdo();
 			$db->beginTransaction();
 			Data::removeFiles($producer_nick);
@@ -386,7 +386,7 @@ class Data {
 				},$ak);
 			}, []);
 			$ans['Файлов'] = sizeof($ans['Бесхозные файлы']);
-			
+
 			foreach ($list as $prod => $arts) {
 				
 				$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$prod]);
@@ -404,6 +404,8 @@ class Data {
 					
 					foreach ($items as $item_num => $files) {
 						$order = 0;
+						//$files = array_unique($files);
+						
 						ksort($files);
 						foreach ($files as $src => $type) { //Все эти файлы относятся к найденной модели
 							$order++;
@@ -643,9 +645,9 @@ class Data {
 		$index = Data::getIndex($dir, $exts);
 		foreach ($index as $art => $files) {
 			if (!$art) continue;
-			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
+			if (!isset($list[$prod][$art])) $list[$prod][$art] = [1=>[]];
 			$files = array_fill_keys($files, $type);
-			$list[$prod][$art][0] += $files;
+			$list[$prod][$art][1] += $files;
 		}
 	}
 	public static function indexdir($dir, &$list) {
@@ -669,9 +671,9 @@ class Data {
 			$art = Path::encode($art);
 			if (in_array($art, Data::$files)) return;
 				
-			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
-			$list[$prod][$art][0][$artdir] = 'folders';
-			Data::indexdir($artdir, $list[$prod][$art][0]);
+			if (!isset($list[$prod][$art])) $list[$prod][$art] = [1=>[]];
+			$list[$prod][$art][1][$artdir] = 'folders';
+			Data::indexdir($artdir, $list[$prod][$art][1]);
 		});
 		
 		foreach (Data::$files as $type) {
@@ -682,26 +684,26 @@ class Data {
 			} else {
 				$index = Data::getIndex($dir.$type.'/',  Data::$$type);
 				foreach ($index as $art => $files) {
-					if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
+					if (!isset($list[$prod][$art])) $list[$prod][$art] = [1=>[]];
 					$files = array_fill_keys($files, $type);
-					$list[$prod][$art][0] += $files;
+					$list[$prod][$art][1] += $files;
 				}
 			}
 		}
 		
 		/*$index = Data::getIndex($dir.'texts/',  Data::$texts);
 		foreach ($index as $art => $texts) {
-			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
+			if (!isset($list[$prod][$art])) $list[$prod][$art] = [1>[]];
 			$texts = array_fill_keys($texts,'texts');
-			$list[$prod][$art][0] += $texts;
+			$list[$prod][$art][1] += $texts;
 		}*/
 
 		
 		/*$index = Data::getIndex($dir.'files/');
 		foreach ($index as $art => $files) {
-			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
+			if (!isset($list[$prod][$art])) $list[$prod][$art] = [1=>[]];
 			foreach ($files as $src) {
-				$list[$prod][$art][0][$src] = Data::fileType($src);
+				$list[$prod][$art][1][$src] = Data::fileType($src);
 			}
 			
 		}*/
@@ -711,9 +713,9 @@ class Data {
 		if (!Path::theme($dir)) return; //Подходят только папки
 		$index = Data::getIndex($dir,  Data::$images);
 		foreach ($index as $art => $images) {
-			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
+			if (!isset($list[$prod][$art])) $list[$prod][$art] = [1=>[]];
 			$images = array_fill_keys($images,'images');
-			$list[$prod][$art][0] += $images;
+			$list[$prod][$art][1] += $images;
 		}
 	}*/
 	public static function addFilesFaylov(&$list, $producer) {
@@ -737,14 +739,14 @@ class Data {
 				WHERE mv.prop_id = ? ',
 			[$fayliid]);	
 		}
-		
+
 		foreach ($fayli as $fayl) {
 			$prod_nick = $fayl['producer_nick'];
 			$art = mb_strtolower($fayl['article_nick']);
 			$num = $fayl['item_num'];
 
 			if (!isset($list[$prod_nick])) $list[$prod_nick] = array();
-			if (!isset($list[$prod_nick][$art])) $list[$prod_nick][$art] = array(0=>[]);
+			if (!isset($list[$prod_nick][$art])) $list[$prod_nick][$art] = array(1 => []);
 			if (!isset($list[$prod_nick][$art][$num])) $list[$prod_nick][$art][$num] = array();
 
 			if (preg_match('/http::/',$fayl['value'])) {
@@ -795,7 +797,7 @@ class Data {
 		foreach ($fotos as $prod => $artsyns) {
 			foreach ($artsyns as $syn => $syns) {
 				if (empty($list[$prod][$syn])) continue;
-				foreach ($list[$prod][$syn][0] as $src => $type) { //По синониму может быть несколько файлов
+				foreach ($list[$prod][$syn][1] as $src => $type) { //По синониму может быть несколько файлов
 					foreach ($syns as $row) { //Один синоним может быть для нескольких позиций и каждый файл записываем в каждую позицию
 						if ($type !== 'images') continue;
 						$art = mb_strtolower($row['article_nick']);
