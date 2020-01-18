@@ -463,11 +463,12 @@ class Showcase {
 				IF(mn2.value_id = :nal1,1,0),
 				IF(mn2.value_id = :nal2,1,0), 
 				IF(mn2.value_id = :nal3,1,0)
+
 				';
 			$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3];
 		}
 
-
+		
 		if ($md['sort'] == 'art') {
 			$md['reverse'] = !$md['reverse'];
 			$sort = 'ORDER BY m.article_nick';
@@ -510,9 +511,8 @@ class Showcase {
 		$sql = '
 			SELECT 
 				SQL_CALC_FOUND_ROWS i.model_id, 
-				i.item_num,
-				max(i.item_nick) as item_nick, 
-				GROUP_CONCAT(distinct i.item_nick) as items, 
+				min(i.item_num) as item_num,
+				GROUP_CONCAT(distinct i.item_num) as items, 
 				min(mn.number) as cost, 
 				m.article_nick, pr.producer_nick, GROUP_CONCAT(distinct m.group_id) as groups from showcase_items i
 			LEFT JOIN showcase_models m on i.model_id = m.model_id
@@ -535,6 +535,7 @@ class Showcase {
 		$binds += [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id];
 		
 		$models = Data::all($sql, $binds);
+		
 		$size = Data::col('SELECT FOUND_ROWS()');
 		$ans['count'] = (int) $size;
 		
@@ -552,12 +553,13 @@ class Showcase {
 				$m['items'] = explode(',',$m['items']);
 				foreach ($m['items'] as $j => $v) if (!$v) unset($m['items'][$j]);
 				
-			
-				$models[$k] = Showcase::getModel($m['producer_nick'], $m['article_nick'], $m['item_nick'], false, $m['items']);
+				$models[$k] = Showcase::getModel($m['producer_nick'], $m['article_nick'], $m['item_num'], false, $m['items']);
 			
 			}
 			$ans['list'] = $models;
 		}
+		
+		
 
 		$groupbinds += [':image_id' => $image_id];
 		
@@ -667,8 +669,8 @@ class Showcase {
 		return $options;
 	}
 	
-	public static function getModelShow($producer_nick, $article_nick, $item_nick = '', $catkit = false, $items = []) {
-		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nick, $catkit, $items);
+	public static function getModelShow($producer_nick, $article_nick, $item_nicknum = '', $catkit = false, $items = []) {
+		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nicknum, $catkit, $items);
 
 		if (!$pos) return $pos;
 		$pos['show'] = true;
@@ -721,12 +723,20 @@ class Showcase {
 		// $myitems - какие позиции будут внутри модели
 		if ($item_nicknum && $myitems) $myitems[] = $item_nicknum;
 
-		$data = Showcase::getFullModel($producer_nick, $article_nick);
 
+			/*uasort($data['items'], function ($a, $b) {
+			    if ($a['item_num'] == $b['item_num']) {
+			        return 0;
+			    }
+			    return ($a['item_num'] < $b['item_num']) ? -1 : 1;
+			});*/	
+		$data = Showcase::getFullModel($producer_nick, $article_nick);
+		
 		if ($item_nicknum && $data['item_nick'] != $item_nicknum && $data['item_num'] != $item_nicknum) {
 			//Первая позиция не подходим ищим в items
-
+			
 			if (empty($data['items'])) return false;
+
 			$item_nick = false;
 			if (Showcase::isInt($item_nicknum) && $item_nicknum <= sizeof($data['items'])) {
 				$keys = array_keys($data['items']);
@@ -743,7 +753,7 @@ class Showcase {
 
 		if (!empty($data['items']) && $myitems) {
 			foreach ($data['items'] as $k=>$item) {
-				if (!in_array($item['item_nick'], $myitems)) unset($data['items'][$k]);
+				if (!in_array($item['item_num'], $myitems)) unset($data['items'][$k]);
 			}
 			if (sizeof($data['items']) == 0) return false;
 			if (sizeof($data['items']) == 1) {
@@ -770,6 +780,7 @@ class Showcase {
 				$data['min'] = $min;
 				$data['max'] = $max;
 			}
+			
 		}
 		
 		//if ($catkit) $data['catkit'] = implode('&', $catkit); //Выбраная комплектация
