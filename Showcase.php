@@ -133,6 +133,9 @@ class Showcase {
 			return Data::col('SELECT producer_nick from showcase_producers where producer_nick = ?',[$producer_nick]);
 		}, [$producer_nick]);
 	}
+	public static function getGroups() {
+		return Data::getGroups();
+	}
 	public static function getGroup($group_nick = false) {
 		$group = Data::getGroups($group_nick);
 		unset($group['catalog']);

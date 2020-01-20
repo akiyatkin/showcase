@@ -87,7 +87,7 @@ class Prices {
 		}
 		return $row['price_id'];
 	}
-	public static function getMyItems($type, $producer_id, $prop_id, $value) {
+	public static function getMyItems($type, $producer_id, $prop_id, $value, $time) {
 		//Вообщедолжна быть одна модель. Прайс связываеся с этими моделями по prop_id и value
 
 		if ($type == 'value') {
@@ -117,11 +117,17 @@ class Prices {
 		if ($producer_id) {
 			$list = Data::all('SELECT m.model_id, n.item_num
 				FROM showcase_iprops n 
-				RIGHT JOIN showcase_models m ON m.model_id = n.model_id AND m.producer_id = ?
+				RIGHT JOIN showcase_models m ON (m.model_id = n.model_id AND m.producer_id = ?)
 				WHERE n.prop_id = ?
 				AND '.$mainprop.' = ?
 			', [$producer_id, $prop_id, $id]);
-
+			
+			Data::exec('UPDATE showcase_models m
+				LEFT JOIN showcase_iprops n ON (m.model_id = n.model_id AND m.producer_id = ?)
+				SET m.time = from_unixtime(?)
+				WHERE n.prop_id = ?
+				AND '.$mainprop.' = ?
+			', [$producer_id, $time, $prop_id, $id]);
 		} else {
 			$sql = 'SELECT n.model_id, n.item_num
 				FROM showcase_iprops n
@@ -129,14 +135,21 @@ class Prices {
 				AND '.$mainprop.' = ?
 				';
 			$list = Data::all($sql, [$prop_id, $id]);
+
+			Data::exec('UPDATE showcase_models m
+				LEFT JOIN showcase_iprops n ON (m.model_id = n.model_id)
+				SET m.time = from_unixtime(?)
+				WHERE n.prop_id = ?
+				AND '.$mainprop.' = ?
+			', [$time, $prop_id, $id]);
 		}
 
 		return $list;
 	}
-	public static function updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value, $name) {
+	public static function updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value, $name, $time) {
 
 
-		$list = Prices::getMyItems($type, $producer_id, $prop_id, $value);
+		$list = Prices::getMyItems($type, $producer_id, $prop_id, $value, $time);
 
 		$modified = 0;
 		$misorder = 0;
@@ -303,7 +316,7 @@ class Prices {
 
 		$db = &Db::pdo();
 		$db->beginTransaction();
-		Prices::actionRemove($name, $src);
+		Prices::actionRemove($name, $src, $time);
 		$producer_id = $option['producer'] ? Data::initProducer($option['producer']) : false;
 		
 		$ans['Синонимы'] = $option['synonyms'];
@@ -334,7 +347,7 @@ class Prices {
 		$ans['Колонки на листах'] = $heads;
 
 		if ($option['isaccurate']) {
-			Xlsx::runPoss( $data, function &(&$pos, $i, &$group) use ($props, $name, &$ans, &$option, $prop_id, $type, $producer_id, $order, $price_id){
+			Xlsx::runPoss( $data, function &(&$pos, $i, &$group) use ($props, $name, &$ans, &$option, $prop_id, $type, $producer_id, $order, $price_id, $time) {
 				$r = null;
 
 				Prices::checkSynonyms($pos, $option);
@@ -361,8 +374,6 @@ class Prices {
 					return $r;
 				}
 
-
-
 				Event::tik('Showcase-prices.onload');
 				$res = Event::fire('Showcase-prices.onload', $obj); //В событии дописываем нужное свойство которое уже есть в props
 				if ($res === false) {
@@ -375,7 +386,7 @@ class Prices {
 					$value = str_ireplace($option['producer_nick'], '', $value); //Удалили из кода продусера
 				}
 				
-				list($c, $modified, $mposs) = Prices::updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value, $name);
+				list($c, $modified, $mposs) = Prices::updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value, $name, $time);
 				$ans['Изменено позиций в каталоге']+=$modified;
 				if ($c == 0) {
 					$ans['Ошибки прайса'][] = $value;
@@ -438,12 +449,21 @@ class Prices {
 				[$model_id, $item_num, $prop_id]);	
 		}
 	}
-	public static function actionRemove($name, $src) {
+	public static function actionRemove($name, $src, $time = false) {
+		if (!$time) $time = time();
 		
-		Data::exec('DELETE t FROM showcase_iprops t, showcase_prices p
-		WHERE t.price_id = p.price_id 
-		AND p.name =?', [$name]);	
+		$price_id = Data::col('SELECT pr.price_id FROM showcase_prices pr WHERE pr.name = ?', [$name]);
+		if (!$price_id) return;
+
+		Data::exec('UPDATE showcase_models m
+			LEFT JOIN showcase_iprops i on (i.model_id = m.model_id)
+			SET m.time = from_unixtime(?) 
+			WHERE i.price_id = ?', [$time, $price_id]);
+
+		Data::exec('DELETE t FROM showcase_iprops t WHERE t.price_id = ?', [$price_id]);	
+
 		
+
 		if (FS::is_file($src)) { //ФАйл есть запись остаётся
 			Data::exec('UPDATE showcase_prices SET time = null WHERE name = ?', [$name]);
 		} else {
