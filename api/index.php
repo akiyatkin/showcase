@@ -125,11 +125,12 @@ return Rest::get( function () {
 		echo 'producer/article/[item_nick]';
 	}, 'seo', function($a, $seo, $producer, $article){
 		$ans = array();
-		$md = Showcase::initMark($ans, $producer, $article);
-		$pos = Showcase::getModel($producer, $article);
+		$md = Showcase::initMark($ans);
+		$producer_nick = Path::encode($producer);
+		$article_nick = Path::encode($article);
+		$pos = Showcase::getModel($producer_nick, $article_nick);
 		
-		$producer = Path::toutf(strip_tags($producer));
-		$article = Path::toutf(strip_tags($article));
+		
 
 		unset($ans['md']);
 		unset($ans['m']);
@@ -137,6 +138,12 @@ return Rest::get( function () {
 			http_response_code(404);
 			return Ans::err($ans,'Position not found');
 		}
+		
+		//$producer = Path::toutf(strip_tags($producer));
+		//$article = Path::toutf(strip_tags($article));
+		$article = $pos['article'];
+		$producer = $pos['producer'];
+
 		$link = strip_tags(Ans::GET('seo'));
 		$link = $link.'/'.urlencode($pos['producer_nick']).'/'.urlencode($pos['article_nick']);
 
@@ -175,11 +182,21 @@ return Rest::get( function () {
 			];
 			return Ans::err($ans);
 		},
-		[function ($a, $producer_nick, $article_nick, $item_nicknum = false, $catkit = false) {
+		[function ($a, $producer, $article, $item_nicknum = false, $catkit = false) {
 			$ans = array();
-			Showcase::initMark($ans, $producer_nick, $article_nick);
-			$producer_nick = Path::toutf(strip_tags($producer_nick));
-			$article_nick = Path::toutf(strip_tags($article_nick));
+			Showcase::initMark($ans);
+
+			$producer_nick = Path::encode($producer);
+			$article_nick = Path::encode($article);
+			/*if (Load::isphp() && ($producer_nick != $producer || $article_nick != $article)) {
+				echo '<pre>';
+				//REDIRECT_URL
+				//REDIRECT_QUERY_STRING
+				print_r($_SERVER);
+				exit;
+			}*/
+			//$producer_nick = Path::toutf(strip_tags($producer_nick));
+			//$article_nick = Path::toutf(strip_tags($article_nick));
 
 			if ($item_nicknum) {
 				if (!$catkit) {
