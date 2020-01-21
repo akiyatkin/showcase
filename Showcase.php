@@ -61,7 +61,7 @@ class Showcase {
 			if (!isset($_GET['m'])) $_GET['m'] = '';
 
 			if ($val == 'actions') {
-				$_GET['m'].=':more.Наличие-на-складе.Акция=1:more.Наличие-на-складе.Распродажа=1';
+				$_GET['m'].=':more.'.Path::encode('Наличие на складе').'.'.Path::encode('Акция').'=1:more.'.Path::encode('Наличие-на-складе').'.'.Path::encode('Распродажа').'=1';
 			} else if ($val == 'items') {
 				$_GET['m'].=':sort=items';
 			} else {
