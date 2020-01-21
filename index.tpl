@@ -33,8 +33,6 @@
 		<li><a href="/catalog/actions">Показать только акции</a></li>
 		<li><a href="/catalog/?m=:more.images.no=1">Без картинок</a></li>
 		<li><a href="/catalog/?m=:more.images.yes=1">С картинками</a></li>
-		<li><a href="/catalog/?m=:more.Цена.no=1">Без цены</a></li>
-		<li><a href="/catalog/?m=:more.Цена.yes=1">С ценой</a></li>
 	</ul>
 	<a class="btn btn-secondary" href="/-showcase/drop">Удалить данные и пересоздать базу данных</a>
 	<hr>
