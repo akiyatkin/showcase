@@ -54,7 +54,7 @@ class Showcase {
 	public static function initMark(&$ans = array())
 	{
 		$val = Ans::GET('val');
-		$val = Path::encode(Path::toutf(strip_tags($val)));
+		$val = Path::toutf(strip_tags($val));
 		$art = Ans::GET('art');
 		
 		if ($val && !$art) {
@@ -391,8 +391,9 @@ class Showcase {
 		}
 
 		if (!empty($md['search'])) {
-			$search = Path::encode($md['search']);
-			$v = preg_split("/[\s\-]+/", mb_strtolower($search));
+			$v = $md['search'];
+			//$v = Path::encode($v);
+			$v = preg_split("/[\s\-]+/", mb_strtolower($v));
 			$str = '';
 			foreach ($v as $i => $s) {
 				$v[$i] = preg_replace("/ы$/","",$s);
@@ -418,7 +419,7 @@ class Showcase {
 			$ans['filters'][] = array(
 				'title' => 'Поиск',
 				'name' => 'search',
-				'value' => Path::encode($md['search'], true)
+				'value' => strip_tags($md['search'])
 			);
 			$no[] = $str;
 		}
