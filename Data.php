@@ -92,8 +92,13 @@ class Data {
 			'filters'=>[],
 			'values'=>[]	
 		);
-		$opt['filters'] += ['buttons'=>[],'groups'=>[],'order'=>'name'];
-
+		$opt['filters'] += [
+			'buttons' => [],
+			'groups' => [],
+			'props' => [],
+			'order' => 'name'
+		];
+		
 		//Data::initPropNick($opt['files']);
 		Data::initPropNick($opt['values']);
 		
@@ -117,10 +122,11 @@ class Data {
 		$opt['groups'] = $keys;
 
 		$keys = [];
-		foreach ($opt['filters'] as $k => $v) {
+		foreach ($opt['filters']['props'] as $k => $v) {
 			$keys[Path::encode($k)] = $v;
 		}
-		$opt['filters'] = $keys;
+		$opt['filters']['props'] = $keys;
+
 		Event::tik('Showcase.onconfig');
 		Event::fire('Showcase.onconfig', $opt);
 		return $opt;
