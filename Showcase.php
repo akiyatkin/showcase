@@ -394,6 +394,7 @@ class Showcase {
 			$v = $md['search'];
 			//$v = Path::encode($v);
 			$v = preg_split("/[\s\-]+/", mb_strtolower($v));
+			$v = array_unique($v);
 			$str = '';
 			foreach ($v as $i => $s) {
 				$v[$i] = preg_replace("/ы$/","",$s);
@@ -409,13 +410,20 @@ class Showcase {
 					where svn'.$i.'.number like "%'.$s.'%") 
 
 					OR m.article_nick LIKE "%'.$s.'%" 
+					OR m.article LIKE "%'.$s.'%" 
 					OR i.item_nick LIKE "%'.$s.'%" 
 					OR g.group_nick LIKE "%'.$s.'%" 
+					OR g.group LIKE "%'.$s.'%" 
 					OR p.group_nick LIKE "%'.$s.'%" 
+					OR p.group LIKE "%'.$s.'%" 
+					OR p2.group_nick LIKE "%'.$s.'%" 
+					OR p2.group LIKE "%'.$s.'%" 
+
 					OR m.model_id LIKE "%'.$s.'%" 
 					OR pr.producer_nick LIKE "%'.$s.'%"
 				)';
 			}
+			$join[] = 'LEFT JOIN showcase_groups p2 on p.parent_id = p2.group_id';
 			$ans['filters'][] = array(
 				'title' => 'Поиск',
 				'name' => 'search',
