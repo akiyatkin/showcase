@@ -89,6 +89,7 @@ return Rest::get( function () {
 					}
 
 					$r1 = explode('/',$url1);
+					if ($r1[1] != 'catalog') return;
 					$url2 = '/'.$r1[1];
 					if ($nick) $url2 .= '/'.$nick;
 					
@@ -220,6 +221,7 @@ return Rest::get( function () {
 				Event::handler('Controller.oninit', function () use ($ans, $producer_nick, $article_nick, $item_nicknum, $catkit){
 					$url1 = $_SERVER['REDIRECT_URL'];
 					$r1 = explode('/',$url1);
+					if ($r1[1] != 'catalog') return;
 					$url2 = '/'.$r1[1].'/'.$producer_nick.'/'.$article_nick;
 					if ($item_nicknum) {
 						$url2 .= '/'.$item_nicknum;
