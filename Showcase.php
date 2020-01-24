@@ -55,8 +55,9 @@ class Showcase {
 	{
 		$val = Ans::GET('val');
 		$val = Path::toutf(strip_tags($val));
+		$nick = Path::encode($val);
 		$art = Ans::GET('art');
-		
+	
 		if ($val && !$art) {
 			if (!isset($_GET['m'])) $_GET['m'] = '';
 
@@ -65,14 +66,14 @@ class Showcase {
 			} else if ($val == 'items') {
 				$_GET['m'].=':sort=items';
 			} else {
-				$group = Showcase::getGroup($val);
+				$group = Showcase::getGroup($nick);
 				if ($group) {
-					$_GET['m'].=':group::.'.$group['group_nick'].'=1';
+					$_GET['m'].=':group::.'.$nick.'=1';
 
 				} else {
-					$producer = Showcase::getProducer($val);
+					$producer = Showcase::getProducer($nick);
 					if ($producer) {
-						$_GET['m'].=':producer::.'.$val.'=1';
+						$_GET['m'].=':producer::.'.$nick.'=1';
 					} else {
 						$_GET['m'].=':search='.$val;
 					}
@@ -103,7 +104,6 @@ class Showcase {
 		if (!$group) $group = Showcase::getGroup();
 		unset($group['childs']);
 		$ans['group'] = $group;
-
 		return $ar['md'];
 	}
 	public static function getMean($prop_nick, $value_nick) {
@@ -1274,7 +1274,7 @@ class Showcase {
 		} else if (!$md['group'] && $md['search']) {
 			$ans['is'] = 'search';
 			$ans['name'] = $md['search'];
-			$ans['title'] = Path::encode($md['search'], true);
+			$ans['title'] = strip_tags($md['search']);
 			$ans['breadcrumbs'][] = array('title' => $conf['title'], 'add' => 'search:');
 			//$ans['breadcrumbs'][] = array('href' => 'find','title' => 'Поиск');
 			$ans['breadcrumbs'][] = array('title' => $ans['name']);
@@ -1307,7 +1307,7 @@ class Showcase {
 			}
 			
 				$ans['name'] = $group['group'];//имя группы длинное
-				$ans['title'] = $group['group'];
+				$ans['title'] = $group['group_nick'];
 
 			
 			//$ans['descr']  =  isset($group['descr']['Описание группы']) ? $group['descr']['Описание группы'] : '';
@@ -1328,6 +1328,5 @@ class Showcase {
 				$ans['breadcrumbs'][sizeof($ans['breadcrumbs'])-1]['active'] =  true;	
 			}
 		}
-
 	}
 }

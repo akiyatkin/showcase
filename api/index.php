@@ -76,7 +76,27 @@ return Rest::get( function () {
 		$ans['list'] = array(); //Массив позиций
 
 		Showcase::makeBreadcrumb($md, $ans, $ans['page']);
-		
+		if (Ans::isReturn()) {
+			Event::handler('Controller.oninit', function () use ($ans){
+				if (in_array($ans['is'], ['producer','group'])) {
+					$url1 = $_SERVER['REDIRECT_URL'];
+
+					if ($ans['is'] == 'group') $nick = $ans['group']['group_nick'];
+					else $nick = $ans['title'];
+
+					$r1 = explode('/',$url1);
+					$url2 = '/'.$r1[1].'/'.$nick;
+					
+					if ($url1 != $url2) {
+						if (!empty($_SERVER['REDIRECT_QUERY_STRING'])) {
+							$url2.='?'.$_SERVER['REDIRECT_QUERY_STRING'];
+						}
+						header('Location: '.$url2);
+						exit;
+					}
+				}
+			});
+		}
 		Showcase::search($md, $ans, $ans['page'], $ans['showlist']);
 
 		$src  =  Rubrics::find(Showcase::$conf['groups'], $ans['title']);
@@ -186,9 +206,29 @@ return Rest::get( function () {
 		[function ($a, $producer, $article, $item_nicknum = false, $catkit = false) {
 			$ans = array();
 			Showcase::initMark($ans);
-
+			
 			$producer_nick = Path::encode($producer);
 			$article_nick = Path::encode($article);
+
+			
+			if (Ans::isReturn()) {
+				Event::handler('Controller.oninit', function () use ($ans){
+					$url1 = $_SERVER['REDIRECT_URL'];
+					$r1 = explode('/',$url1);
+					$url2 = '/'.$r1[1].'/'.$producer_nick.'/'.$article_nick;
+					if ($item_nicknum) {
+						$url2 .= '/'.$item_nicknum;
+						if ($catkit) $url2 .= '/'.$catkit;
+					}
+					if ($url1 != $url2) {
+						if (!empty($_SERVER['REDIRECT_QUERY_STRING'])) {
+							$url2.='?'.$_SERVER['REDIRECT_QUERY_STRING'];
+						}
+						header('Location: '.$url2);
+						exit;
+					}
+				});
+			}
 			/*if (Load::isphp() && ($producer_nick != $producer || $article_nick != $article)) {
 				echo '<pre>';
 				//REDIRECT_URL
