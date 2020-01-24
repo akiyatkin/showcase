@@ -81,8 +81,12 @@ return Rest::get( function () {
 				if (in_array($ans['is'], ['producer','group'])) {
 					$url1 = $_SERVER['REDIRECT_URL'];
 
-					if ($ans['is'] == 'group') $nick = $ans['group']['group_nick'];
-					else $nick = $ans['title'];
+					if ($ans['is'] == 'group') {
+						if (!$ans['group']['parent']) return; 
+						$nick = $ans['group']['group_nick'];
+					} else {
+						$nick = $ans['title'];
+					}
 
 					$r1 = explode('/',$url1);
 					$url2 = '/'.$r1[1].'/'.$nick;
