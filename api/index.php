@@ -82,14 +82,15 @@ return Rest::get( function () {
 					$url1 = $_SERVER['REDIRECT_URL'];
 
 					if ($ans['is'] == 'group') {
-						if (!$ans['group']['parent']) return; 
-						$nick = $ans['group']['group_nick'];
+						if (!$ans['group']['parent']) $nick = '';
+						else $nick = $ans['group']['group_nick'];
 					} else {
 						$nick = $ans['title'];
 					}
 
 					$r1 = explode('/',$url1);
-					$url2 = '/'.$r1[1].'/'.$nick;
+					$url2 = '/'.$r1[1];
+					if ($nick) $url2 .= '/'.$nick;
 					
 					if ($url1 != $url2) {
 						if (!empty($_SERVER['REDIRECT_QUERY_STRING'])) {
@@ -216,7 +217,7 @@ return Rest::get( function () {
 
 			
 			if (Ans::isReturn()) {
-				Event::handler('Controller.oninit', function () use ($ans){
+				Event::handler('Controller.oninit', function () use ($ans, $producer_nick, $article_nick, $item_nicknum, $catkit){
 					$url1 = $_SERVER['REDIRECT_URL'];
 					$r1 = explode('/',$url1);
 					$url2 = '/'.$r1[1].'/'.$producer_nick.'/'.$article_nick;
