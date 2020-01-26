@@ -627,13 +627,14 @@ class Showcase {
 		}, true);
 		
 		$conf = Showcase::$conf;
-		Xlsx::runGroups ($root, function &(&$group, $conf) {
+		Xlsx::runGroups ($root, function &(&$group) use ($conf) {
 			$r = null;
 			while (isset($group['childs']) && sizeof($group['childs']) == 1 && isset($group['childs'][0]['childs'])) {
 				$group['childs'] = array_values($group['childs'][0]['childs']);
 			}
 			
-			$img = Rubrics::find($conf['icons'], $group['group_nick'], Data::$images);
+			$img = Rubrics::find($conf['icons'], 
+				$group['group_nick'], Data::$images);
 			if ($img) $group['img'] = $img;
 			return $r;
 		});

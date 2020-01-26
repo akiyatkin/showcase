@@ -87,12 +87,14 @@ class Prices {
 		}
 		return $row['price_id'];
 	}
-	public static function getMyItems($type, $producer_id, $prop_id, $value, $time) {
+	public static function getMyItems($type, $producer_id, $prop_id, $value, $time = false) {
 		//Вообщедолжна быть одна модель. Прайс связываеся с этими моделями по prop_id и value
+		if($time === false) $time = time();
 
 		if ($type == 'value') {
 			$value_nick = Path::encode($value);
 			$row = Showcase::getValue($value_nick);
+			if (!$row) return [];
 			$id = $row['value_id'];
 			$mainprop = 'n.value_id';
 		} else if ($type == 'number') {
