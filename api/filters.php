@@ -217,13 +217,21 @@ return Rest::get( function () {
 	- key
 
 	*/
+	$origfilters = Showcase::getOption(['filters'],[]);
+	$filters = [];
+	foreach($origfilters as $k=>$v) {
+		$filters[Path::encode($k)] = $v;
+	}
+
 	foreach ($params as $k=>$p) {
 		if (!in_array($k, $columns)) $params[$k]['more'] = true;
 
-		$params[$k] += Showcase::getOption(['filters', $p['prop_nick']],[]);
-
-			//depricated
-			$params[$k] += Showcase::getOption(['filters','props',$p['prop_nick']],['tpl'=>'prop-default']);
+		//1 вариант
+		if (isset($filters[$p['prop_nick']])) {
+			$params[$k] += $filters[$p['prop_nick']];
+		}
+		//2 вариант depricated
+		$params[$k] += Showcase::getOption(['filters','props',$p['prop_nick']],['tpl'=>'prop-default']);
 
 		$params[$k] += ['tpl'=>'prop-default'];
 
