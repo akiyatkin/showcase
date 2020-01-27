@@ -368,9 +368,7 @@ class Showcase {
 					$join[] = 'INNER JOIN showcase_iprops p'.$un.' on (p'.$un.'.model_id = m.model_id and p'.$un.'.item_num = i.item_num and p'.$un.'.prop_id = '.$prop_id.')';
 				}
 			}
-			//echo '<pre>';
-			//print_r($join);
-			//print_r($no);
+			
 			
 			if ($vals) {
 				$un = $prop_id.'v';
@@ -803,12 +801,9 @@ class Showcase {
 		//if ($catkit) $data['catkit'] = implode('&', $catkit); //Выбраная комплектация
 		if ($catkit) $data['catkit'] = $catkit; //Выбраная комплектация
 		//Event::tik('Showcase-position.onsearch');
+
 		Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
-		/*if ($data['article_nick'] == 'x8-mig-welder' && empty($data['catkit'])) {
-			echo '<pre>';
-			print_r($data);
-			exit;
-		}*/
+		
 		return $data;
 
 	}
@@ -829,21 +824,7 @@ class Showcase {
 		$data = Data::fetchto($sql, 'item_num', [':article'=>$article_nick,':producer'=>$producer_nick]);
 		if (!$data) return false;
 
-		/*
-		echo '<pre>';
-		//print_r([':article'=>$article_nick,':producer'=>$producer_nick]);
-		//print_r($sql);
-		print_r($data);
-		echo '</pre>';
-		if ($model_id = 148) {
-			//if ($article_nick == 'x8-power-source-400') {
-			$r = Data::all('SELECT * from showcase_items where model_id = 148');
-			echo '<pre>';
-			print_r($r);
-			echo '</pre>';
-			//exit;
-		}
-		*/
+		
 		
 		//надо определить itemrows
 		foreach ($data as $pos) break;
@@ -864,8 +845,6 @@ class Showcase {
 		$icount = sizeof($data);
 		$items = [];
 		foreach ($list as $p=>$prop) {
-			//print_r($prop);
-			//exit;
 			if (!is_null($prop['number'])) $list[$p]['val'] = (float)$prop['number'];
 			else if (!is_null($prop['text'])) $list[$p]['val'] = $prop['text'];
 			else if (!is_null($prop['value'])) $list[$p]['val'] = $prop['value'];

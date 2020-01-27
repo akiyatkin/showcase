@@ -76,7 +76,7 @@ return Rest::get( function () {
 		$ans['list'] = array(); //Массив позиций
 
 		Showcase::makeBreadcrumb($md, $ans, $ans['page']);
-		if (Ans::isReturn()) {
+		/*if (Ans::isReturn()) {
 			Event::handler('Controller.oninit', function () use ($ans){
 				if (in_array($ans['is'], ['producer','group'])) {
 					$url1 = $_SERVER['REDIRECT_URL'];
@@ -102,7 +102,7 @@ return Rest::get( function () {
 					}
 				}
 			});
-		}
+		}*/
 		Showcase::search($md, $ans, $ans['page'], $ans['showlist']);
 
 		$src  =  Rubrics::find(Showcase::$conf['groups'], $ans['title']);
@@ -215,10 +215,10 @@ return Rest::get( function () {
 			
 			$producer_nick = Path::encode($producer);
 			$article_nick = Path::encode($article);
-
 			
-			if (Ans::isReturn()) {
+			/*if (Ans::isReturn() && $redirect) {
 				Event::handler('Controller.oninit', function () use ($ans, $producer_nick, $article_nick, $item_nicknum, $catkit){
+
 					$url1 = $_SERVER['REDIRECT_URL'];
 					$r1 = explode('/',$url1);
 					if ($r1[1] != 'catalog') return;
@@ -235,7 +235,7 @@ return Rest::get( function () {
 						exit;
 					}
 				});
-			}
+			}*/
 			/*if (Load::isphp() && ($producer_nick != $producer || $article_nick != $article)) {
 				echo '<pre>';
 				//REDIRECT_URL
@@ -266,11 +266,11 @@ return Rest::get( function () {
 
 			$ans['pos'] = Once::func(function ($producer_nick, $article_nick, $item_nicknum, $catkit){
 				$pos = Showcase::getModelShow($producer_nick, $article_nick, $item_nicknum, $catkit);
-				if ($item_nicknum && !$pos) $pos = Showcase::getModelShow($producer_nick, $article_nick, '', $catkit);	
+				if ($item_nicknum && !$pos) $pos = Showcase::getModelShow($producer_nick, $article_nick, 1, $catkit);	
 				return $pos;
 			},[$producer_nick, $article_nick, $item_nicknum, $catkit]);
 			
-			
+
 			$active = $ans['pos']['article'];
 
 			if (Showcase::$conf['hiddenarticle'] && isset($ans['pos']['Наименование'])) {
