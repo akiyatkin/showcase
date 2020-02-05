@@ -578,7 +578,7 @@ class Showcase {
 		$groupbinds += [':image_id' => $image_id];
 		
 		$groups = Data::fetchto('
-			SELECT mn3.text as img, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_items i
+			SELECT max(mn3.text) as img, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_items i
 			LEFT JOIN showcase_models m on m.model_id = i.model_id
 			LEFT JOIN showcase_groups g on g.group_id = m.group_id
 			LEFT JOIN showcase_groups p on g.parent_id = p.group_id
@@ -1159,7 +1159,8 @@ class Showcase {
 			array_shift($ar);
 		} else {
 			$plen=$plen-1;
-			$lside=$plen/2+1;//Последняя цифра после которой появляется переход слева
+			$lside=round($plen/2)+1;//Последняя цифра после которой появляется переход слева
+
 			$rside=$pages-$lside-1;//Первая цифра после которой справа появляется переход
 			$islspace=$page>$lside;
 			$isrspace=$page<$rside+2;
