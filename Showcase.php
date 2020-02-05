@@ -578,7 +578,7 @@ class Showcase {
 		$groupbinds += [':image_id' => $image_id];
 		
 		$groups = Data::fetchto('
-			SELECT max(mn3.text) as img, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_items i
+			SELECT mn3.text as img, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_items i
 			LEFT JOIN showcase_models m on m.model_id = i.model_id
 			LEFT JOIN showcase_groups g on g.group_id = m.group_id
 			LEFT JOIN showcase_groups p on g.parent_id = p.group_id
