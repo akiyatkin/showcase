@@ -253,8 +253,8 @@ class Data {
 	public static function checkType($prop) {
 		$options = Data::loadShowcaseConfig();
 		$prop_nick = Path::encode($prop);
-
-		if ($prop_nick == 'Артикул') return 'article';
+		$prop_test = Path::encode('Артикул');
+		if ($prop_nick == $prop_test) return 'article';
 		if (in_array($prop_nick, $options['numbers'])) return 'number';
 		if (in_array($prop_nick, $options['texts'])) return 'text';
 		if (in_array($prop_nick, $options['values'])) return 'value';
