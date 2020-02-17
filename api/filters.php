@@ -248,6 +248,7 @@ return Rest::get( function () {
 			},[]);
 
 			Xlsx::runPoss($data, function($pos) use (&$list, $p, &$chain, $el, $vals) {
+				if (empty($pos[$el[sizeof($el)-1]])) return;
 				$keyval = Path::encode($pos[$el[sizeof($el)-1]]);
 				if (!isset($vals[$keyval])) return;
 				array_reduce($el, function ($ar, $key) use($pos, &$chain, &$last){
