@@ -1,6 +1,7 @@
 <?php
 
 use akiyatkin\showcase\Showcase;
+use akiyatkin\showcase\Data;
 use infrajs\ans\Ans;
 use infrajs\excel\Xlsx;
 
@@ -40,6 +41,22 @@ if ($group) {
 		return $r;
 	}, true);
 	$ans['path'] = $group['path'];
+}
+$isdata = Ans::GET('data','bool', false);
+if ($isdata) {
+	Xlsx::runGroups($ans['root'], function &(&$group) {
+		$group_id = $group['group_id'];
+		$poss = Data::all('SELECT model_id, p.producer_nick, m.article_nick 
+			from showcase_models m 
+			join showcase_producers p on p.producer_id = m.producer_id
+			where m.group_id = ? limit 0,3',[$group_id]);
+		foreach ($poss as $k => $pos) {
+			$poss[$k] = Showcase::getModel($pos['producer_nick'],$pos['article_nick']);
+		}
+		$group['data'] = $poss;
+		$r = null;
+		return $r;
+	});
 }
 return Ans::ret($ans);
 /*use infrajs\load\Load;
