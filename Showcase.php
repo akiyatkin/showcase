@@ -895,7 +895,7 @@ class Showcase {
 		if ($items) $pos['items'] = $items;
 
 		$g = Showcase::getGroup($pos['group_nick']);
-		$pos += array_intersect_key($g, array_flip(['group_id','parent_id','parent_nick','parent','path']));
+		$pos += array_intersect_key($g, array_flip(['group_id','parent_id','parent_nick','parent','path','showcase']));
 		
 		return $pos;
 	}
@@ -1152,35 +1152,39 @@ class Showcase {
 
 
 		*/
-
-		if ($pages<=$plen) {
+		if ($pages <= $plen) {
 			$ar = array_fill(0, $pages+1, 1);
 			$ar = array_keys($ar);
 			array_shift($ar);
 		} else {
 			$plen=$plen-1;
-			$lside=round($plen/2)+1;//Последняя цифра после которой появляется переход слева
-
+			$lside=floor($plen/2)+1;//Последняя цифра после которой появляется переход слева
+			
 			$rside=$pages-$lside-1;//Первая цифра после которой справа появляется переход
-			$islspace=$page>$lside;
+			$islspace=$page>=$lside;
 			$isrspace=$page<$rside+2;
+
+			
 			$ar = array(1);
 			if ($isrspace&&!$islspace) {
+
 				for ($i = 0; $i < $plen-2; $i++) {
 					$ar[] = $i+2;
 				}
 				$ar[]=0;
 				$ar[] = $pages;
 			} else if (!$isrspace&&$islspace) {
+
 				$ar[]=0;
 				for ($i=0; $i<$plen-1; $i++) {
-					$ar[] = $pages-$plen/2+$i-3;
+					$ar[] = $pages-ceil($plen/2)+$i;
 				}
 			} else if ($isrspace&&$islspace) {
+
 				$nums=$plen/2-2;//Количество цифр показываемых сбоку от текущей когда есть $islspace далее текущая
 				$ar[]=0;
-				for ($i=0; $i<$nums*2+1; $i++) {
-					$ar[] = $page-$plen/2+$i+2;
+				for ($i=0; $i<$nums*2+2; $i++) {
+					$ar[] = $page-ceil($plen/2)+$i+2;
 				}
 				$ar[]=0;
 				$ar[] = $pages;

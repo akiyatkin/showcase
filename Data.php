@@ -115,8 +115,38 @@ class Data {
 		Data::initPropNick($opt['texts']);
 
 		
+		
+		$titles = [
+			'producer'=>[
+				'link' => true,
+				'value'=>'producer',
+				'title'=>'Производитель',
+				'nick' =>'producer_nick'
+			],
+			'group' => [
+				'link' => true,
+				'value'=>'group',
+				'title'=>'Группа',
+				'nick' =>'group_nick'
+			],
+			'article'=> [
+				'value'=>'article',
+				'title'=>'Артикул',
+				'nick' =>'article_nick'
+			]
+		];
 		$keys = [];
 		foreach ($opt['groups'] as $k => $v) {
+			
+			if (empty($v['props'])) $v['props'] = ['producer','article','Группа','Наличие'];
+			foreach ($v['props'] as $j => $p) {
+				$ar = isset($titles[$p]) ? $titles[$p] : [
+					'title' => $p,
+					'nick'	=> Path::encode($p),
+					'value' => $p
+				];
+				$v['props'][$j] = $ar;
+			}
 			$keys[Path::encode($k)] = $v;
 		}
 		$opt['groups'] = $keys;

@@ -30,7 +30,7 @@ return Rest::get( function () {
 		$arlist[$k] = [];
 		foreach ($v['filters'] as $vv) $arlist[$k][] = Path::encode($vv);
 	}
-	
+
 	$title_nick = Path::encode(Showcase::$conf['title']);
 	if(isset($arlist[$title_nick])) {
 		$ar = $arlist[$title_nick];
@@ -68,7 +68,7 @@ return Rest::get( function () {
 	} else {
 		$order = ' order by value';	
 	}
-
+	
 	foreach ($ar as $prop_nick) {
 		if ($prop_nick == 'producer') {//Артикул, Группа
 			$row = [];
