@@ -688,7 +688,7 @@ class Showcase {
 		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nicknum, $catkit, $items);
 
 		if (!$pos) return $pos;
-		$pos['show'] = true;
+		$pos['show'] = true; //Метка что даные для показа... На странице модели покаываем цену позиции! Одну цену. А в карточке товра вилку.
 		if (isset($pos['texts'])) {
 			foreach ($pos['texts'] as $i => $src) {
 				$pos['texts'][$i]  =  Rubrics::article($src);//Изменение текста не отражается как изменение 

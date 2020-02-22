@@ -138,7 +138,7 @@ class Data {
 		$keys = [];
 		foreach ($opt['groups'] as $k => $v) {
 			
-			if (empty($v['props'])) $v['props'] = ['producer','article','Группа','Наличие'];
+			if (!isset($v['props'])) $v['props'] = ['producer','article','group','Наличие'];
 			foreach ($v['props'] as $j => $p) {
 				$ar = isset($titles[$p]) ? $titles[$p] : [
 					'title' => $p,
