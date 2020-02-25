@@ -75,6 +75,19 @@ class Data {
 			$list[$k] = Path::encode($v);
 		}
 	}
+	public static function initProps($opt, $props = []) {
+		if (empty($props)) $props = ['producer','article','group','Наличие'];
+		foreach ($props as $j => $p) {
+			$ar = isset($opt['props'][$p]) ? $opt['props'][$p] : [];
+			$ar += [
+				'prop' => $p,
+				'nick'	=> Path::encode($p),
+				'value' => $p
+			];
+			$props[$j] = $ar;
+		}
+		return $props;
+	}
 	public static function loadShowcaseConfig(){
 		$opt = Load::loadJSON(Showcase::$conf['jsonoptions']);
 		
@@ -142,17 +155,7 @@ class Data {
 		
 		$keys = [];
 		foreach ($opt['groups'] as $k => $v) {
-			
-			if (!isset($v['props'])) $v['props'] = ['producer','article','group','Наличие'];
-			foreach ($v['props'] as $j => $p) {
-				$ar = isset($opt['props'][$p]) ? $opt['props'][$p] : [];
-				$ar += [
-					'prop' => $p,
-					'nick'	=> Path::encode($p),
-					'value' => $p
-				];
-				$v['props'][$j] = $ar;
-			}
+			$v['props'] = Data::initProps($opt, $v['props']);
 			$keys[Path::encode($k)] = $v;
 		}
 		$opt['groups'] = $keys;

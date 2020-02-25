@@ -669,10 +669,14 @@ class Showcase {
 	public static function getOption($right = [], $def = null) {
 		$options = Once::func( function (){
 			$options = Data::getOptions();
-			$options['columns'] = array_merge(Data::$files, Showcase::$columns, $options['columns']);
+			$props = array_keys($options['props']);
+			$options['columns'] = array_merge(Data::$files, Showcase::$columns, $options['columns'], $props);
+
 			$options['columns'] = array_map( function ($val) {
 				return Path::encode($val);
 			}, $options['columns']);
+			$options['columns'] = array_unique($options['columns']);
+			
 			return $options;
 		});
 		$res = Seq::get($options, $right);
@@ -704,7 +708,9 @@ class Showcase {
 			} 
 		}
 		//Event::tik('Showcase-position.onshow'); //Позиция вызывается в двух слоях по разным запросам - ошибка в этом
-
+		$opt = Showcase::getOptions();
+		$pos['showcase']['props'] = Data::initProps($opt, array_keys($opt['props']));
+		
 		Event::fire('Showcase-position.onshow', $pos);
 		return $pos;
 	}
