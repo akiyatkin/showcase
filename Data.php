@@ -116,32 +116,38 @@ class Data {
 
 		
 		
-		$titles = [
+		$props = [
 			'producer'=>[
-				'link' => true,
+				"ptpl"=>"prop-link",
 				'value'=>'producer',
-				'title'=>'Производитель',
+				'prop'=>'Производитель',
 				'nick' =>'producer_nick'
 			],
 			'group' => [
-				'link' => true,
+				"ptpl"=>"prop-link",
 				'value'=>'group',
-				'title'=>'Группа',
+				'prop'=>'Группа',
 				'nick' =>'group_nick'
 			],
 			'article'=> [
 				'value'=>'article',
-				'title'=>'Артикул',
+				'prop'=>'Артикул',
 				'nick' =>'article_nick'
 			]
 		];
+		foreach ($props as $n => $prop) {
+			if (!isset($opt['props'][$n])) $opt['props'][$n] = [];
+			$opt['props'][$n] += $prop;
+		}
+		
 		$keys = [];
 		foreach ($opt['groups'] as $k => $v) {
 			
 			if (!isset($v['props'])) $v['props'] = ['producer','article','group','Наличие'];
 			foreach ($v['props'] as $j => $p) {
-				$ar = isset($titles[$p]) ? $titles[$p] : [
-					'title' => $p,
+				$ar = isset($opt['props'][$p]) ? $opt['props'][$p] : [];
+				$ar += [
+					'prop' => $p,
 					'nick'	=> Path::encode($p),
 					'value' => $p
 				];

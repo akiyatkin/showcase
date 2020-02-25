@@ -13,18 +13,17 @@ return Rest::get( function () {
 	$ans = array();
 	$md = Showcase::initMark($ans);
 	
-	$arlist = array();
+	//$arlist = array();
 		
-	//depricated
+	/*//depricated
 	$arlist2 = Showcase::getOptions()['filters']['groups'];
 	foreach ($arlist2 as $k=>$v) {
 		$arlist[Path::encode($k)] = [];
 		foreach ($v as $vv) $arlist[Path::encode($k)][] = Path::encode($vv);
-	}
+	}*/
 
-	$arlist2 = Showcase::getOptions()['groups'];
-
-	foreach ($arlist2 as $k=>$v) {
+	$arlist = Showcase::getOptions()['groups'];
+	foreach ($arlist as $k=>$v) {
 		$k = Path::encode($k);
 		if (empty($v['filters'])) continue;
 		$arlist[$k] = [];
@@ -46,7 +45,7 @@ return Rest::get( function () {
 		$tempar = array_diff($arlist[$g], $tempar);
 		$ar = array_merge($ar, $tempar);
 	}
-
+	
 	$props = Ans::get('props','string');
 	if ($props) {
 		$props = explode(',', $props);
@@ -217,7 +216,7 @@ return Rest::get( function () {
 	- key
 
 	*/
-	$origfilters = Showcase::getOption(['filters'],[]);
+	$origfilters = Showcase::getOption(['props'],[]);
 	$filters = [];
 	foreach($origfilters as $k=>$v) {
 		$filters[Path::encode($k)] = $v;
@@ -280,7 +279,7 @@ return Rest::get( function () {
 	}
 	
 
-	$data = Load::loadJSON('-excel/get/group/Help/?src=~pages/Параметры.xlsx');
+	$data = Load::loadJSON('-excel/get/group/Help/?src='.Showcase::$conf['paramsrc']);
 	if (!empty($data['data']['data'])) {
 		$data = $data['data']['data'];
 		$options = [];

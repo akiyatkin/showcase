@@ -5,6 +5,7 @@
 	"require":"infra.php",
 	"update":"update.php",
 	"title":"Каталог",
+	"paramsrc":"~auto/pages/Параметры.xlsx",
 	"sort":"is",
 	"css":"style.css",
 	

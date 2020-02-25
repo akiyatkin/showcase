@@ -62,7 +62,7 @@ class Showcase {
 			if (!isset($_GET['m'])) $_GET['m'] = '';
 
 			if ($val == 'actions') {
-				$_GET['m'].=':more.'.Path::encode('Наличие на складе').'.'.Path::encode('Акция').'=1:more.'.Path::encode('Наличие-на-складе').'.'.Path::encode('Распродажа').'=1';
+				$_GET['m'].=':more.'.Path::encode('Наличие').'.'.Path::encode('Акция').'=1:more.'.Path::encode('Наличие').'.'.Path::encode('Распродажа').'=1';
 			} else if ($val == 'items') {
 				$_GET['m'].=':sort=items';
 			} else {
@@ -176,7 +176,7 @@ class Showcase {
 		$cost_id = Data::initProp("Цена");
 		$name_id = Data::initProp("Наименование");
 		$image_id = Data::initProp("images");
-		$nalichie_id = Data::initProp("Наличие на складе");
+		$nalichie_id = Data::initProp("Наличие");
 		$ans['filters'] = [];
 		$grquery = '';
 
@@ -665,7 +665,7 @@ class Showcase {
 	}
 
 
-	public static $columns = array("producer","article","producer_nick","article_nick", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие-на-складе","Прайс");
+	public static $columns = array("producer","article","producer_nick","article_nick", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие","Прайс");
 	public static function getOption($right = [], $def = null) {
 		$options = Once::func( function (){
 			$options = Data::getOptions();
