@@ -637,18 +637,18 @@ class Showcase {
 			return $r;
 		});
 		
-		$ans['childs'] = array_values($root['childs']);
-		
-		
-		foreach ($ans['childs'] as $i => $ch) {
-			if (empty($ans['childs'][$i]['childs'])) continue;
-			foreach($ans['childs'][$i]['childs'] as $ii => $cch) {
-				unset($ans['childs'][$i]['childs'][$ii]['childs']);
+		if (!empty($ans['childs'])) {
+			$ans['childs'] = array_values($root['childs']);
+			foreach ($ans['childs'] as $i => $ch) {
+				if (empty($ans['childs'][$i]['childs'])) continue;
+				foreach($ans['childs'][$i]['childs'] as $ii => $cch) {
+					unset($ans['childs'][$i]['childs'][$ii]['childs']);
+				}
 			}
-		}
-		if (sizeof($ans['childs']) == 1 && isset($ans['group'])) {
-			if ($ans['childs'][0]['group_nick'] == $ans['group']['group_nick']) {
-				unset($ans['childs']);
+			if (sizeof($ans['childs']) == 1 && isset($ans['group'])) {
+				if ($ans['childs'][0]['group_nick'] == $ans['group']['group_nick']) {
+					unset($ans['childs']);
+				}
 			}
 		}
 		
