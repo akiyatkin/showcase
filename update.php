@@ -154,8 +154,7 @@ CREATE TABLE IF NOT EXISTS `showcase_items` (
 	`item_num` SMALLINT unsigned NOT NULL COMMENT '',
 	`item_nick` TEXT NOT NULL COMMENT '',
 	`item` TEXT NOT NULL COMMENT '',
-	PRIMARY KEY (`model_id`, `item_num`),
-	UNIQUE (`model_id`,`item_nick`)
+	PRIMARY KEY (`model_id`, `item_num`)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 END;
 scexec($sql);
