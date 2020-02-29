@@ -637,7 +637,7 @@ class Showcase {
 			return $r;
 		});
 		
-		if (!empty($ans['childs'])) {
+		if (!empty($root['childs'])) {
 			$ans['childs'] = array_values($root['childs']);
 			foreach ($ans['childs'] as $i => $ch) {
 				if (empty($ans['childs'][$i]['childs'])) continue;

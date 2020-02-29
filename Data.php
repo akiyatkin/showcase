@@ -76,7 +76,7 @@ class Data {
 		}
 	}
 	public static function initProps($opt, $props = []) {
-		if (empty($props)) $props = ['producer','article','group','Наличие'];
+		//if (empty($props)) $props = ['producer','article','groups','Описание'];
 		foreach ($props as $j => $p) {
 			$ar = isset($opt['props'][$p]) ? $opt['props'][$p] : [];
 			$ar += [
@@ -129,6 +129,7 @@ class Data {
 
 		
 		
+		//Описание по умаолчанию для некоторых свойств
 		$props = [
 			'producer'=>[
 				"ptpl"=>"prop-link",
@@ -136,16 +137,23 @@ class Data {
 				'prop'=>'Производитель',
 				'nick' =>'producer_nick'
 			],
+			'article'=> [
+				'value'=>'article',
+				'prop'=>'Артикул',
+				'ptpl' => 'prop-bold',
+				'nick' =>'article_nick'
+			],
 			'group' => [
 				"ptpl"=>"prop-link",
 				'value'=>'group',
 				'prop'=>'Группа',
 				'nick' =>'group_nick'
 			],
-			'article'=> [
-				'value'=>'article',
-				'prop'=>'Артикул',
-				'nick' =>'article_nick'
+			'Описание' => [
+				"ptpl"=>"prop-p",
+				'value'=>'Описание',
+				'prop'=>'Описание',
+				'nick' =>'Описание'
 			]
 		];
 		foreach ($props as $n => $prop) {
@@ -153,11 +161,17 @@ class Data {
 			$opt['props'][$n] += $prop;
 		}
 		
+		//Описание для каждой группы
 		$keys = [];
 		foreach ($opt['groups'] as $k => $v) {
+			if (empty($v['props'])) {
+				$keys[Path::encode($k)] = $v;
+				continue;
+			}
 			$v['props'] = Data::initProps($opt, $v['props']);
 			$keys[Path::encode($k)] = $v;
 		}
+
 		$opt['groups'] = $keys;
 
 		$keys = [];
@@ -978,21 +992,11 @@ class Data {
 
 			$opt = Data::getOptions();
 			Xlsx::runGroups($root, function &(&$group, $i, $parent) use ($opt) {
-
-				if (isset($opt['groups'][$group['group_nick']])) {
-					$group['showcase'] = $opt['groups'][$group['group_nick']];
-				} else if(isset($group['path'])) {
-					foreach ($group['path'] as $g) {
-						if (isset($opt['groups'][$g])) {
-							$group['showcase'] = $opt['groups'][$g];
-						}
-					}	
-				}
-				if (!isset($group['showcase'])) {
-					$root_nick = Path::encode(Showcase::$conf['title']);
-					if (isset($opt['groups'][$root_nick])) {
-						$group['showcase'] = $opt['groups'][$root_nick];
-					}
+				$grs = isset($group['path'])? array_reverse($group['path']) : [];
+				$grs[] = Path::encode(Showcase::$conf['title']);
+				$group['showcase'] = [];
+				foreach ($grs as $g) {
+					if (isset($opt['groups'][$g])) $group['showcase'] += $opt['groups'][$g];
 				}
 				
 				
