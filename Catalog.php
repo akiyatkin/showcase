@@ -138,6 +138,17 @@ class Catalog {
 		}
 		return $res;
 	}
+	public static function getDefOpt($name) {
+		return array(
+			'name' => $name,
+			'isfile' => false,
+			'isopt' => false,
+			'isdata' => false,
+			'order' => 0,
+			'producer' => $name,
+			'producer_nick' => Path::encode($name)
+		);
+	}
 	public static function getOptions($filename = false) {//3 пересечения Опциии, Файлы, БазаДанных
 		$list = Data::getOptions('catalog');
 		$filelist = Data::getFileList(Showcase::$conf['tables']);
@@ -153,16 +164,9 @@ class Catalog {
 			$list[$name] += $savedlist[$name];
 			if (!$savedlist[$name]['time']) continue;// Данные ещё не вносились
 		}
+
 		foreach ($list as $name => $opt) { // По опциям
-			$list[$name] += array(
-				'name' => $name,
-				'isfile' => false,
-				'isopt' => false,
-				'isdata' => false,
-				'order' => 0,
-				'producer' => $name,
-				'producer_nick' => Path::encode($name)
-			);
+			$list[$name] += Catalog::getDefOpt($name);
 			
 			$list[$name]['isglob'] = !!$list[$name]['producer'];
 			//if (empty($opt['isfile']) && empty($opt['time'])) {
@@ -170,7 +174,10 @@ class Catalog {
 			//}
 		}
 		
-		if ($filename) return $list[$filename];
+		if ($filename) {
+			if (isset($list[$filename])) return $list[$filename];
+			return Catalog::getDefOpt($filename);
+		}
 		uasort($list, function($a, $b) {
 			if ($b['isfile'] && !$a['isfile']) return 1; //Сначало файлы, потом база данных, потом опции
 			if ($b['order'] < $a['order']) return 1;
