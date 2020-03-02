@@ -230,9 +230,9 @@ return Rest::get( function () {
 			$params[$k] += $filters[$p['prop_nick']];
 		}
 		//2 вариант depricated
-		$params[$k] += Showcase::getOption(['filters','props',$p['prop_nick']],['tpl'=>'prop-default']);
+		$params[$k] += Showcase::getOption(['filters','props',$p['prop_nick']],[ ]);
 
-		$params[$k] += ['tpl'=>'prop-default'];
+		//$params[$k] += [ 'ftpl'=>'prop-default' ];
 
 		$p = $params[$k];
 		if (isset($p['chain'])) {
@@ -293,7 +293,7 @@ return Rest::get( function () {
 			$options[$nick]['help'] = $options[$nick]['Описание'];
 		}
 	}
-	
+
 	$ans['list'] = $params;
 	return Ans::ret($ans);
 });
