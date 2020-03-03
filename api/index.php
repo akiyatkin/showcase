@@ -276,20 +276,20 @@ return Rest::get( function () {
 			},[$producer_nick, $article_nick, $item_nicknum, $catkit]);
 			
 
-			$active = $ans['pos']['article'];
-
-			if (Showcase::$conf['hiddenarticle'] && isset($ans['pos']['Наименование'])) {
-				$active = $ans['pos']['Наименование'];
-			}
+			
 
 			
 			if (!$ans['pos']) {
 				//$ans['breadcrumbs'][] = array('href'=>'producers','title'=>'Производители');
 				//$ans['breadcrumbs'][] = array('href'=>'','title'=>$producer_nick,'href'=>$producer_nick);
-				$ans['breadcrumbs'][] = array('active'=>true, 'title'=>$active);
+				$ans['breadcrumbs'][] = array('active'=>true, 'title'=>$article);
 				return Ans::err($ans);
 			}
-			
+			$active = $ans['pos']['article'];
+
+			if (Showcase::$conf['hiddenarticle'] && isset($ans['pos']['Наименование'])) {
+				$active = $ans['pos']['Наименование'];
+			}
 			$ans['breadcrumbs'][] = array('title'=>Showcase::$conf['title'],'href'=>'','add'=>':group');
 			array_map(function($p) use (&$ans){
 				$group = Showcase::getGroup($p);
