@@ -753,7 +753,7 @@ class Showcase {
 			    return ($a['item_num'] < $b['item_num']) ? -1 : 1;
 			});*/	
 		$data = Showcase::getFullModel($producer_nick, $article_nick);
-		
+		if (!$data) return false;
 		if ($item_nicknum && $data['item_nick'] != $item_nicknum && $data['item_num'] != $item_nicknum) {
 			//Первая позиция не подходим ищим в items
 			
@@ -832,7 +832,8 @@ class Showcase {
 		if (!$data) return false;
 
 		
-		
+		echo '<pre>';
+		print_r($data);
 		//надо определить itemrows
 		foreach ($data as $pos) break;
 		$list = Data::all('SELECT 
