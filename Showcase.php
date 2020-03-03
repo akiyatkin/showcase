@@ -831,9 +831,6 @@ class Showcase {
 		$data = Data::fetchto($sql, 'item_num', [':article'=>$article_nick,':producer'=>$producer_nick]);
 		if (!$data) return false;
 
-		
-		echo '<pre>';
-		print_r($data);
 		//надо определить itemrows
 		foreach ($data as $pos) break;
 		$list = Data::all('SELECT 
