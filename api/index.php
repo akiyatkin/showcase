@@ -285,6 +285,7 @@ return Rest::get( function () {
 				$ans['breadcrumbs'][] = array('active'=>true, 'title'=>$article);
 				return Ans::err($ans);
 			}
+			var_dump($ans['pos']);
 			$active = $ans['pos']['article'];
 
 			if (Showcase::$conf['hiddenarticle'] && isset($ans['pos']['Наименование'])) {
