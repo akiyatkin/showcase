@@ -232,8 +232,6 @@ return Rest::get( function () {
 		//2 вариант depricated
 		$params[$k] += Showcase::getOption(['filters','props',$p['prop_nick']],[ ]);
 
-		//$params[$k] += [ 'ftpl'=>'prop-default' ];
-
 		$p = $params[$k];
 		if (isset($p['chain'])) {
 			$data = Load::loadJSON($p['chain']);

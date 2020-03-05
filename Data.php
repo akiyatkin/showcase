@@ -132,7 +132,7 @@ class Data {
 		//Описание по умаолчанию для некоторых свойств
 		$props = [
 			'producer'=>[
-				"ptpl"=>"prop-link",
+				"tplprop"=>"prop-link",
 				'value'=>'producer',
 				'prop'=>'Производитель',
 				'nick' =>'producer_nick'
@@ -140,17 +140,17 @@ class Data {
 			'article'=> [
 				'value'=>'article',
 				'prop'=>'Артикул',
-				'ptpl' => 'prop-bold',
+				'tplprop' => 'prop-bold',
 				'nick' =>'article_nick'
 			],
 			'group' => [
-				"ptpl"=>"prop-link",
+				"tplprop"=>"prop-link",
 				'value'=>'group',
 				'prop'=>'Группа',
 				'nick' =>'group_nick'
 			],
 			'Описание' => [
-				"ptpl"=>"prop-p",
+				"tplprop"=>"prop-p",
 				'value'=>'Описание',
 				'prop'=>'Описание',
 				'nick' =>'Описание'
