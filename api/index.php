@@ -61,7 +61,8 @@ return Rest::get( function () {
 		$md = Showcase::initMark($ans);
 
 		$ans['page'] = Ans::GET('p','integer',1);
-		
+		$count = Ans::GET('count','integer',0);
+		if ($count) $md['count'] = $count;
 		if ($ans['page'] < 1) $ans['page'] = 1;
 		$ans['is'] = ''; //group producer search Что было найдено по запросу val (Отдельный файл is:change)
 		$ans['descr'] = '';//абзац текста в начале страницы';
@@ -108,6 +109,7 @@ return Rest::get( function () {
 		$group = Showcase::getGroup($group_nick);
 		
 		$ans['showlist'] = Ans::GET('showlist','bool', !empty($group['showcase']['showlist']));
+
 		Showcase::search($md, $ans, $ans['page'], $ans['showlist']);
 		
 		$src  =  Rubrics::find(Showcase::$conf['groups'], $ans['title']);
