@@ -23,6 +23,7 @@ return Rest::get( function () {
 	}*/
 
 	$arlist = Showcase::getOptions()['groups'];
+
 	foreach ($arlist as $k=>$v) {
 		$k = Path::encode($k);
 		if (empty($v['filters'])) continue;
@@ -30,20 +31,23 @@ return Rest::get( function () {
 		foreach ($v['filters'] as $vv) $arlist[$k][] = Path::encode($vv);
 	}
 
+	
+
 	$title_nick = Path::encode(Showcase::$conf['title']);
-	if(isset($arlist[$title_nick])) {
+	if (isset($arlist[$title_nick])) {
 		$ar = $arlist[$title_nick];
 	} else {
 		$ar = [];
 	}
-
+	
 	for ($i = sizeof($ans['group']['path'])-1; $i >= 0; $i--) {
 		$g = $ans['group']['path'][$i];
 		if (!isset($arlist[$g])) continue;
-		$tempar = array_intersect($arlist[$g], $ar);
+		$ar = $arlist[$g];
+		/*$tempar = array_intersect($arlist[$g], $ar);
 		
 		$tempar = array_diff($arlist[$g], $tempar);
-		$ar = array_merge($ar, $tempar);
+		$ar = array_merge($ar, $tempar);*/
 	}
 	
 	$props = Ans::get('props','string');
@@ -224,7 +228,6 @@ return Rest::get( function () {
 
 	foreach ($params as $k=>$p) {
 		if (!in_array($k, $columns)) $params[$k]['more'] = true;
-
 		//1 вариант
 		if (isset($filters[$p['prop_nick']])) {
 			$params[$k] += $filters[$p['prop_nick']];
