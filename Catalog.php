@@ -397,8 +397,10 @@ class Catalog {
 				);
 				
 			} else {
+				$prop_nick = Path::encode($prop);
 				$strid = ($type == 'number')? 'number' : 'value_id';
-				$ar = (in_array($prop, $options['justonevalue']))? [$val] : explode(',', $val);
+				$ar = (in_array($prop_nick, $options['justonevalue']))? [$val] : explode(',', $val);
+					
 				foreach ($ar as $v) {
 					$order++;
 					$v = trim($v);
