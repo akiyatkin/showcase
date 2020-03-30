@@ -23,14 +23,16 @@ return Rest::get( function () {
 	}*/
 
 	$arlist = Showcase::getOptions()['groups'];
-
+	
 	foreach ($arlist as $k=>$v) {
 		$k = Path::encode($k);
-		if (empty($v['filters'])) continue;
+		if (empty($v['filters'])) {
+			$arlist[$k] = [];
+			continue;
+		}
 		$arlist[$k] = [];
 		foreach ($v['filters'] as $vv) $arlist[$k][] = Path::encode($vv);
 	}
-
 	
 
 	$title_nick = Path::encode(Showcase::$conf['title']);
@@ -55,7 +57,7 @@ return Rest::get( function () {
 		$props = explode(',', $props);
 		$ar = array_merge($ar, $props);
 	}
-
+	
 	$params = [];
 	
 	$columns = Showcase::getOption(['columns']);
@@ -71,7 +73,7 @@ return Rest::get( function () {
 	} else {
 		$order = ' order by value';	
 	}
-	
+
 	foreach ($ar as $prop_nick) {
 		if ($prop_nick == 'producer') {//Артикул, Группа
 			$row = [];
@@ -92,7 +94,9 @@ return Rest::get( function () {
 				'type' => 'producer'
 			);
 		} else {
+
 			$row = Data::fetch('SELECT prop_id, prop from showcase_props where prop_nick = ?',[$prop_nick]);
+
 			if(!$row) continue;
 			list($prop_id, $prop) = array_values($row);
 			if(!$prop_id) continue;

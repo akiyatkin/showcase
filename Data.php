@@ -631,21 +631,30 @@ class Data {
 				}
 				$list[$k]['logo'] = null;
 				//Посмотрели в иконках
-				$logo = Rubrics::find($conf['icons'], $prod['producer_nick'], Data::$images);
-				if ($logo) {
-					$list[$k]['logo'] = $logo;
-					continue;
+				//$logo = Rubrics::find($conf['icons'], $prod['producer_nick'], Data::$images);
+				if ($conf['icons']) {
+					$images = FS::scandir($conf['icons'], function ($file) {
+						$fd = Load::nameInfo($file);
+						if (in_array($fd['ext'], Data::$images)) return true;
+						return false;
+					});
+					if ($images) {
+						$list[$k]['logo'] = $conf['icons'].$images[0];
+						continue;
+					}
 				} 
 				//Посмотрели в папках с файлами
-				$dir = Rubrics::find($conf['folders'], $prod['producer_nick'], 'dir');
-				$images = FS::scandir($dir, function ($file) use (&$conf, &$prod, $dir) {
-					$fd = Load::nameInfo($file);
-					if (in_array($fd['ext'], Data::$images)) return true;
-					return false;
-				});
-				if ($images) {
-					$list[$k]['logo'] = $dir.$images[0];
-					continue;
+				if ($conf['folders']) {
+					$dir = Rubrics::find($conf['folders'], $prod['producer_nick'], 'dir');
+					$images = FS::scandir($dir, function ($file) {
+						$fd = Load::nameInfo($file);
+						if (in_array($fd['ext'], Data::$images)) return true;
+						return false;
+					});
+					if ($images) {
+						$list[$k]['logo'] = $dir.$images[0];
+						continue;
+					}
 				}
 			}
 			foreach($list as $prod) {
