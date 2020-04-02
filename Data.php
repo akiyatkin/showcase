@@ -629,10 +629,11 @@ class Data {
 						unset($icons[$nick]);
 					}
 				}
-				$list[$k]['logo'] = null;
+				$list[$k]['logo'] = $icon;
+				if ($icon) continue;
 				//Посмотрели в иконках
 				//$logo = Rubrics::find($conf['icons'], $prod['producer_nick'], Data::$images);
-				if ($conf['icons']) {
+				/*if ($conf['icons']) {
 					$images = FS::scandir($conf['icons'], function ($file) {
 						$fd = Load::nameInfo($file);
 						if (in_array($fd['ext'], Data::$images)) return true;
@@ -642,7 +643,8 @@ class Data {
 						$list[$k]['logo'] = $conf['icons'].$images[0];
 						continue;
 					}
-				} 
+				}*/
+
 				//Посмотрели в папках с файлами
 				if ($conf['folders']) {
 					$dir = Rubrics::find($conf['folders'], $prod['producer_nick'], 'dir');
