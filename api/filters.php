@@ -46,12 +46,12 @@ return Rest::get( function () {
 		$g = $ans['group']['path'][$i];
 		if (!isset($arlist[$g])) continue;
 		$ar = $arlist[$g];
+		break;
 		/*$tempar = array_intersect($arlist[$g], $ar);
 		
 		$tempar = array_diff($arlist[$g], $tempar);
 		$ar = array_merge($ar, $tempar);*/
 	}
-	
 	$props = Ans::get('props','string');
 	if ($props) {
 		$props = explode(',', $props);
