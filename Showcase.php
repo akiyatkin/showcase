@@ -252,11 +252,13 @@ class Showcase {
 				$no[] = 'and 1=0';
 				continue;
 			}
+
 			$prop_id = $prop['prop_id'];
+			$title = Showcase::getOption(['props',$prop['prop'],'title'], $prop['prop']);
 			$ans['filters'][] = array( 
 				'name' => 'more.'.$prop_nick,
 				'value' => $titles,
-				'title' => $prop['prop']
+				'title' => $title
 			);
 			$type = Data::checkType($prop_nick);
 
