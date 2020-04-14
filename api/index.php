@@ -109,7 +109,7 @@ return Rest::get( function () {
 		$group = Showcase::getGroup($group_nick);
 		
 		$ans['showlist'] = Ans::GET('showlist','bool', !empty($group['showcase']['showlist']));
-
+		
 		Showcase::search($md, $ans, $ans['page'], $ans['showlist']);
 		
 		$src  =  Rubrics::find(Showcase::$conf['groups'], $ans['title']);
