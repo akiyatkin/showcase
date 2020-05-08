@@ -242,34 +242,36 @@ return Rest::get( function () {
 		$p = $params[$k];
 		if (isset($p['chain'])) {
 			$data = Load::loadJSON($p['chain']);
-			$data = $data['data'];
-			$chain = [];
-			$el = array_reverse($data['head']);
+			if (!empty($data['data'])) {
+				$data = $data['data'];
+				$chain = [];
+				$el = array_reverse($data['head']);
 
-			$vals = array_reduce($p['values'], function($vals, $v){
-				$vals[$v['value_nick']] = 1;
-				return $vals;
-			},[]);
+				$vals = array_reduce($p['values'], function($vals, $v){
+					$vals[$v['value_nick']] = 1;
+					return $vals;
+				},[]);
 
-			Xlsx::runPoss($data, function($pos) use (&$list, $p, &$chain, $el, $vals) {
-				if (empty($pos[$el[sizeof($el)-1]])) return;
-				$keyval = Path::encode($pos[$el[sizeof($el)-1]]);
-				if (!isset($vals[$keyval])) return;
-				array_reduce($el, function ($ar, $key) use($pos, &$chain, &$last){
-					$child = &$ar[0];
-					if(empty($child['childs'])) $child['childs'] = [];
-					$child['key'] = $key;
-					if (!isset($pos[$key])) return $ar;
-					$val = $pos[$key];
-					$nick = Path::encode($val);
-					if (empty($child['childs'][$nick])) $child['childs'][$nick] = ['value'=>$val,'nick'=>$nick];
-					return [&$child['childs'][$nick]];
-				}, [&$chain]);
-			});
+				Xlsx::runPoss($data, function($pos) use (&$list, $p, &$chain, $el, $vals) {
+					if (empty($pos[$el[sizeof($el)-1]])) return;
+					$keyval = Path::encode($pos[$el[sizeof($el)-1]]);
+					if (!isset($vals[$keyval])) return;
+					array_reduce($el, function ($ar, $key) use($pos, &$chain, &$last){
+						$child = &$ar[0];
+						if(empty($child['childs'])) $child['childs'] = [];
+						$child['key'] = $key;
+						if (!isset($pos[$key])) return $ar;
+						$val = $pos[$key];
+						$nick = Path::encode($val);
+						if (empty($child['childs'][$nick])) $child['childs'][$nick] = ['value'=>$val,'nick'=>$nick];
+						return [&$child['childs'][$nick]];
+					}, [&$chain]);
+				});
 
-			
-			$params[$k]['chain'] = $chain;
-			//unset($params[$k]['values']);
+				
+				$params[$k]['chain'] = $chain;
+				//unset($params[$k]['values']);
+			}
 		}
 
 
