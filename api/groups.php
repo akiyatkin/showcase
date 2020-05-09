@@ -58,6 +58,23 @@ if ($isdata) {
 		return $r;
 	});
 }
+$isclean = Ans::GET('clean','bool', false);
+if ($isclean) {
+	Xlsx::runGroups($ans['root'], function &(&$group) {
+		unset($group['showcase']);
+		if (empty($group['childs'])) $group['childs'] = [];
+		$group = [
+			'group' => $group['group'],
+			'childs' => $group['childs'],
+			'group_nick' => $group['group_nick']
+		];
+		if (empty($group['childs'])) unset($group['childs']);
+		
+		$r = null;
+		return $r;
+	});
+	
+}
 return Ans::ret($ans);
 /*use infrajs\load\Load;
 use infrajs\rest\Rest;

@@ -28,7 +28,7 @@ if (isset($_GET['-showcase'])) {
 
 Showcase::add('count', function () {
 	$conf = Showcase::$conf;
-	return 24;
+	return 12;
 }, function (&$val) {
 	$val = (int) $val;
 	if ($val < 1 || $val > 10000) return false;
