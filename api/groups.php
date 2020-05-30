@@ -8,6 +8,7 @@ use infrajs\excel\Xlsx;
 $ans = array();
 $md = Showcase::initMark($ans);
 $ans['root'] = Showcase::getGroup();
+
 $isempty = Showcase::$conf['showemptygroups'];
 $isempty = Ans::GET('empty','bool', $isempty);
 
@@ -75,6 +76,7 @@ if ($isclean) {
 	});
 	
 }
+
 return Ans::ret($ans);
 /*use infrajs\load\Load;
 use infrajs\rest\Rest;
