@@ -10,10 +10,13 @@ use akiyatkin\showcase\Showcase;
 use infrajs\path\Path;
 use infrajs\view\View;
 use infrajs\each\Each;
+use infrajs\access\Access;
+use infrajs\nostore\Nostore;
 use infrajs\layer\seojson\Seojson;
 use infrajs\rubrics\Rubrics;
 use infrajs\once\Once;
-//ob_start();
+
+
 date_default_timezone_set("Europe/Samara");
 return Rest::get( function () {
 	$ans = [];
@@ -58,6 +61,7 @@ return Rest::get( function () {
 
 		return Ans::ans($ans);	
 }], 'search', [function (){
+
 		$md = Showcase::initMark($ans);
 
 		$ans['page'] = Ans::GET('p','integer',1);
