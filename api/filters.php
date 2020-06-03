@@ -3,6 +3,8 @@ use akiyatkin\showcase\Showcase;
 use akiyatkin\showcase\Data;
 use infrajs\ans\Ans;
 use infrajs\rest\Rest;
+use infrajs\access\Access;
+use infrajs\nostore\Nostore;
 use infrajs\load\Load;
 use infrajs\path\Path;
 use infrajs\excel\Xlsx;
@@ -213,7 +215,7 @@ return Rest::get( function () {
 		}
 	}
 	
-	$columns = ['producer'];//Showcase::getOption(['columns']);
+	$columns = ['producer']; //Showcase::getOption(['columns']);
 	/*
 	Обработка параметров в showcase.json каждого фильтра
 	- showalways
@@ -302,5 +304,7 @@ return Rest::get( function () {
 	}
 
 	$ans['list'] = $params;
+	Nostore::off();
+	Access::modified();
 	return Ans::ret($ans);
 });

@@ -16,6 +16,8 @@ use infrajs\layer\seojson\Seojson;
 use infrajs\rubrics\Rubrics;
 use infrajs\once\Once;
 
+Nostore::off();
+Access::modified();
 
 date_default_timezone_set("Europe/Samara");
 return Rest::get( function () {
@@ -121,6 +123,7 @@ return Rest::get( function () {
 			$ans['textinfo']  =  Rubrics::info($src); 
 			$ans['text']  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение каталога, должно быть вне кэша
 		}
+		header('Cache-Control: no-cache, max-age=0, must-revalidate');
 		return Ans::ret($ans);
 	},'seo', function(){
 		$ans = array();
