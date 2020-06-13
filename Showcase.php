@@ -8,7 +8,6 @@ use infrajs\once\Once;
 use infrajs\excel\Xlsx;
 use infrajs\rubrics\Rubrics;
 use infrajs\event\Event;
-use infrajs\db\Db;
 use infrajs\config\Config;
 use infrajs\template\Template;
 use akiyatkin\showcase\Data;
@@ -55,6 +54,7 @@ class Showcase {
 	public static function initMark(&$ans = array())
 	{
 		$val = Ans::GET('val');
+
 		$val = Path::toutf(strip_tags($val));
 		$nick = Path::encode($val);
 		$art = Ans::GET('art');
@@ -101,9 +101,13 @@ class Showcase {
 		$group = false;
 		foreach ($ans['md']['group'] as $group => $one) break;
 		if (!$group) $group = Showcase::$conf['title'];
-		$group = Showcase::getGroup($group);
-		if (!$group) $group = Showcase::getGroup();
+		
+		$group = Showcase::getGroup($nick);
+		if (!$group) $group = Data::getGroups();
+		
 		unset($group['childs']);
+		unset($group['catalog']);
+
 		$ans['group'] = $group;
 		return $ar['md'];
 	}

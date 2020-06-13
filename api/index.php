@@ -16,8 +16,6 @@ use infrajs\layer\seojson\Seojson;
 use infrajs\rubrics\Rubrics;
 use infrajs\once\Once;
 
-Nostore::off();
-Access::modified();
 
 date_default_timezone_set("Europe/Samara");
 return Rest::get( function () {
@@ -62,69 +60,42 @@ return Rest::get( function () {
 		$ans['canonical'] = Seojson::getSite().'/'.$link;
 
 		return Ans::ans($ans);	
-}], 'search', [function (){
+}], 'search', [function ($name){
+	$md = Showcase::initMark($ans);
+	$ans['page'] = Ans::GET('p','integer',1);
+	$count = Ans::GET('count','integer',0);
+	if ($count) $md['count'] = $count;
+	if ($ans['page'] < 1) $ans['page'] = 1;
+	$ans['is'] = ''; //group producer search Что было найдено по запросу val (Отдельный файл is:change)
+	$ans['descr'] = '';//абзац текста в начале страницы';
+	$ans['text'] = ''; //большая статья снизу всего
+	$ans['name'] = ''; //заголовок длинный и человеческий
+	$ans['breadcrumbs'] = array();//Путь где я нахожусь
+	$ans['filters'] = array();//Данные для формирования интерфейса фильтрации, опции и тп
+	$ans['groups'] = array();
+	$ans['producers'] = array();
+	$ans['numbers'] = array(); //Данные для построения интерфейса постраничной разбивки
+	$ans['list'] = array(); //Массив позиций
 
-		$md = Showcase::initMark($ans);
+	Showcase::makeBreadcrumb($md, $ans, $ans['page']);
 
-		$ans['page'] = Ans::GET('p','integer',1);
-		$count = Ans::GET('count','integer',0);
-		if ($count) $md['count'] = $count;
-		if ($ans['page'] < 1) $ans['page'] = 1;
-		$ans['is'] = ''; //group producer search Что было найдено по запросу val (Отдельный файл is:change)
-		$ans['descr'] = '';//абзац текста в начале страницы';
-		$ans['text'] = ''; //большая статья снизу всего
-		$ans['name'] = ''; //заголовок длинный и человеческий
-		$ans['breadcrumbs'] = array();//Путь где я нахожусь
-		$ans['filters'] = array();//Данные для формирования интерфейса фильтрации, опции и тп
-		$ans['groups'] = array();
-		$ans['producers'] = array();
-		$ans['numbers'] = array(); //Данные для построения интерфейса постраничной разбивки
-		$ans['list'] = array(); //Массив позиций
+	$groups = array_keys($md['group']);
+	$group_nick = null;
+	foreach ($groups as $group_nick) break;
+	$group = Showcase::getGroup($group_nick);
 
-		Showcase::makeBreadcrumb($md, $ans, $ans['page']);
-		/*if (Ans::isReturn()) {
-			Event::handler('Controller.oninit', function () use ($ans){
-				if (in_array($ans['is'], ['producer','group'])) {
-					$url1 = $_SERVER['REDIRECT_URL'];
+	$ans['showlist'] = Ans::GET('showlist','bool', !empty($group['showcase']['showlist']));
 
-					if ($ans['is'] == 'group') {
-						if (!$ans['group']['parent']) $nick = '';
-						else $nick = $ans['group']['group_nick'];
-					} else {
-						$nick = $ans['title'];
-					}
+	Showcase::search($md, $ans, $ans['page'], $ans['showlist']);
 
-					$r1 = explode('/',$url1);
-					if ($r1[1] != 'catalog') return;
-					$url2 = '/'.$r1[1];
-					if ($nick) $url2 .= '/'.$nick;
-					
-					if ($url1 != $url2) {
-						if (!empty($_SERVER['REDIRECT_QUERY_STRING'])) {
-							$url2.='?'.$_SERVER['REDIRECT_QUERY_STRING'];
-						}
-						header('Location: '.$url2);
-						exit;
-					}
-				}
-			});
-		}*/
-		$groups = array_keys($md['group']);
-		$group_nick = null;
-		foreach ($groups as $group_nick) break;
-		$group = Showcase::getGroup($group_nick);
+	$src  =  Rubrics::find(Showcase::$conf['groups'], $ans['title']);
+	if ($src) {
+		$ans['textinfo']  =  Rubrics::info($src); 
+		$ans['text']  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение каталога, должно быть вне кэша
+	}
+
+	return Ans::ret($ans);
 		
-		$ans['showlist'] = Ans::GET('showlist','bool', !empty($group['showcase']['showlist']));
-		
-		Showcase::search($md, $ans, $ans['page'], $ans['showlist']);
-		
-		$src  =  Rubrics::find(Showcase::$conf['groups'], $ans['title']);
-		if ($src) {
-			$ans['textinfo']  =  Rubrics::info($src); 
-			$ans['text']  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение каталога, должно быть вне кэша
-		}
-		header('Cache-Control: no-cache, max-age=0, must-revalidate');
-		return Ans::ret($ans);
 	},'seo', function(){
 		$ans = array();
 

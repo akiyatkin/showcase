@@ -35,37 +35,37 @@ class Data {
 	public static $videos = ['avi','ogv','mp4','swf'];
 	public static $slides = ['png', 'jpg', 'jpeg'];
 	public static function fetch($sql, $args = []) {
-		$stmt = Db::stmt($sql);
+		$stmt = Db::cstmt($sql);
 		$stmt->execute($args);
 		return $stmt->fetch();
 	}
 	public static function col($sql, $args = []) {
-		$stmt = Db::stmt($sql);
+		$stmt = Db::cstmt($sql);
 		$stmt->execute($args);
 		return $stmt->fetchColumn();
 	}
 	public static function lastId($sql, $args = []) {
-		$db = &Db::pdo();
-		$stmt = Db::stmt($sql);
+		$db = &Db::cpdo();
+		$stmt = Db::cstmt($sql);
 		$stmt->execute($args);
 		return $db->lastInsertId();
 	}
 	public static function fetchto($sql, $name, $args = []) { //Колонки в аргументах $func
-		$stmt = Db::stmt($sql);
+		$stmt = Db::cstmt($sql);
 		$stmt->execute($args);
 		$list = array();
 		while ($row = $stmt->fetch()) $list[$row[$name]] = $row;
 		return $list;
 	}
 	public static function all($sql, $args = []) { //Колонки в аргументах $func
-		$db = &Db::pdo();
-		$stmt = Db::stmt($sql);
+		$db = &Db::cpdo();
+		$stmt = Db::cstmt($sql);
 		$stmt->execute($args);
 		return $stmt->fetchAll();
 	}
 	public static function exec($sql, $args = []) {
-		$db = &Db::pdo();
-		$stmt = Db::stmt($sql);
+		$db = &Db::cpdo();
+		$stmt = Db::cstmt($sql);
 		$stmt->execute($args);
 		return $stmt->rowCount();
 	}
@@ -429,7 +429,7 @@ class Data {
 			Data::addFilesSyns($list, $producer_nick); //Синонимы Фото и Файл для поиска
 			
 			
-			$db = &Db::pdo();
+			$db = &Db::cpdo();
 			$db->beginTransaction();
 			Data::removeFiles($producer_nick);
 
@@ -953,21 +953,20 @@ class Data {
 		return $list;
 	}
 	public static function getGroups($group_nick = false) {
-
+		
 		$root = Once::func(function (){
 
 			$cost_id = Data::initProp("Цена");
 			
-			$list = Data::fetchto('SELECT g.group_id, g.parent_id, g.group_nick, g.icon, g.order, g.group, c.name as catalog, count(distinct m.model_id) as count, max(m.model_id) as notempty, min(mn.number) as min, max(mn.number) as max, g2.group_nick as parent_nick, g2.group as parent FROM showcase_groups g
-			left JOIN showcase_models m ON g.group_id = m.group_id
-			left JOIN showcase_iprops mn ON (m.model_id = mn.model_id and mn.prop_id = ?)
-			left JOIN showcase_catalog c ON c.catalog_id = g.catalog_id
-			left JOIN showcase_groups g2 ON g2.group_id = g.parent_id
-			GROUP BY group_nick
-			order by c.order, g.order','group_nick',[$cost_id]);
-
-
-
+			$list = Data::fetchto('
+				SELECT g.group_id, g.parent_id, g.group_nick, g.icon, g.order, g.group, c.name as catalog, count(distinct m.model_id) as count, max(m.model_id) as notempty, min(mn.number) as min, max(mn.number) as max, g2.group_nick as parent_nick, g2.group as parent FROM showcase_groups g
+				left JOIN showcase_models m ON g.group_id = m.group_id
+				left JOIN showcase_iprops mn ON (m.model_id = mn.model_id and mn.prop_id = ?)
+				left JOIN showcase_catalog c ON c.catalog_id = g.catalog_id
+				left JOIN showcase_groups g2 ON g2.group_id = g.parent_id
+				GROUP BY group_nick
+				ORDER by c.order, g.order
+			','group_nick',[$cost_id]);
 			
 			$parents = [];
 			foreach ($list as $i=>&$group) {
