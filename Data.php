@@ -837,7 +837,13 @@ class Data {
 			$src = $dir.$fayl['value'];
 			
 			if (!Path::theme($src)) $src = $fayl['value'];
-			if (!Path::theme($src)) continue; //В Файлы путь указывается от корня data
+			if (!Path::theme($src)) {
+				if (Path::theme(Showcase::$conf['tables'].$src)) {
+					$src = Showcase::$conf['tables'].$src;
+				} else {
+					continue; //В Файлы путь указывается от корня data
+				}
+			}
 			
 			if (FS::is_dir($src)) {
 				$list[$prod_nick][$art][$num][$src] = 'folders';
