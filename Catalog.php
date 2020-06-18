@@ -22,12 +22,14 @@ Event::$classes['Showcase-onloadprice'] = function () {
 class Catalog {
 	public static function action($type = 'table') {
 		$action = Ans::GET('action');
-		Access::adminSetTime();
 		if (!$action) {
 			$action = Ans::REQ('action');
 			if ($action) {
 				if (Showcase::$conf["ydisk"]) Ydisk::replaceAll();
 			}
+		}
+		if ($action) {
+			Access::adminSetTime();
 		}
 		
 		
@@ -42,7 +44,7 @@ class Catalog {
 		$name = Ans::REQ('name');
 		$src = Ans::REQ('src');
 		$type = Ans::REQ('type','string',$type);
-
+		
 		$res = null;
 		if ($type == 'table') {
 			if ($action == 'load') $res = Catalog::actionLoad($name, $src);
@@ -261,6 +263,7 @@ class Catalog {
 	public static function actionRead($name, $src)
 	{
 		$data = Catalog::readCatalog($name, $src);
+		
 		Xlsx::runGroups($data, function &(&$group) {
 			$group['data'] = sizeof($group['data']);
 			unset($group['head']);
@@ -283,13 +286,14 @@ class Catalog {
 		$row = Data::fetch('SELECT catalog_id, `order` from showcase_catalog where name = ?',[$name]);
 		$catalog_id = $row['catalog_id'];
 		$order = $row['order'];
-
+		
 		$option = Catalog::getOptions($name);
 		$ans = array('Данные' => $src);
 		if ($option['producer']) $ans['Производитель'] = '<a href="/-showcase/producers/'.$option['producer_nick'].'">'.$option['producer'].'</a>';
 		$data = Catalog::readCatalog($name, $src);
-	
+		
 		Catalog::applyGroups($data, $catalog_id, $order, $ans);
+		
 		
 		$count = 0;
 
@@ -319,8 +323,6 @@ class Catalog {
 				//$ans['Пропущено из-за конфликта с другими данными']++;
 				return; //Каталог не может управлять данной моделью, так как есть более приоритетный источник
 			}
-		
-			
 
 			if (isset($pos['items'])) { //1 item уже в модели надо его вынести в отдельный items и удалить из модели
 				$item = array();
