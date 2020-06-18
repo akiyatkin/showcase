@@ -14,7 +14,8 @@ date_default_timezone_set("Europe/Samara");
 
 if (Showcase::$conf['checkaccess']) Access::debug(true);
 
-ob_start();
+header('Cache-Control: no-store');
+//ob_start();
 
 echo Rest::get( function () {
 	$ans = [];

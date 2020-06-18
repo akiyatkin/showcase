@@ -103,10 +103,10 @@ return Rest::get( function () {
 			list($prop_id, $prop) = array_values($row);
 			if(!$prop_id) continue;
 			$type = Data::checkType($prop_nick);
-			$def = ($type == 'number')? 'range':'value';
-			$filtertype = $def;
-			//$filtertype = Showcase::getOption(['props', $prop_nick, 'filter'], $def);
 			
+			$filtertype = Showcase::getOption(['props', $prop, 'type'], $type);
+			
+			$filtertype = ($filtertype == 'number')? 'range':'value';
 
 
 			if ($filtertype == 'value') {
@@ -124,6 +124,7 @@ return Rest::get( function () {
 					left join showcase_values v on v.value_id = mv.value_id
 					where '.$grwhere.'
 					group by v.value_id
+					order by v.value
 					';
 
 					$values = Data::all($sql,[':prop_id'=>$prop_id]);
@@ -145,7 +146,7 @@ return Rest::get( function () {
 						'.$groups.'
 						WHERE mv.prop_id = :prop_id
 					group by mv.number
-					order by mv.number DESC
+					order by mv.number
 					', [':prop_id'=>$prop_id]);
 					foreach ($values as $i => $val) {
 						$values[$i]['value'] = (float) $val['value'];
@@ -158,6 +159,7 @@ return Rest::get( function () {
 				$params[$prop_nick] = [
 					'values' => $values
 				];
+				
 			} else if ($filtertype == 'range') {
 
 				if ($type == 'number') {	

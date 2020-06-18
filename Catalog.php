@@ -10,6 +10,7 @@ use akiyatkin\showcase\Data;
 use akiyatkin\showcase\Showcase;
 use infrajs\event\Event;
 use infrajs\ans\Ans;
+use infrajs\access\Access;
 use akiyatkin\ydisk\Ydisk;
 
 Event::$classes['Showcase-catalog'] = function (&$obj) {
@@ -21,6 +22,7 @@ Event::$classes['Showcase-onloadprice'] = function () {
 class Catalog {
 	public static function action($type = 'table') {
 		$action = Ans::GET('action');
+		Access::adminSetTime();
 		if (!$action) {
 			$action = Ans::REQ('action');
 			if ($action) {
@@ -223,7 +225,6 @@ class Catalog {
 			'listreverse' => false,
 			'Известные колонки' => array("Артикул","Производитель")
 		));
-		
 		/*if (!empty($opt['producer'])) {
 			Xlsx::runPoss($data, function (&$pos) use (&$opt) {
 				$pos['Производитель'] = $opt['producer'];
@@ -288,8 +289,8 @@ class Catalog {
 		if ($option['producer']) $ans['Производитель'] = '<a href="/-showcase/producers/'.$option['producer_nick'].'">'.$option['producer'].'</a>';
 		$data = Catalog::readCatalog($name, $src);
 	
-		$groups = Catalog::applyGroups($data, $catalog_id, $order, $ans);
-		$props = array();
+		Catalog::applyGroups($data, $catalog_id, $order, $ans);
+		
 		$count = 0;
 
 		$ans['Принято моделей'] = 0;
