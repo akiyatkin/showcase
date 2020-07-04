@@ -102,7 +102,7 @@ class Showcase {
 		foreach ($ans['md']['group'] as $group => $one) break;
 		if (!$group) $group = Showcase::$conf['title'];
 		
-		$group = Showcase::getGroup($nick);
+		$group = Showcase::getGroup($group);
 		if (!$group) $group = Data::getGroups();
 		
 		unset($group['childs']);
