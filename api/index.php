@@ -263,6 +263,7 @@ return Rest::get( function () {
 				//$ans['breadcrumbs'][] = array('href'=>'producers','title'=>'Производители');
 				//$ans['breadcrumbs'][] = array('href'=>'','title'=>$producer_nick,'href'=>$producer_nick);
 				$ans['breadcrumbs'][] = array('active'=>true, 'title'=>$article);
+				http_response_code(404);
 				return Ans::err($ans);
 			}
 			
