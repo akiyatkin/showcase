@@ -292,6 +292,7 @@ class Prices {
 		$count = 0;
 		$data = Prices::readPrice($name, $src);
 		$option = Prices::getOptions($name);
+		
 		$ans['Прайс'] = $name;
 		if ($option['producer']) $ans['Производитель'] = '<a href="/-showcase/producers/'.$option['producer_nick'].'">'.$option['producer'].'</a>';
 		$ans['Внесение параметров'] = implode(', ',$option['props']);
@@ -315,7 +316,7 @@ class Prices {
 			$prop_id = false;
 			$type = false;
 		}
-
+		
 		$db = &Db::pdo();
 		$db->beginTransaction();
 		Prices::actionRemove($name, $src, $time);
@@ -375,14 +376,14 @@ class Prices {
 					$ans['Позиции в прайсе игнорируется в результате обработки'][] = $pos;
 					return $r;
 				}
-
+				
 				Event::tik('Showcase-prices.onload');
 				$res = Event::fire('Showcase-prices.onload', $obj); //В событии дописываем нужное свойство которое уже есть в props
 				if ($res === false) {
 					$ans['Позиции в прайсе игнорируется в результате обработки'][] = $pos;
 					return $r;
 				}
-
+				
 				$value = $pos[$option['priceprop']];
 				if (!empty($option['cleararticle']) && $option['producer_nick']) {
 					$value = str_ireplace($option['producer_nick'], '', $value); //Удалили из кода продусера

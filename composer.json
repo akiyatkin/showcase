@@ -11,7 +11,6 @@
 		"infrajs/rubrics":"~1",
 		"infrajs/load":"~1",
 		"infrajs/layer-seojson":"~1",
-		"infrajs/once":"~1",
 		"infrajs/sequence":"~1",
 		"infrajs/db":"~1",
 		"infrajs/config":"~1",
