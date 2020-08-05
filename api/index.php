@@ -14,7 +14,6 @@ use infrajs\access\Access;
 use infrajs\nostore\Nostore;
 use infrajs\layer\seojson\Seojson;
 use infrajs\rubrics\Rubrics;
-use infrajs\once\Once;
 
 
 date_default_timezone_set("Europe/Samara");
@@ -250,12 +249,13 @@ return Rest::get( function () {
 					$catkit = implode('&', $catkit);
 				}
 			}
-
-			$ans['pos'] = Once::func(function ($producer_nick, $article_nick, $item_nicknum, $catkit){
-				$pos = Showcase::getModelShow($producer_nick, $article_nick, $item_nicknum, $catkit);
-				if ($item_nicknum && !$pos) $pos = Showcase::getModelShow($producer_nick, $article_nick, 1, $catkit);	
-				return $pos;
-			},[$producer_nick, $article_nick, $item_nicknum, $catkit]);
+			
+			$key = 'restpos:'.json_encode([$producer_nick, $article_nick, $item_nicknum, $catkit], JSON_UNESCAPED_UNICODE);
+			if (isset(Showcase::$once[$key])) $ans['pos'] = Showcase::$once[$key];
+			else {	
+				$ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick, $item_nicknum, $catkit);
+				if ($item_nicknum && !$ans['pos']) $ans['pos'] = Showcase::getModelShow($producer_nick, $article_nick, 1, $catkit);	
+			}
 			
 
 			

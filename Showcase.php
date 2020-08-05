@@ -4,7 +4,6 @@ use akiyatkin\fs\FS;
 use infrajs\load\Load;
 use infrajs\path\Path;
 use infrajs\each\Each;
-use infrajs\once\Once;
 use infrajs\excel\Xlsx;
 use infrajs\rubrics\Rubrics;
 use infrajs\event\Event;
@@ -83,7 +82,10 @@ class Showcase {
 		}
 		
 		$m = Path::toutf(Seq::get($_GET, array('m')));
-		$ar = Once::func( function ($m = '') {
+
+		$key = 'initMark:'.$m;
+		if (isset(Showcase::$once[$key])) $ar = Showcase::$once[$key];
+		else {
 			$mark = Showcase::getDefaultMark();
 			$mark->setVal($m);
 
@@ -92,9 +94,13 @@ class Showcase {
 			
 			$m = $mark->getOrigVal($m);
 			
+			$ar = Showcase::$once[$key] = array('md' => $md, 'm' => $m);
+		}
+		
 			
-			return array('md' => $md, 'm' => $m);
-		}, array($m));
+		
+
+
 		$ans['m'] = $ar['m'];
 		$ans['md'] = $ar['md'];
 
@@ -127,16 +133,17 @@ class Showcase {
 		}
 		return $row;
 	}
+	public static $once = array();
 	public static function getValue($value_nick) {
-		return Once::func(function ($value_nick) {
-			return Data::fetch('SELECT value_id, value_nick, value FROM showcase_values WHERE value_nick = ?', [$value_nick]);	
-		},[$value_nick]);
+		$key = 'getValue:'.$value_nick;
+		if (isset(Showcase::$once[$key])) return Showcase::$once[$key];
+		return Showcase::$once[$key] = Data::fetch('SELECT value_id, value_nick, value FROM showcase_values WHERE value_nick = ?', [$value_nick]);	
 	}
 	
 	public static function getProducer($producer_nick) {
-		return Once::func(function ($producer_nick){
-			return Data::col('SELECT producer_nick from showcase_producers where producer_nick = ?',[$producer_nick]);
-		}, [$producer_nick]);
+		$key = 'getProducer:'.$producer_nick;
+		if (isset(Showcase::$once[$key])) return Showcase::$once[$key];
+		return Showcase::$once[$key] = Data::col('SELECT producer_nick from showcase_producers where producer_nick = ?',[$producer_nick]);	
 	}
 	public static function getGroups() {
 		return Data::getGroups();
@@ -674,7 +681,10 @@ class Showcase {
 
 	public static $columns = array("producer","article","producer_nick","article_nick", "Наименование","Файл","Иллюстрации","Файлы","Фото","Цена","Описание","Скрыть-фильтры-в-полном-описании","Наличие","Прайс");
 	public static function getOption($right = [], $def = null) {
-		$options = Once::func( function (){
+
+		$key = 'getOption:';
+		if (isset(Showcase::$once[$key])) $options = Showcase::$once[$key];
+		else {
 			$options = Data::getOptions();
 			$props = array_keys($options['props']);
 			$options['columns'] = array_merge(Data::$files, Showcase::$columns, $options['columns'], $props);
@@ -683,9 +693,9 @@ class Showcase {
 				return Path::encode($val);
 			}, $options['columns']);
 			$options['columns'] = array_unique($options['columns']);
-			
-			return $options;
-		});
+			Showcase::$once[$key] = $options;
+		}
+
 		$res = Seq::get($options, $right);
 		if (is_null($res)) return $def;
 		return $res;
@@ -694,7 +704,6 @@ class Showcase {
 		$options = Data::getOptions();
 		return $options;
 	}
-	
 	public static function getModelShow($producer_nick, $article_nick, $item_nicknum = '', $catkit = false, $items = []) {
 		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nicknum, $catkit, $items);
 
