@@ -132,7 +132,7 @@
 			<span class="btn btn-sm btn-info" onclick="Action('addFilesAll')">Связать всё с <b>файлами</b></span>
 		</div>
 		<div>
-			<span class="btn btn-sm btn-danger" onclick="Action('clearAll')">Очистить <b>всё</b></span>
+			<!-- <span class="btn btn-sm btn-danger" onclick="Action('clearAll')">Очистить <b>всё</b></span> -->
 		</div>
 	</div>
 	<hr>
@@ -205,7 +205,8 @@
 			{isdata?:actdelprice}
 		</div>
 	{actpload:}<span class="btn btn-sm btn-info" onclick="ActionPrice('load','{name}','{conf.prices}{file}')">Внести</span>
-	{actdelprice:}<span class="btn btn-sm btn-danger" onclick="ActionPrice('remove','{name}','{conf.prices}{file}')">Очистить</span>
+	{actdelprice:}
+	<!-- <span class="btn btn-sm btn-danger" onclick="ActionPrice('remove','{name}','{conf.prices}{file}')">Очистить</span> -->
 {cactions:}
 		<div class="p-2 text-right" style="width:400px">
 			{file?:actfile}
@@ -215,7 +216,8 @@
 	{actbunch:}<span class="btn btn-sm btn-info" onclick="Action('addFiles','{producer_nick}')">Связать с файлами</span>
 	{actload:}<span class="btn btn-sm btn-success" onclick="Action('loadproducer','{producer_nick}')">Внести производителя</span>
 	{actfile:}<span class="btn btn-sm btn-info" onclick="ActionTable('load','{name}','{conf.tables}{file}')">Внести</span>
-	{actdel:}<span class="btn btn-sm btn-danger" onclick="ActionTable('remove','{name}','{conf.tables}{file}')">Очистить</span>
+	{actdel:}
+		<!-- <span class="btn btn-sm btn-danger" onclick="ActionTable('remove','{name}','{conf.tables}{file}')">Очистить</span> -->
 {foot:}
 	{:ACTMENU}
 	<hr>
