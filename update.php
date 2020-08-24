@@ -131,10 +131,11 @@ scexec($sql);
 $sql = <<<END
 CREATE TABLE IF NOT EXISTS `showcase_models` (
 	`model_id` MEDIUMINT unsigned NOT NULL AUTO_INCREMENT COMMENT '',
-	`catalog_id` SMALLINT unsigned COMMENT '',
 	`producer_id` SMALLINT unsigned COMMENT '',
-	`article` varchar(255) NOT NULL COMMENT '',
 	`article_nick` varchar(255) NOT NULL COMMENT '',
+	`article` varchar(255) NOT NULL COMMENT '',
+
+	`catalog_id` SMALLINT unsigned COMMENT '',
 	`time` DATETIME NULL DEFAULT NULL COMMENT '',
 	`group_id` SMALLINT unsigned NOT NULL COMMENT '',
 	PRIMARY KEY (`model_id`),
