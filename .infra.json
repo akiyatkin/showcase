@@ -9,15 +9,15 @@
 	"sort":"is",
 	"css":"style.css",
 	
-	"icons":"~catalog/icons/",
-	"images":"~catalog/images/",
-	"tables":"~catalog/tables/",
-	"prices":"~catalog/.prices/",
-	"folders":"~catalog/folders/",
-	"texts":"~catalog/texts/",
-	"videos":"~catalog/videos/",
-	"slides":"~catalog/slides/",
-	"groups":"~catalog/groups/",
+	"icons":"~catalog2/icons/",
+	"images":"~catalog2/images/",
+	"tables":"~catalog2/tables/",
+	"prices":"~catalog2/.prices/",
+	"folders":"~catalog2/folders/",
+	"texts":"~catalog2/texts/",
+	"videos":"~catalog2/videos/",
+	"slides":"~catalog2/slides/",
+	"groups":"~catalog2/groups/",
 
 	"jsonoptions":"~catalog/.prices/showcase.json",
 	"phpoptions":"~catalog/.prices/showcase.php",
@@ -28,6 +28,6 @@
 	"checkaccess":false,
 	"hiddenarticle":false,
 	"Группы уникальны":true,
-	"ignorelistname":false
+	"ignorelistname":true
 	
 }
