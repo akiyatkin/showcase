@@ -720,7 +720,7 @@ class Data {
 
 		foreach ($prodsfs as $prod_nick => $prod_fs) {
 			foreach (Data::$files as $type) {
-				if (!isset(Showcase::$conf[$type])) continue;
+				if (empty(Showcase::$conf[$type])) continue;
 				Data::addFilesFStype(Showcase::$conf[$type].$prod_fs.'/', $list, $prod_nick, $type);
 			}
 		}
@@ -734,7 +734,7 @@ class Data {
 		if ($type == 'folders') {
 			return Data::addFilesFSproducer($list, $prod, $dir);
 		}
-		$exts = $type == 'folders' ? false : Data::$$type;
+		$exts = $type == 'files' ? false : Data::$$type;
 		$index = Data::getIndex($dir, $exts);
 		foreach ($index as $art => $files) {
 			if (!$art) continue;
