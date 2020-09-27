@@ -781,6 +781,7 @@ class Showcase
 			where m.model_id = :model_id
 		';
 		$ar = Db::fetch($sql,['model_id'=> $model_id]);
+		if (!$ar) return false;
 		return Showcase::getModel($ar['producer_nick'], $ar['article_nick'], $item_nicknum, $catkit, $myitems);
 	}
 	public static function getModel($producer_nick, $article_nick, $item_nicknum = '', $catkit = '', $myitems = [])
