@@ -793,11 +793,11 @@ class Showcase
 
 
 			/*uasort($data['items'], function ($a, $b) {
-					if ($a['item_num'] == $b['item_num']) {
-						return 0;
-					}
-					return ($a['item_num'] < $b['item_num']) ? -1 : 1;
-				});*/
+				if ($a['item_num'] == $b['item_num']) {
+					return 0;
+				}
+				return ($a['item_num'] < $b['item_num']) ? -1 : 1;
+			});*/
 			$data = Showcase::getFullModel($producer_nick, $article_nick);
 			if (!$data) return false;
 			if ($item_nicknum && $data['item_nick'] != $item_nicknum && $data['item_num'] != $item_nicknum) {
@@ -857,6 +857,52 @@ class Showcase
 			return $data;
 		});
 	}
+	public static function getModelEasy($producer_nick, $article_nick, $item_num = 1)
+	{
+
+		$sql = 'SELECT 
+			m.model_id, m.article_nick, m.article, 
+			p.producer_nick, p.logo, p.producer, 
+			i.item_nick, i.item_num, i.item, 
+			g.group_nick, g.group, g.icon
+			FROM showcase_models m 
+			LEFT JOIN showcase_items i on (i.model_id = m.model_id and i.item_num = :item_num)
+			INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = :producer)
+			INNER JOIN showcase_groups g on (g.group_id = m.group_id)
+			where m.article_nick = :article
+			order by m.model_id
+			';
+		$pos = Data::fetch($sql, [':article' => $article_nick, ':producer' => $producer_nick, ':item_num' => $item_num]);
+		if (!$pos) return false;
+
+		//надо определить itemrows
+		
+		$list = Data::all('SELECT 
+			p.prop, p.prop_nick, 
+			v.value, 
+			ip.number, ip.text, ip.order as `order`, ip.item_num
+			FROM showcase_iprops ip
+			LEFT JOIN showcase_values v on v.value_id = ip.value_id
+			LEFT JOIN showcase_props p on p.prop_id = ip.prop_id
+			WHERE ip.model_id = :model_id and ip.item_num = :item_num
+		', [
+			':model_id' => $pos['model_id'], 
+			':item_num' => $pos['item_num']
+		]);
+
+		foreach ($list as $p => $prop) {
+			$val = $prop['value'] ?? $prop['number'] ?? $prop['text'];
+			$name = $prop['prop'];
+			if (in_array($name, Data::$files)) {
+				if (!isset($pos[$name])) $pos[$name] = [];
+				$pos[$name][] = $val;
+			} else {
+				if (isset($pos[$name])) $pos[$name] .= ', '.$val;
+				else $pos[$name] = $val;
+			}	
+		}
+		return $pos;
+	}
 	public static function getFullModel($producer_nick, $article_nick)
 	{
 
@@ -890,6 +936,7 @@ class Showcase
 
 		//$calc[prop_nick][value][item_num] = true
 		//Если у prop_nick есть value не указанный у какого-то item_num, prop идёт в itemrows
+
 		$calc = [];
 		$icount = sizeof($data);
 		$items = [];
@@ -939,11 +986,13 @@ class Showcase
 		foreach ($items as $k => $item) {
 			Showcase::makeMore($items[$k], $item['list']);
 		}
+
 		if ($itemrows) $pos['itemrows'] = $itemrows;
 		if ($itemmore) $pos['itemmore'] = $itemmore;
 		if ($items) $pos['items'] = $items;
 
 		$g = Showcase::getGroup($pos['group_nick']);
+
 		$pos += array_intersect_key($g, array_flip(['group_id', 'parent_id', 'parent_nick', 'parent', 'path', 'showcase']));
 
 		return $pos;
