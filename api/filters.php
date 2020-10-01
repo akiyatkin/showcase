@@ -44,7 +44,7 @@ return Rest::get( function () {
 		$ar = [];
 	}
 	
-	for ($i = sizeof($ans['group']['path'])-1; $i >= 0; $i--) {
+	for ($i = sizeof($ans['group']['path'] ?? [])-1; $i >= 0; $i--) {
 		$g = $ans['group']['path'][$i];
 		if (!isset($arlist[$g])) continue;
 		$ar = $arlist[$g];
