@@ -784,6 +784,27 @@ class Showcase
 		if (!$ar) return false;
 		return Showcase::getModel($ar['producer_nick'], $ar['article_nick'], $item_nicknum, $catkit, $myitems);
 	}
+	public static function getCost($producer_nick, $article_nick, $item_num = 1) {
+		
+		$sql = 'SELECT ip.number from showcase_models m
+			left join showcase_producers p on p.producer_id = m.producer_id
+			left join showcase_items i on i.model_id = m.model_id
+			left join showcase_iprops ip on (ip.item_num = i.item_num and ip.model_id = i.model_id)
+			left join showcase_props pr on pr.prop_id = ip.prop_id
+			WHERE  
+			m.article_nick = :article_nick
+			and p.producer_nick = :producer_nick
+			and pr.prop_nick = :prop_nick
+		';
+		$prop_nick = Path::encode('Цена');
+		
+		$cost = Db::col($sql, [
+			'article_nick'=> $article_nick,
+			'prop_nick' => $prop_nick,
+			'producer_nick'=> $producer_nick
+		]);
+		return (float) $cost;
+	}
 	public static function getModel($producer_nick, $article_nick, $item_nicknum = '', $catkit = '', $myitems = [])
 	{
 		return static::once('getModel', [$producer_nick, $article_nick, $item_nicknum, $catkit, $myitems], function ($producer_nick, $article_nick, $item_nicknum, $catkit, $myitems) {
