@@ -878,6 +878,48 @@ class Showcase
 			return $data;
 		});
 	}
+	public static function getModelEasyById($model_id)
+	{
+
+		$sql = 'SELECT 
+			m.model_id, m.article_nick, m.article, 
+			p.producer_nick, p.logo, p.producer, 
+			g.group_nick, g.group, g.icon
+			FROM showcase_models m 
+			left JOIN showcase_producers p on (p.producer_id = m.producer_id)
+			left JOIN showcase_groups g on (g.group_id = m.group_id)
+			where m.model_id = :model_id
+			';
+		$pos = Data::fetch($sql, [':model_id' => $model_id]);
+		
+		if (!$pos) return false;
+
+		//надо определить itemrows
+		
+		$list = Data::all('SELECT 
+			p.prop, p.prop_nick, 
+			v.value, 
+			ip.number, ip.text, ip.order as `order`, ip.item_num
+			FROM showcase_iprops ip
+			LEFT JOIN showcase_values v on v.value_id = ip.value_id
+			LEFT JOIN showcase_props p on p.prop_id = ip.prop_id
+			WHERE ip.model_id = :model_id
+		', [
+			':model_id' => $pos['model_id']
+		]);
+		foreach ($list as $p => $prop) {
+			$val = $prop['value'] ?? $prop['number'] ?? $prop['text'];
+			$name = $prop['prop'];
+			if (in_array($name, Data::$files)) {
+				if (!isset($pos[$name])) $pos[$name] = [];
+				$pos[$name][] = $val;
+			} else {
+				if (isset($pos[$name])) $pos[$name] .= ', '.$val;
+				else $pos[$name] = $val;
+			}	
+		}
+		return $pos;
+	}
 	public static function getModelEasy($producer_nick, $article_nick, $item_num = 1)
 	{
 
