@@ -9,6 +9,7 @@
 		"akiyatkin/fs":"~1",
 		"infrajs/lang":"~1",
 		"infrajs/ans":"~1",
+		"infrajs/once":"~1",
 		"infrajs/rubrics":"~1",
 		"infrajs/load":"~1",
 		"infrajs/layer-seojson":"~1",
