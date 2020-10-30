@@ -884,7 +884,7 @@ class Showcase
 		$sql = 'SELECT 
 			m.model_id, m.article_nick, m.article, 
 			p.producer_nick, p.logo, p.producer, 
-			g.group_nick, g.group, g.icon
+			g.group_nick, g.group_id, g.group, g.icon
 			FROM showcase_models m 
 			left JOIN showcase_producers p on (p.producer_id = m.producer_id)
 			left JOIN showcase_groups g on (g.group_id = m.group_id)
