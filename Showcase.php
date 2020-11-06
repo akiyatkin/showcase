@@ -695,7 +695,13 @@ class Showcase
 	}
 
 
-	public static $columns = array("producer", "article", "producer_nick", "article_nick", "Наименование", "Файл", "Иллюстрации", "Файлы", "Фото", "Цена", "Описание", "Скрыть-фильтры-в-полном-описании", "Наличие", "Прайс");
+	public static $columns = array(
+		"model_id", "item_num", "producer", 
+		"group_nick", "group_id", "group","icon",
+		"article", "producer_nick", "article_nick", 
+		"Наименование", "Файл", "Иллюстрации", "Файлы", "Фото", "Цена", "Описание", 
+		"Скрыть-фильтры-в-полном-описании", "Наличие", "Прайс"
+	);
 	public static function getOption($right = [], $def = null)
 	{
 
@@ -903,9 +909,10 @@ class Showcase
 			FROM showcase_iprops ip
 			LEFT JOIN showcase_values v on v.value_id = ip.value_id
 			LEFT JOIN showcase_props p on p.prop_id = ip.prop_id
-			WHERE ip.model_id = :model_id
+			WHERE ip.model_id = :model_id and ip.item_num = :item_num
 		', [
-			':model_id' => $pos['model_id']
+			':model_id' => $pos['model_id'],
+			":item_num" => 1
 		]);
 		foreach ($list as $p => $prop) {
 			$val = $prop['value'] ?? $prop['number'] ?? $prop['text'];
@@ -918,6 +925,7 @@ class Showcase
 				else $pos[$name] = $val;
 			}	
 		}
+		$pos['item_num'] = "1";
 		return $pos;
 	}
 	public static function getModelEasy($producer_nick, $article_nick, $item_num = 1)
@@ -926,16 +934,23 @@ class Showcase
 		$sql = 'SELECT 
 			m.model_id, m.article_nick, m.article, 
 			p.producer_nick, p.logo, p.producer, 
-			i.item_nick, i.item_num, i.item, 
+			i.item_num,
 			g.group_nick, g.group, g.icon
 			FROM showcase_models m 
-			LEFT JOIN showcase_items i on (i.model_id = m.model_id and i.item_num = :item_num)
-			INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = :producer)
-			INNER JOIN showcase_groups g on (g.group_id = m.group_id)
-			where m.article_nick = :article
-			order by m.model_id
-			';
-		$pos = Data::fetch($sql, [':article' => $article_nick, ':producer' => $producer_nick, ':item_num' => $item_num]);
+			INNER JOIN showcase_items i on i.model_id = m.model_id
+			INNER JOIN showcase_producers p on p.producer_id = m.producer_id
+			INNER JOIN showcase_groups g on g.group_id = m.group_id
+			WHERE m.article_nick = :article_nick
+				and p.producer_nick = :producer_nick
+				and i.item_num = :item_num
+			ORDER by m.model_id
+		';
+		$pos = Data::fetch($sql, [
+			':article_nick' => $article_nick, 
+			':producer_nick' => $producer_nick, 
+			':item_num' => $item_num
+		]);
+
 		if (!$pos) return false;
 
 		//надо определить itemrows
@@ -952,7 +967,7 @@ class Showcase
 			':model_id' => $pos['model_id'], 
 			':item_num' => $pos['item_num']
 		]);
-
+		
 		foreach ($list as $p => $prop) {
 			$val = $prop['value'] ?? $prop['number'] ?? $prop['text'];
 			$name = $prop['prop'];
