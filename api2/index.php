@@ -5,13 +5,10 @@ use akiyatkin\showcase\api2\API;
 use infrajs\path\Path;
 use akiyatkin\showcase\Showcase;
 use akiyatkin\showcase\Data;
+use infrajs\load\Load;
+use infrajs\excel\Xlsx;
 
 $meta = new Meta();
-
-$meta->addAction('', function () {
-
-	return $this->empty();
-});
 
 $meta->addArgument('search');
 
@@ -124,22 +121,188 @@ $meta->addAction('live', function () {
 	$this->ans['list'] = $list;
 	return $this->ret();
 });
-$meta->addAction('group', function ($val, $pname) {
-	extract($this->gets(['group_id']), EXTR_REFS);
+$meta->addAction('groups', function ($val, $pname) {	
+	$list = Data::fetchto('
+		SELECT g.group_id, g.parent_id, g.group_nick, g.icon, g.order, g.group, count(distinct m.model_id) as count, g2.group_nick as parent_nick, g2.group as parent FROM showcase_groups g
+		left JOIN showcase_models m ON g.group_id = m.group_id
+		left JOIN showcase_groups g2 ON g2.group_id = g.parent_id
+		GROUP BY group_nick
+		ORDER by g.order
+	','group_nick',[]);
+
+	$parents = [];
+	foreach ($list as $i=>&$group) {
+		if (empty($parent[$group['parent_nick']])) $parent[$group['parent_nick']] = [];
+		$parents[$group['parent_nick']][] = &$group;
+	}
+	$p = null;
+	foreach ($list as $i => &$group) {
+		if (!isset($parents[$group['group_nick']])) continue;
+		$group['childs'] = $parents[$group['group_nick']];
+	}
+	$childs = $parents[''];
+	$root = $childs[0];
+	
+	Xlsx::runGroups($root, function &(&$group, $i, &$parent) {
+		if (!$group['count'] && empty($group['childs'])) {
+			unset($parent['childs'][$i]);
+			$parent['childs'] = array_values($parent['childs']);
+		}
+
+		$r = null;
+		return $r;
+	}, true);
+
+	Xlsx::runGroups($root, function &(&$group, $i, &$parent) {
+		unset($group['parent_nick']);
+		unset($group['parent']);
+		unset($group['group_id']);
+		unset($group['icon']);
+		unset($group['count']);
+		unset($group['parent_id']);
+		unset($group['order']);
+		$r = null;
+		return $r;
+	});
+
+	
+
+	$this->ans['root'] = $root;
+	return $this->ret();
+});
+$meta->addAction('filters', function () {
+	$md = Showcase::initMark($this->ans);
+	$group_nick = Path::encode(Showcase::$conf['title']);
+	foreach ($md['group'] ?? [] as $group_nick => $one) break;
+	$group_id = Db::col('SELECT group_id from showcase_groups where group_nick = :group_nick', [
+		':group_nick' => $group_nick
+	]);
 	$group = API::getGroupById($group_id);
-	$group['props'] = $group['options']['props'];
-	unset($group['options']);
-	foreach ($group['props'] as $k=>$v) {
-		unset($group['props'][$k]['tplfilter']);
+	unset($group['options']['props']);
+	unset($group['options']['showlist']);
+	unset($group['parent']);
+	$props = Showcase::getOptions()['props'];
+
+	$list = [];
+
+	$gs = Showcase::getGroupsIn($md);
+	if ($gs) $grwhere = 'm.group_id in ('.implode(',', $gs).')';
+	else $grwhere = '1=1';
+
+	foreach ($group['options']['filters'] as $name) {
+		$p = $props[$name];
+		$prop_nick = Path::encode($name);
+		$p['prop_nick'] = $prop_nick;
+		if ($prop_nick == 'producer') {
+			$values = Data::all('SELECT pr.producer as value, pr.producer_nick as value_nick, count(*) as count 
+				FROM showcase_models m
+				INNER join showcase_producers pr on m.producer_id = pr.producer_id
+			where '.$grwhere.' 
+			group by pr.producer_id 
+			order by count DESC');// order by value
+
+			$p['values'] = $values;
+		} else {
+			$row = Data::fetch('SELECT prop_id, prop from showcase_props where prop_nick = :prop_nick',
+				[
+					':prop_nick' => $prop_nick
+				]
+			);
+			if (!$row) continue;
+			list($prop_id, $prop) = array_values($row);
+			$type = Data::checkType($prop_nick);
+
+
+			if ($p['filter'] ?? '' == 'range') {
+				if ($type != 'number') continue;
+			
+				$row = Data::fetch('
+					SELECT min(mv.number) as min, max(mv.number) as max 
+					FROM showcase_models m
+					left join showcase_iprops mv on mv.model_id = m.model_id
+					where '.$grwhere.' 
+					and mv.prop_id = :prop_id
+				', [':prop_id' => $prop_id]);
+
+
+
+				$dif = round($row['max'] - $row['min']);
+				$len = strlen($dif);
+				if ($len < 2 ) {
+					$step = 1;
+				} else {
+					$step = pow(10, $len - 2);
+				}
+				$row['min'] = floor($row['min']/$step)*$step;
+				$row['max'] = ceil($row['max']/$step)*$step;
+				$row['step'] = $step;
+				$row['minval'] = $row['min'];
+				$row['maxval'] = $row['max'];
+				
+
+				if (isset($md['more'][$prop_nick]['minmax'])) {
+					$minmax = $md['more'][$prop_nick]['minmax'];
+					$r = explode('/',$minmax);
+					if (sizeof($r) == 2) {
+						$row['minval'] = floor($r[0]/$step)*$step;
+						$row['maxval'] = ceil($r[1]/$step)*$step;
+						if ($row['minval'] < $row['min']) $row['minval'] = $row['min'];
+						if ($row['maxval'] > $row['max']) $row['maxval'] = $row['max'];
+					}
+				}
+				
+				if ($row['max'] == $row['min']) continue;
+				$p += $row;
+			} else {
+				$sql = '
+				SELECT v.value, v.value_nick, count(*) as count
+				FROM showcase_models m
+				left join showcase_iprops mv on (mv.model_id = m.model_id and mv.prop_id = :prop_id)
+				left join showcase_values v on v.value_id = mv.value_id
+				where '.$grwhere.'
+				group by v.value_id
+				order by count DESC
+				';
+				$values = Data::all($sql,[':prop_id' => $prop_id]);
+				$p['values'] = $values;
+
+				if (isset($p['chain'])) {
+					$data = Load::loadJSON($p['chain']);
+					$data = $data['data'];
+					$chain = [];
+					$el = array_reverse($data['head']);
+
+					$vals = array_reduce($p['values'], function($vals, $v){
+						$vals[$v['value_nick']] = 1;
+						return $vals;
+					},[]);
+
+					Xlsx::runPoss($data, function($pos) use (&$list, $p, &$chain, $el, $vals) {
+						if (empty($pos[$el[sizeof($el)-1]])) return;
+						$keyval = Path::encode($pos[$el[sizeof($el)-1]]);
+						if (!isset($vals[$keyval])) return;
+						array_reduce($el, function ($ar, $key) use($pos, &$chain, &$last){
+							$child = &$ar[0];
+							if(empty($child['childs'])) $child['childs'] = [];
+							$child['key'] = $key;
+							if (!isset($pos[$key])) return $ar;
+							$val = $pos[$key];
+							$nick = Path::encode($val);
+							if (empty($child['childs'][$nick])) $child['childs'][$nick] = ['value'=>$val,'nick'=>$nick];
+							return [&$child['childs'][$nick]];
+						}, [&$chain]);
+					});
+					$p['chain'] = $chain;
+					unset($p['values']);
+				}
+			}
+		}
+		
+		$list[$prop_nick] = $p;
 	}
 
-	$parent = &$group;
-	while (!empty($parent['parent'])) {
-		$parent = &$parent['parent'];
-		unset($parent['options']);
-	}
-
-	$this->ans['group'] = $group;
+	
+	$this->ans['list'] = $list;
 	return $this->ret();
 });
 $meta->addAction('actions', function () {
@@ -188,6 +351,9 @@ $meta->addAction('actions', function () {
 
 	foreach ($list as $i => $model_id) {
 		$list[$i] = Showcase::getModelEasyById($model_id);
+		$list[$i]['showcase'] = array();
+		$group = API::getGroupById($list[$i]['group_id']);
+		$list[$i]['showcase']['props'] = $group['options']['props'];
 	}
 	$this->ans['list'] = $list;
 	return $this->ret();

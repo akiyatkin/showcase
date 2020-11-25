@@ -80,7 +80,10 @@ class Showcase
 			} else if ($val == 'items') {
 				$_GET['m'] .= ':sort=items';
 			} else {
-				$group = Showcase::getGroup($nick);
+				$group = Db::col('SELECT group_id from showcase_groups where group_nick = :group_nick',[
+					':group_nick' => $nick
+				]);
+				
 				if ($group) {
 					$_GET['m'] .= ':group::.' . $nick . '=1';
 				} else {
@@ -100,6 +103,7 @@ class Showcase
 		if (isset(Showcase::$once[$key])) $ar = Showcase::$once[$key];
 		else {
 			$mark = Showcase::getDefaultMark();
+
 			$mark->setVal($m);
 
 			$md = $mark->getData();
@@ -117,17 +121,18 @@ class Showcase
 		$ans['m'] = $ar['m'];
 		$ans['md'] = $ar['md'];
 
-		$group = false;
-		foreach ($ans['md']['group'] as $group => $one) break;
-		if (!$group) $group = Showcase::$conf['title'];
+		//$group = false;
+		//foreach ($ans['md']['group'] as $group => $one) break;
+		//if (!$group) $group = Showcase::$conf['title'];
 
-		$group = Showcase::getGroup($group);
-		if (!$group) $group = Data::getGroups();
+		//$group = Showcase::getGroup($group);
+		//if (!$group) $group = Data::getGroups();
 
-		unset($group['childs']);
-		unset($group['catalog']);
+		//unset($group['childs']);
+		//unset($group['catalog']);
 
-		$ans['group'] = $group;
+		//$ans['group'] = $group;
+		//$ans['group_nick'] = 
 		return $ar['md'];
 	}
 	public static function getMean($prop_nick, $value_nick)
@@ -182,22 +187,21 @@ class Showcase
 	}
 	public static function getGroupsIn($md = [])
 	{
-
 		$groups = [];
-		if (!empty($md['group'])) foreach ($md['group'] as $group => $one) {
-			$group_id = Data::col('SELECT group_id from showcase_groups where group_nick = ?', [$group]);
-			if ($group_id == 1) {
-				$groups = [];
-			} else if ($group_id) {
-				$gs = Showcase::nestedGroups($group_id);
-				$gs = array_column($gs, 'group_id');
-				$gs[] = $group_id;
-				$groups = array_merge($groups, $gs);
-			}
+		if (!empty($md['group'])) foreach ($md['group'] as $group_nick => $one) {
+			if ($group_nick == Path::encode(Showcase::$conf['title'])) return [];
+			$group_id = Data::col(
+				'SELECT group_id from showcase_groups where group_nick = :group_nick', 
+				[
+					':group_nick' => $group_nick
+				]
+			);
+			$gs = Showcase::nestedGroups($group_id);
+			$gs = array_column($gs, 'group_id');
+			$gs[] = $group_id;
+			$groups = array_merge($groups, $gs);
 		}
-		if ($groups) { //Если есть группа надо достать все вложенные группы
-			$groups = array_unique($groups);
-		}
+		$groups = array_unique($groups);
 		return $groups;
 	}
 	public static function search($md = false, &$ans = array(), $page = 1, $showlist = false)

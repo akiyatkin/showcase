@@ -1,6 +1,7 @@
 <?php
 use infrajs\path\Path;
 use infrajs\ans\Ans;
+use infrajs\db\Db;
 use akiyatkin\showcase\Showcase;
 use akiyatkin\ydisk\Ydisk;
 use akiyatkin\showcase\Data;
@@ -66,6 +67,7 @@ Showcase::add('producer', function () {
 Showcase::add('group', function () {
 	return array();
 }, function (&$val) {
+
 	if (!is_array($val)){
 		$s = $val;
 		$val = array();
@@ -76,9 +78,13 @@ Showcase::add('group', function () {
 	$values = array_filter($values, function (&$nick) {
 		if (in_array($nick, array('yes', 'no'))) return true;
 		if (!$nick) return false;
-		if (!Showcase::getGroup($nick)) return false;
+		$group_id = Db::col('SELECT group_id from showcase_groups where group_nick = :group_nick',[
+			':group_nick' => $nick
+		]);
+		if (!$group_id) return false;
 		return true;
 	});
+
 	$val = array_fill_keys($values, 1);
 	return !!$val;
 });
