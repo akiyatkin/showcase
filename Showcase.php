@@ -173,6 +173,9 @@ class Showcase
 	}
 	public static function getGroup($group_nick = false)
 	{
+		echo '<pre>';
+		debug_print_backtrace();
+		exit;
 		$group = Data::getGroups($group_nick);
 		unset($group['catalog']);
 		return $group;

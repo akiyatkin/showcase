@@ -360,6 +360,54 @@ $meta->addFunction('encode', function ($val) {
 });
 
 $meta->addArgument('showlist');
+$meta->addAction('searchseo', function () {
+	$ans = &$this->ans;
+	$md = Showcase::initMark($ans);
+
+	$link = 'catalog';
+	if ($md['group']){
+		foreach($md['group'] as $val => $one) break;
+		$link = $link.'/'.Path::encode($val);
+	} else if($md['producer']){
+		foreach($md['producer'] as $val => $one) break;
+		$link = $link.'/'.Path::encode($val);
+	} else if($md['search']){
+		$val = $md['search'];
+		$link = $link.'/'.Path::encode($val);
+	} else {
+		$val = 'Каталог';
+	}
+	$ans['canonical'] = Seojson::getSite().'/'.$link;
+	unset($ans['md']);
+	unset($ans['m']);
+	$seo = Load::loadJSON('-seo/?path='.$link);
+	unset($seo['data']);
+	
+	$ans += $seo;
+
+	if (empty($ans['title']) || ($ans["Адрес"] != $link && empty($ans['json']))) {
+		unset($ans['description']);
+		unset($ans['keywords']);
+		$ans['title']  =  $val;
+		if ($md['group']) {
+			foreach ($md['group'] as $group_nick => $one) break;
+			$group_id = Db::col('SELECT group_id from showcase_groups where group_nick = :group_nick', [
+				':group_nick' => $group_nick
+			]);
+			if ($group_id) {
+				$group = API::getGroupById($group_id);
+				if ($group) {
+					$ans['title'] = $group['group'];
+
+					if (isset($group['icon'])) $ans['image_src'] = $group['icon'];
+				}
+			}
+		}
+	
+		
+	}
+	return $this->ret();
+});
 $meta->addAction('search', function () {
 	$ans = &$this->ans;
 	$md = Showcase::initMark($ans);
