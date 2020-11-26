@@ -970,11 +970,9 @@ class Showcase
 		]);
 		
 		$items = [];
-		$itemrows = [];
 		foreach ($list as $p => $prop) {
 			$val = $prop['value'] ?? $prop['number'] ?? $prop['text'];
 			$name = $prop['prop'];
-			$itemrows[$name] = $val;
 			$item_num = $prop['item_num'];
 
 			if (empty($items[$item_num])) $items[$item_num] = [];
@@ -987,6 +985,8 @@ class Showcase
 				else $items[$item_num][$name] = $val;
 			}	
 		}
+		$itemrows = $items["1"];
+	
 		foreach ($itemrows as $prop => $val) {
 			$euqal = true;
 			foreach($items as $item_num => $item) {
@@ -1005,17 +1005,19 @@ class Showcase
 		if (!isset($items[$choice_item_num])) $choice_item_num = 1;
 		$pos = $pos + $items[$choice_item_num];
 		$pos['item_num'] = $choice_item_num;
-		$pos['items'] = $items;
-		$pos['itemrows'] = array_keys($items[$choice_item_num]);
-
 		$columns = Showcase::getOption()['columns'];
 
-		$pos['itemmore'] = [];
-		foreach($pos['itemrows'] as $name) {
-			$nick = Path::encode($name);
-			if (in_array($nick, $columns)) continue;
-			$pos['itemmore'][] = $name;
+		if (sizeof($items) > 1) {
+			$pos['items'] = $items;
+			$pos['itemrows'] = array_keys($items[$choice_item_num]);
+			$pos['itemmore'] = [];
+			foreach($pos['itemrows'] as $name) {
+				$nick = Path::encode($name);
+				if (in_array($nick, $columns)) continue;
+				$pos['itemmore'][] = $name;
+			}
 		}
+		
 		
 		$more = [];
 		foreach ($pos as $i => $v) {
@@ -1025,7 +1027,7 @@ class Showcase
 			unset($pos[$i]);
 		}
 		$pos['more'] = $more;
-
+		
 		return $pos;
 	}
 
