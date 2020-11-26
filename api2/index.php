@@ -211,6 +211,7 @@ $meta->addAction('filters', function () {
 			list($prop_id, $prop) = array_values($row);
 			$type = Data::checkType($prop_nick);
 
+			$p['more'] = true;
 
 			if ($p['filter'] ?? '' == 'range') {
 				if ($type != 'number') continue;
