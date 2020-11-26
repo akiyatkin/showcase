@@ -152,7 +152,7 @@ class Prices {
 
 
 		$list = Prices::getMyItems($type, $producer_id, $prop_id, $value, $time);
-	
+		
 		$modified = 0;
 		$misorder = 0;
 		$misvalue = 0;

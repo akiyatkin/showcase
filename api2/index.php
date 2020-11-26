@@ -7,10 +7,12 @@ use akiyatkin\showcase\Showcase;
 use akiyatkin\showcase\Data;
 use infrajs\load\Load;
 use infrajs\excel\Xlsx;
+use infrajs\rubrics\Rubrics;
+use infrajs\layer\seojson\Seojson;
 
 $meta = new Meta();
 
-$meta->addArgument('search');
+$meta->addArgument('query');
 
 $meta->addFunction('int', ['notempty'], function ($str, $pname) {
 	$realint = (int) $str;
@@ -23,13 +25,9 @@ $meta->addFunction('notempty', function ($val, $pname) {
 	if (!$val) return $this->fail('meta.required', $pname);
 });
 $meta->addArgument('model_id', ['int']);
+$meta->addArgument('p', ['int']);
 $meta->addArgument('group_id', ['notempty']);
-$meta->addArgument('producer_nick', ['notempty']);
-$meta->addArgument('article_nick', ['notempty']);
-$meta->addArgument('item_num', ['int'], function ($item_num, $pname) {
-	
-	if ($item_num > 255) return $this->fail('meta.required', $pname);
-});
+
 
 
 $meta->addVariable('model_id@', function () {
@@ -55,8 +53,8 @@ $meta->addVariable('model_id@', function () {
 });
 
 $meta->addAction('live', function () {
-	extract($this->gets(['search']), EXTR_REFS);
-	$split = preg_split("/[\s\-]/u", $search);
+	extract($this->gets(['query']), EXTR_REFS);
+	$split = preg_split("/[\s\-]/u", $query);
 	
 	$props_equal = [];
 	$props_trim = [];
@@ -178,6 +176,7 @@ $meta->addAction('filters', function () {
 		':group_nick' => $group_nick
 	]);
 	$group = API::getGroupById($group_id);
+
 	unset($group['options']['props']);
 	unset($group['options']['showlist']);
 	unset($group['parent']);
@@ -223,8 +222,6 @@ $meta->addAction('filters', function () {
 					where '.$grwhere.' 
 					and mv.prop_id = :prop_id
 				', [':prop_id' => $prop_id]);
-
-
 
 				$dif = round($row['max'] - $row['min']);
 				$len = strlen($dif);
@@ -358,23 +355,719 @@ $meta->addAction('actions', function () {
 	$this->ans['list'] = $list;
 	return $this->ret();
 });
+$meta->addFunction('encode', function ($val) {
+	return Path::encode($val);
+});
+
+$meta->addArgument('showlist');
+$meta->addAction('search', function () {
+	$ans = &$this->ans;
+	$md = Showcase::initMark($ans);
+	$ans['page'] = $this->get('p');
+	$count = 0;
+
+	if ($count) $md['count'] = $count;
+	if ($ans['page'] < 1) $ans['page'] = 1;
+	$ans['is'] = ''; //group producer search Что было найдено по запросу val (Отдельный файл is:change)
+	$ans['descr'] = '';//абзац текста в начале страницы';
+	$ans['text'] = ''; //большая статья снизу всего
+	$ans['name'] = ''; //заголовок длинный и человеческий
+	$ans['breadcrumbs'] = array();//Путь где я нахожусь
+	$ans['filters'] = array();//Данные для формирования интерфейса фильтрации, опции и тп
+	$ans['groups'] = array();
+	$ans['producers'] = array();
+	$ans['numbers'] = array(); //Данные для построения интерфейса постраничной разбивки
+	$ans['list'] = array(); //Массив позиций
+
+
+	Showcase::makeBreadcrumb($md, $ans, $ans['page']);
+
+	
+	$group_nick = Path::encode(Showcase::$conf['title']);
+	foreach ($md['group'] ?? [] as $group_nick => $one) break;
+	$group_id = Db::col('SELECT group_id from showcase_groups where group_nick = :group_nick', [
+		':group_nick' => $group_nick
+	]);
+	$group = API::getGroupById($group_id);
+	
+	$ans['showlist'] = $this->get('showlist') || !empty($group['options']['showlist']);
+	
+
+
+
+
+
+	$showlist = $ans['showlist'];
+	$page = $ans['page'];
+	if (empty($md['count'])) $count = 0;
+	else $count = $md['count'];
+
+	
+	$cost_id = Db::col('SELECT prop_id from showcase_props where prop_nick = :prop_nick', [
+		':prop_nick' => Path::encode('Цена')
+	]);
+	$name_id = Db::col('SELECT prop_id from showcase_props where prop_nick = :prop_nick', [
+		':prop_nick' => Path::encode('Наименование')
+	]);
+	$image_id = Db::col('SELECT prop_id from showcase_props where prop_nick = :prop_nick', [
+		':prop_nick' => Path::encode('images')
+	]);
+	$nalichie_id = Db::col('SELECT prop_id from showcase_props where prop_nick = :prop_nick', [
+		':prop_nick' => Path::encode('Наличие')
+	]);
+	
+	$ans['filters'] = [];
+
+
+	$grquery = '';
+	$groups = Showcase::getGroupsIn($md);
+	if ($groups) {
+		$grquery = implode(',', $groups);
+		$grquery = 'and m.group_id in (' . $grquery . ')';
+	}
+
+
+	$prquery = '';
+	$prods = [];
+	if (!empty($md['producer'])) foreach ($md['producer'] as $prod => $one) {
+		$prod = Db::fetch('SELECT producer_id, producer, producer_nick from showcase_producers where producer_nick = :producer_nick', [
+			':producer_nick' => $prod
+		]);
+		if ($prod) $prods[] = $prod;
+	}
+	if ($prods) { //Если есть группа надо достать все вложенные группы
+		$prods = array_unique($prods);
+		$ans['filters'][] = array(
+			'name' => 'producer',
+			'value' => implode(', ', array_column($prods, 'producer')),
+			'title' => 'Производитель'
+		);
+
+		$prods = array_column($prods, 'producer_id');
+		$prquery = implode(',', $prods);
+		$prquery = 'and m.producer_id in (' . $prquery . ')';
+	}
+
+
+	$nal1 = Db::col('SELECT value_id from showcase_values where value_nick = :value_nick', [
+		':value_nick' => Path::encode('Акция')
+	]);
+	$nal2 = Db::col('SELECT value_id from showcase_values where value_nick = :value_nick', [
+		':value_nick' => Path::encode('Распродажа')
+	]);
+	$nal3 = Db::col('SELECT value_id from showcase_values where value_nick = :value_nick', [
+		':value_nick' => Path::encode('В наличии')
+	]);
+	$nal4 = Db::col('SELECT value_id from showcase_values where value_nick = :value_nick', [
+		':value_nick' => Path::encode('Есть в наличии')
+	]);
+	$nal5 = Db::col('SELECT value_id from showcase_values where value_nick = :value_nick', [
+		':value_nick' => Path::encode('Мало')
+	]);
+	
+
+	$join = [];
+	$no = [];
+
+	if (!empty($md['more'])) {
+		foreach ($md['more'] as $prop_nick => $vals) {
+			$titles = [];
+			foreach ($vals as $v => $one) {
+				if ($v === 'no') {
+					//if (sizeof($vals) > 1) continue;
+					$titles[] = 'не указано';
+				} else if ($v === 'yes') {
+					$titles[] = 'Указано';
+				} else if ($v === 'minmax') {
+					$r = explode('/', $one);
+					if (sizeof($r) == 2) {
+						if ($prop_nick == 'Цена') {
+							$fncost = Template::$scope['~cost'];
+							$titles[] = 'От ' . $fncost($r[0]) . ' до ' . $fncost($r[1]) . ' руб.';
+						} else {
+							$titles[] = 'От ' . $r[0] . ' до ' . $r[1];
+						}
+					} else {
+						$titles[] = $one;
+					}
+				} else {
+					$row = Showcase::getMean($prop_nick, $v);
+					if ($row) $titles[] = $row['mean'];
+				}
+			}
+			$titles = implode(' или ', $titles);
+
+			$prop = Db::fetch('SELECT prop_id, prop from showcase_props where prop_nick = :prop_nick', [
+				':prop_nick' => $prop_nick
+			]);
+			if (!$prop) {
+				$ans['filters'][] = array(
+					'name' => 'more.' . $prop_nick,
+					'value' => $titles,
+					'title' => 'Нет свойства ' . $prop_nick
+				);
+				$no[] = 'and 1=0';
+				continue;
+			}
+
+			$prop_id = $prop['prop_id'];
+			$title = Showcase::getOption(['props', $prop['prop'], 'title'], $prop['prop']);
+			$ans['filters'][] = array(
+				'name' => 'more.' . $prop_nick,
+				'value' => $titles,
+				'title' => $title
+			);
+			$type = Data::checkType($prop_nick);
+
+			$un = $prop_id;
+			if ($type == 'value') {
+				if (isset($vals['no'])) {
+					unset($vals['no']);
+					$join[] = 'LEFT JOIN showcase_iprops p' . $un . ' on (p' . $un . '.model_id = m.model_id and p' . $un . '.prop_id = ' . $prop_id . ')';
+					if ($vals) {
+						$joinp = [];
+						foreach ($vals as $val => $one) {
+							$value_id = Data::initValue($val);
+							$joinp[] = 'p' . $un . '.value_id = ' . $value_id;
+						}
+						$vals = [];
+						$joinp = implode(' OR ', $joinp);
+						$no[] = 'and (p' . $un . '.value_id is null OR (' . $joinp . '))';
+					} else {
+						$no[] = 'and p' . $un . '.value_id is null';
+					}
+				} else if (isset($vals['yes'])) {
+					unset($vals['yes']);
+					$join[] = 'INNER JOIN showcase_iprops p' . $un . ' on (p' . $un . '.model_id = m.model_id and p' . $un . '.item_num = i.item_num and p' . $un . '.prop_id = ' . $prop_id . ')';
+				}
+			} else if ($type == 'text') {
+				if (!empty($vals['no'])) {
+
+					$join[] = 'LEFT JOIN showcase_iprops p' . $un . ' on (p' . $un . '.model_id = m.model_id and p' . $un . '.prop_id = ' . $prop_id . ')';
+
+
+					$no[] = 'and (p' . $un . '.text is null)';
+					//Только no
+					unset($vals['no']);
+
+
+					if ($vals) {
+						$joinp = [];
+						foreach ($vals as $val => $one) {
+							$joinp[] = 'p' . $un . '.text = ' . $val;
+						}
+						$vals = [];
+						$joinp = implode(' OR ', $joinp);
+						$no[] = 'and (p' . $un . '.text is null OR (' . $joinp . '))';
+					}
+				} else if (isset($vals['yes'])) {
+					unset($vals['yes']);
+					$join[] = 'INNER JOIN showcase_iprops p' . $un . ' on (p' . $un . '.model_id = m.model_id and p' . $un . '.item_num = i.item_num and p' . $un . '.prop_id = ' . $prop_id . ')';
+				}
+			} else if ($type == 'number') {
+
+				if (!empty($vals['no']) || !empty($vals['minmax'])) {
+					$join[] = 'LEFT JOIN showcase_iprops p' . $un . ' on (p' . $un . '.model_id = m.model_id and p' . $un . '.item_num = i.item_num and p' . $un . '.prop_id = ' . $prop_id . ')';
+
+					$nn = !empty($vals['no']);
+					$mm = !empty($vals['minmax']);
+					//unset($vals['no']);
+					if ($mm) {
+						$r = explode('/', $vals['minmax']);
+						unset($vals['minmax']);
+						if (sizeof($r) == 2) {
+							$min = (float) $r[0];
+							$max = (float) $r[1];
+						}
+						unset($vals['no']);
+						unset($vals['minmax']);
+						if ($nn) {
+							if ($vals) {
+								$joinp = [];
+								foreach ($vals as $val => $one) {
+									$joinp[] = 'p' . $un . '.number = ' . $val;
+								}
+
+								$vals = [];
+								$joinp = implode(' OR ', $joinp);
+								$no[] = 'and (p' . $un . '.number is null OR (p' . $un . '.number >= ' . $min . ' AND p' . $un . '.number <= ' . $max . ') OR (' . $joinp . '))';
+							} else {
+								$no[] = 'and (p' . $un . '.number is null OR (p' . $un . '.number >= ' . $min . ' AND p' . $un . '.number <= ' . $max . '))';
+							}
+						} else {
+							$no[] = 'and (p' . $un . '.number >= ' . $min . ' AND p' . $un . '.number <= ' . $max . ')';
+						}
+					} else {
+						$no[] = 'and (p' . $un . '.number is null)';
+						//Только no
+						unset($vals['no']);
+					}
+
+					if ($vals) {
+						$joinp = [];
+						foreach ($vals as $val => $one) {
+							$joinp[] = 'p' . $un . '.number = ' . $val;
+						}
+						$vals = [];
+						$joinp = implode(' OR ', $joinp);
+						$no[] = 'and (p' . $un . '.number is null OR (' . $joinp . '))';
+					}
+				} else if (isset($vals['yes'])) {
+					unset($vals['yes']);
+					$join[] = 'INNER JOIN showcase_iprops p' . $un . ' on (p' . $un . '.model_id = m.model_id and p' . $un . '.item_num = i.item_num and p' . $un . '.prop_id = ' . $prop_id . ')';
+				}
+			}
+
+			if ($vals) {
+				$un = $prop_id . 'v';
+				$joinp = [];
+				if ($type == 'value') {
+					foreach ($vals as $val => $one) {
+						$value_id = Data::initValue($val);
+						$joinp[] = 'p' . $un . '.value_id = ' . $value_id;
+					}
+				} else if ($type == 'number') {
+					foreach ($vals as $val => $one) {
+						$number = (float) $val;
+						$joinp[] = 'p' . $un . '.number = ' . $number;
+					}
+				} else if ($type == 'text') {
+				}
+				$joinp = implode(' OR ', $joinp);
+				$join[] = 'INNER JOIN showcase_iprops p' . $un . ' on (p' . $un . '.model_id = i.model_id and p' . $un . '.item_num = i.item_num and p' . $un . '.prop_id = ' . $prop_id . ' and (' . $joinp . '))';
+			}
+		}
+	}
+
+	if (!empty($md['search'])) {
+		$v = $md['search'];
+		//$v = Path::encode($v);
+		$v = preg_split("/[\s\-]+/", mb_strtolower($v));
+		$v = array_unique($v);
+		$str = '';
+		foreach ($v as $i => $s) {
+			$v[$i] = preg_replace("/ы$/", "", $s);
+			$s = $v[$i];
+			$str .= 'and (m.model_id in (SELECT smv' . $i . '.model_id from showcase_values sv' . $i . '
+				inner join showcase_iprops smv' . $i . ' on smv' . $i . '.value_id = sv' . $i . '.value_id
+				where sv' . $i . '.value_nick like "%' . $s . '%") 
+
+				OR m.model_id in (SELECT svt' . $i . '.model_id from showcase_iprops svt' . $i . '
+				where svt' . $i . '.text like "%' . $s . '%") 
+
+				OR m.model_id in (SELECT svn' . $i . '.model_id from showcase_iprops svn' . $i . '
+				where svn' . $i . '.number like "%' . $s . '%") 
+
+				OR m.article_nick LIKE "%' . $s . '%" 
+				OR m.article LIKE "%' . $s . '%" 
+				OR i.item_nick LIKE "%' . $s . '%" 
+				OR g.group_nick LIKE "%' . $s . '%" 
+				OR g.group LIKE "%' . $s . '%" 
+				OR p.group_nick LIKE "%' . $s . '%" 
+				OR p.group LIKE "%' . $s . '%" 
+				OR p2.group_nick LIKE "%' . $s . '%" 
+				OR p2.group LIKE "%' . $s . '%" 
+
+				OR m.model_id LIKE "%' . $s . '%" 
+				OR pr.producer_nick LIKE "%' . $s . '%"
+			)';
+		}
+		$join[] = 'LEFT JOIN showcase_groups p2 on p.parent_id = p2.group_id';
+		$ans['filters'][] = array(
+			'title' => 'Поиск',
+			'name' => 'search',
+			'value' => strip_tags($md['search'])
+		);
+		$no[] = $str;
+	}
+
+
+
+
+
+
+
+	//sort нужно регистрировать 
+	$sort = 'ORDER BY';
+
+	if ($md['sort'] == 'items') {
+		$sort = 'ORDER BY IF(i.item_nick = "",1,0),';
+	}
+
+	$sort .= '
+		IF(mn3.text is null,1,0),
+		IF(mn2.value_id = :nal1,0,1),
+		IF(mn2.value_id = :nal2,0,1), 
+		IF(mn2.value_id = :nal3,0,1), 
+		IF(mn2.value_id = :nal4,0,1), 
+		IF(mn2.value_id = :nal5,0,1), 
+		IF(mn.number IS NULL,1,0), 
+		mn.number';
+	$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5];
+	$groupbinds = [];
+
+	if ($md['sort'] == 'source') {
+		$sort = '';
+		$binds = [];
+	}
+	if ($md['sort'] == 'isimage') {
+		$sort = 'ORDER BY IF(mn3.text is null,0,1)';
+		$binds = [];
+	}
+	if ($md['sort'] == 'iscost') {
+		$sort = 'ORDER BY IF(mn.number IS NULL,0,1)';
+		$binds = [];
+	}
+	if ($md['sort'] == 'is') {
+
+		$sort = 'ORDER BY 
+			IF(mn3.text is null,1,0), 
+			IF(mn.number IS NULL,1,0),
+			IF(mn2.value_id = :nal1,0,1),
+			IF(mn2.value_id = :nal2,0,1), 
+			IF(mn2.value_id = :nal3,0,1), 
+			IF(mn2.value_id = :nal4,0,1), 
+			IF(mn2.value_id = :nal5,0,1), 
+			mn.number
+			';
+		$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5];
+	}
+	if ($md['sort'] == 'art') {
+		$md['reverse'] = !$md['reverse'];
+		$sort = 'ORDER BY m.article_nick';
+		$binds = [];
+	}
+	if ($md['sort'] == 'name') {
+		$join[] = '
+		LEFT JOIN showcase_iprops ipn on (ipn.model_id = m.model_id and ipn.item_num = i.item_num and ipn.prop_id = :name_id)';
+
+		$md['reverse'] = !$md['reverse'];
+		if ($md['reverse']) {
+			$sort = 'ORDER BY IF(ipn.text is null,1,0), ipn.text';
+		} else {
+			//null всегда снизу внезависимости от сортировки
+			$sort = 'ORDER BY IF(ipn.text is null,0,1), ipn.text';
+		}
+		$binds = [':name_id' => $name_id];
+		$groupbinds = [':name_id' => $name_id];
+	}
+
+
+	if ($sort) {
+		if ($md['reverse']) {
+			$asc = "ASC";
+		} else {
+			$asc = "DESC";
+		}
+		$sort .= ' ' . $asc;
+	}
+
+
+
+
+	$no = implode(' ', $no);
+	$start = ($page - 1) * $count;
+	if ($count) $limit = 'limit ' . $start . ',' . $count;
+	else $limit = '';
+
+	$join = implode(' ', $join);
+	$sql = '
+		SELECT 
+			SQL_CALC_FOUND_ROWS i.model_id, 
+			min(i.item_num) as item_num,
+			GROUP_CONCAT(distinct i.item_num) as items, 
+			min(mn.number) as cost, 
+			m.article_nick, pr.producer_nick, GROUP_CONCAT(distinct m.group_id) as groups from showcase_items i
+		LEFT JOIN showcase_models m on i.model_id = m.model_id
+		LEFT JOIN showcase_groups g on g.group_id = m.group_id
+		LEFT JOIN showcase_groups p on g.parent_id = p.group_id
+		LEFT JOIN showcase_producers pr on pr.producer_id = m.producer_id
+		LEFT JOIN showcase_iprops mn on (mn.model_id = m.model_id and mn.item_num = i.item_num and mn.prop_id = :cost_id)
+		LEFT JOIN showcase_iprops mn2 on (mn2.model_id = m.model_id and mn2.item_num = i.item_num and mn2.prop_id = :nalichie_id)
+		LEFT JOIN showcase_iprops mn3 on (mn3.model_id = m.model_id and mn3.item_num = i.item_num and mn3.prop_id = :image_id)
+		
+		' . $join . '
+		WHERE 1=1 ' . $grquery . ' ' . $prquery . ' ' . $no . '
+		GROUP BY m.model_id
+		' . $sort . '
+		' . $limit . '
+		';
+
+
+
+	$binds += [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id];
+
+	$models = Data::all($sql, $binds);
+
+	$size = Data::col('SELECT FOUND_ROWS()');
+	$ans['count'] = (int) $size;
+
+	$limit = 500;
+
+	$ans['showlist'] = $showlist ? $showlist : $limit < $count || (!empty($ans['group']['count'])) || (sizeof($ans['filters']) && $ans['count'] < $limit);
+
+	if ($ans['showlist']) {
+		foreach ($models as $k => $m) {
+
+			/*
+				Подготовили список items внутри найденой позиции
+				Модель в результатах поиска будет выглядеть иначе. Кликаем и видим друое количество позиций.
+			*/
+			//$m['items'] = explode(',', $m['items']);
+			//foreach ($m['items'] as $j => $v) if (!$v) unset($m['items'][$j]);
+
+			$models[$k] = Showcase::getModelEasyById($m['model_id']);
+			$models[$k]['showcase'] = array();
+			$group = API::getGroupById($models[$k]['group_id']);
+			$models[$k]['showcase']['props'] = $group['options']['props'];
+		}
+		$ans['list'] = $models;
+	}
+
+
+
+	$groupbinds += [':image_id' => $image_id];
+
+	$groups = Data::fetchto('
+		SELECT max(mn3.text) as img, g.icon, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_items i
+		LEFT JOIN showcase_models m on m.model_id = i.model_id
+		LEFT JOIN showcase_groups g on g.group_id = m.group_id
+		LEFT JOIN showcase_groups p on g.parent_id = p.group_id
+		LEFT JOIN showcase_producers pr on pr.producer_id = m.producer_id
+		LEFT JOIN showcase_iprops mn3 on (mn3.model_id = m.model_id and mn3.prop_id = :image_id)
+		' . $join . '
+		WHERE m.model_id = i.model_id ' . $grquery . ' ' . $prquery . ' ' . $no . '
+		GROUP BY m.group_id
+		', 'group_nick', $groupbinds);
+	//Найти общего предка для всех групп
+	//Пропустить 1 вложенную группу
+	//Отсортировать группы по их order
+
+	$nicks = [];
+	foreach ($groups as $k => $g) {
+		$parent = API::getGroupById($g['group_id']);
+
+
+		$test = $parent;
+		$path = [];
+		do {
+			$nicks[$test['group_nick']] = $test;
+			$path[] = $test['group_nick'];
+			$test = $test['parent'];
+		} while ($test);
+		
+		$groups[$k]['path'] = array_reverse($path);
+	}
+
+	foreach ($groups as $k => $g) {
+		$path = array_intersect($path, $g['path']);
+	}
+	$level = sizeof($path);
+	$childs = [];
+	foreach ($groups as $k => $g) {
+		if (empty($g['path'][$level])) continue;
+		$nick = $g['path'][$level];
+		if (isset($childs[$nick])) continue;
+		$childs[$nick] = [
+			'group' => $nicks[$nick]['group'],
+			'group_nick' => $nicks[$nick]['group_nick'],
+			'icon' => $g['icon'],
+			'img' => $g['img']
+		];
+	}
+	
+	if (sizeof($childs) == 1) $childs = [];
+	$ans['childs'] = array_values($childs);
+	
+	// echo sizeof($groups);
+	// print_r($groups);
+	// exit;
+	// $root = Data::getGroups();
+
+	// Xlsx::runGroups($root, function & (&$group) use ($groups) {
+	// 	$r = null;
+	// 	$nick = $group['group_nick'];
+	// 	if (!isset($groups[$nick])) return $r;
+	// 	$group['found'] = $groups[$nick]['count'];
+	// 	$group['img'] = $groups[$nick]['img'];
+	// 	return $r;
+	// });
+
+	// Xlsx::runGroups($root, function & (&$group, $i, &$parent) {
+	// 	$r = null;
+	// 	if (!$parent) return $r;
+	// 	if (isset($group['img']) && empty($parent['img'])) $parent['img'] = $group['img'];
+	// 	if (!isset($group['found'])) {
+	// 		array_splice($parent['childs'], $i, 1);
+	// 		return $r;
+	// 	}
+	// 	if (!isset($parent['found'])) $parent['found'] = 0;
+	// 	$parent['found'] += $group['found'];
+
+	// 	if (!isset($group['childs'])) return $r;
+
+	// 	/*usort($group['childs'], function ($a, $b){
+	// 		if ($a['found'] > $b['found']) return -1;
+	// 		if ($a['found'] < $b['found']) return 1;
+	// 		return 0;
+	// 	});*/
+	// 	return $r;
+	// }, true);
+
+	// $conf = Showcase::$conf;
+	// Xlsx::runGroups($root, function & (&$group) use ($conf) {
+	// 	$r = null;
+	// 	while (isset($group['childs']) && sizeof($group['childs']) == 1 && isset($group['childs'][0]['childs'])) {
+	// 		$group['childs'] = array_values($group['childs'][0]['childs']);
+	// 	}
+
+	// 	$img = Rubrics::find(
+	// 		$conf['icons'],
+	// 		$group['group_nick'],
+	// 		Data::$images
+	// 	);
+	// 	if ($img) $group['img'] = $img;
+	// 	return $r;
+	// });
+
+	// if (!empty($root['childs'])) {
+	// 	$ans['childs'] = array_values($root['childs']);
+	// 	foreach ($ans['childs'] as $i => $ch) {
+	// 		if (empty($ans['childs'][$i]['childs'])) continue;
+	// 		foreach ($ans['childs'][$i]['childs'] as $ii => $cch) {
+	// 			unset($ans['childs'][$i]['childs'][$ii]['childs']);
+	// 		}
+	// 	}
+	// 	if (sizeof($ans['childs']) == 1 && isset($ans['group'])) {
+	// 		if ($ans['childs'][0]['group_nick'] == $ans['group']['group_nick']) {
+	// 			unset($ans['childs']);
+	// 		}
+	// 	}
+	// }
+
+	
+
+	if ($ans['showlist'] && $count) {
+		$pages = ceil($size / $count);
+		if ($pages < $page) $page = $pages;
+		$ans['numbers'] = Showcase::numbers($page, $pages, 6);
+	}
+
+
+	$src  =  Rubrics::find(Showcase::$conf['groups'], $ans['title']);
+	if (!$src) $src  =  Rubrics::find(Showcase::$conf['groups'], $ans['name']);
+	
+	if ($src) {
+		$ans['textinfo']  =  Rubrics::info($src); 
+		$ans['text']  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение каталога, должно быть вне кэша
+	}
+
+	return $this->ret();
+});
 $meta->addAction('columns', function () {
 	$columns = Showcase::getOption(['columns']);
 	return $columns;
 });
-$meta->addAction('pos', function () {
-	extract($this->gets(['producer_nick','article_nick','item_num']));
-	$pos = Showcase::getModelEasy($producer_nick, $article_nick, $item_num);
-	//breadcrumb собираем в шаблоне из group
-	//more собираем в шаблоне из columns
-	//items и itemrows??? items - сделать отдельным запросом и отдельным слоем
-	//catkit
+
+// $meta->addAction('pos', function () {
+// 	extract($this->gets(['producer_nick','article_nick','item_num']));
+// 	$pos = Showcase::getModelEasy($producer_nick, $article_nick, $item_num);
+// 	//breadcrumb собираем в шаблоне из group
+// 	//more собираем в шаблоне из columns
+// 	//items и itemrows??? items - сделать отдельным запросом и отдельным слоем
+// 	//catkit
 	
-	$this->ans['pos'] = $pos;
+// 	$this->ans['pos'] = $pos;
+// 	return $this->ret();
+// });
+
+$meta->addArgument('producer_nick',['encode','notempty']);
+$meta->addArgument('article_nick',['encode','notempty']);
+$meta->addArgument('item_num', ['int'], function ($item_num, $pname) {
+	if ($item_num > 255) return $this->fail('meta.required', $pname);
+});
+$meta->addArgument('catkit');
+$meta->addAction('posseo', function () {
+	extract($this->gets(['producer_nick','article_nick']), EXTR_REFS);
+	$ans = &$this->ans;
+	
+	$pos = Showcase::getModelEasy($producer_nick, $article_nick);
+	
+	if (!$pos) {
+		return Ans::err($ans, 'Position not found');
+	}
+	
+	$article = $pos['article'];
+	$producer = $pos['producer'];
+
+	$link = 'catalog/'.urlencode($pos['producer_nick']).'/'.urlencode($pos['article_nick']);
+
+	if (!empty($pos['Наименование'])) {
+		$ans['title'] = $pos['Наименование'];
+		if (Showcase::$conf['cleanname']) { //Если в наименовании нет артикула, добавляем
+			$ans['title'] .= ' '. $pos['producer'].' '.$pos['article'];
+		}
+	} else $ans['title'] = $pos['producer'].' '.$pos['article'];
+	
+
+	if (!empty($pos['Описание'])) $ans['description'] = preg_replace("/[\s\n\t]+/u"," ",strip_tags($pos['Описание']));
+	
+	//if (!empty($pos['Наименование'])) $ans['description'] = 'Купить '.$pos['Наименование'];
+	//if (Showcase::$conf['cleanname']) { //Если в наименовании нет артикула, добавляем
+	//	$ans['description'] .= $pos['producer'].' '.$pos['article'];
+	//}
+
+	$ans['canonical'] = Seojson::getSite().'/'.$link;
+	
+	if (isset($pos['images'][0])) {
+		$ans['image_src'] = Seojson::getSite().'/-imager/?w=400&src='.$pos['images'][0];	
+	}
+	
 	return $this->ret();
 });
+$meta->addAction('pos', function () {
+	extract($this->gets(['producer_nick','article_nick','item_num','catkit']), EXTR_REFS);
+	$md = Showcase::initMark($this->ans);
+	$pos = Showcase::getModelWhithItems($producer_nick, $article_nick, $item_num);
+	
+	
+	if (!$pos) {
+		http_response_code(404);
+		return $this->err();
+	}
+	
+	
+	
+	$this->ans['pos'] = $pos;
 
 
+	$this->ans['breadcrumbs'][] = array(
+		'title' => Showcase::$conf['title'],
+		'href' => '',
+		'add' => ':group'
+	);
+
+	$group = API::getGroupById($pos['group_id']);
+	$path = [];
+	do {
+		$path[] = array(
+			'title' => $group['group'],
+			'href' => $group['group_nick']
+		);
+		$group = $group['parent'];
+	} while ($group['parent']);
+	$path = array_reverse($path);
+	foreach($path as $p) {
+		$this->ans['breadcrumbs'][] = $p;
+	}
+
+	$this->ans['breadcrumbs'][] = array(
+		'active' => true, 
+		'title' => $pos['producer'].'&nbsp;'.$pos['article']
+	);
+
+	return $this->ret();
+});
 
 
 
@@ -432,7 +1125,9 @@ $meta->addAction('items', function () {
 	return $items;
 });
 
-return $meta->init([
+$r = $meta->init([
 	'name'=>'showcase',
 	'base'=>'-showcase/api2/'
 ]);
+
+return $r;

@@ -17,6 +17,7 @@ use infrajs\db\Db;
 use infrajs\sequence\Sequence as Seq;
 use infrajs\mark\Mark as Marker;
 
+use akiyatkin\showcase\api2\API;
 use infrajs\lang\LangAns;
 use infrajs\cache\CacheOnce;
 use infrajs\user\UserMail;
@@ -700,7 +701,7 @@ class Showcase
 
 
 	public static $columns = array(
-		"model_id", "item_num", "producer", 
+		"model_id", "item_num", "producer", "items", "itemrows","itemmore",
 		"group_nick", "group_id", "group","icon",
 		"article", "producer_nick", "article_nick", 
 		"Наименование", "Файл", "Иллюстрации", "Файлы", "Фото", "Цена", "Описание", 
@@ -932,11 +933,104 @@ class Showcase
 		$pos['item_num'] = "1";
 		return $pos;
 	}
+	public static function getModelWhithItems($producer_nick, $article_nick, $choice_item_num = 1)
+	{
+
+		$sql = 'SELECT 
+			m.model_id, m.group_id, m.article_nick, m.article, 
+			p.producer_nick, p.logo, p.producer, 
+			g.group_nick, g.group, g.icon
+			FROM showcase_models m 
+			INNER JOIN showcase_producers p on p.producer_id = m.producer_id
+			INNER JOIN showcase_groups g on g.group_id = m.group_id
+			WHERE m.article_nick = :article_nick
+				and p.producer_nick = :producer_nick
+			ORDER by m.model_id
+		';
+		$pos = Data::fetch($sql, [
+			':article_nick' => $article_nick, 
+			':producer_nick' => $producer_nick
+		]);
+
+		if (!$pos) return false;
+
+		$list = Data::all('SELECT 
+			p.prop, p.prop_nick, 
+			v.value, 
+			ip.number, ip.text, ip.order as `order`, ip.item_num
+			FROM showcase_iprops ip
+			LEFT JOIN showcase_values v on v.value_id = ip.value_id
+			LEFT JOIN showcase_props p on p.prop_id = ip.prop_id
+			WHERE ip.model_id = :model_id
+		', [
+			':model_id' => $pos['model_id']
+		]);
+		
+		$items = [];
+		$itemrows = [];
+		foreach ($list as $p => $prop) {
+			$val = $prop['value'] ?? $prop['number'] ?? $prop['text'];
+			$name = $prop['prop'];
+			$itemrows[$name] = $val;
+			$item_num = $prop['item_num'];
+
+			if (empty($items[$item_num])) $items[$item_num] = [];
+
+			if (in_array($name, Data::$files)) {
+				if (!isset($items[$item_num][$name])) $items[$item_num][$name] = [];
+				$items[$item_num][$name][] = $val;
+			} else {
+				if (isset($items[$item_num][$name])) $items[$item_num][$name] .= ', '.$val;
+				else $items[$item_num][$name] = $val;
+			}	
+		}
+		foreach ($itemrows as $prop => $val) {
+			$euqal = true;
+			foreach($items as $item_num => $item) {
+				if ($val !== $item[$prop]) {
+					$euqal = false;
+					break;
+				}
+			}
+			if ($euqal) {
+				$pos[$prop] = $val;
+				foreach($items as $item_num => $item) {
+					unset($items[$item_num][$prop]);
+				}
+			}
+		}
+		if (!isset($items[$choice_item_num])) $choice_item_num = 1;
+		$pos = $pos + $items[$choice_item_num];
+		$pos['item_num'] = $choice_item_num;
+		$pos['items'] = $items;
+		$pos['itemrows'] = array_keys($items[$choice_item_num]);
+
+		$columns = Showcase::getOption()['columns'];
+
+		$pos['itemmore'] = [];
+		foreach($pos['itemrows'] as $name) {
+			$nick = Path::encode($name);
+			if (in_array($nick, $columns)) continue;
+			$pos['itemmore'][] = $name;
+		}
+		
+		$more = [];
+		foreach ($pos as $i => $v) {
+			$nick = Path::encode($i);
+			if (in_array($nick, $columns)) continue;
+			$more[$i] = $v;
+			unset($pos[$i]);
+		}
+		$pos['more'] = $more;
+
+		return $pos;
+	}
+
 	public static function getModelEasy($producer_nick, $article_nick, $item_num = 1)
 	{
 
 		$sql = 'SELECT 
-			m.model_id, m.article_nick, m.article, 
+			m.model_id, m.group_id, m.article_nick, m.article, 
 			p.producer_nick, p.logo, p.producer, 
 			i.item_num,
 			g.group_nick, g.group, g.icon
@@ -957,7 +1051,6 @@ class Showcase
 
 		if (!$pos) return false;
 
-		//надо определить itemrows
 		
 		$list = Data::all('SELECT 
 			p.prop, p.prop_nick, 
@@ -1452,27 +1545,28 @@ class Showcase
 			$ans['breadcrumbs'][sizeof($ans['breadcrumbs']) - 1]['active']  =  true;
 		} else {
 			//is!, descr!, text!, name!, breadcrumbs!, title
-			if ($md['group']) foreach ($md['group'] as $group  =>  $v) break;
-			else $group = false;
+			//if ($md['group']) foreach ($md['group'] as $group  =>  $v) break;
+			//else $group = false;
 
-			$root = Data::getGroups();
-			if ($group) {
-				$group = Xlsx::runGroups($root, function & ($g) use ($group) {
-					if ($g['group_nick'] == $group) return $g;
-					$r = null;
-					return $r;
-				});
-			} else {
-				$group = $root;
-			}
+			$group_nick = Path::encode(Showcase::$conf['title']);
+			foreach ($md['group'] ?? [] as $group_nick => $one) break;
+			$group_id = Db::col('SELECT group_id from showcase_groups where group_nick = :group_nick', [
+				':group_nick' => $group_nick
+			]);
+			$group = API::getGroupById($group_id);
+			
 			$ans['is'] = 'group';
 			$ans['breadcrumbs'][] = array('href' => '', 'title' => $conf['title'], 'add' => 'group:');
-			if (isset($group['path'])) {
-				array_map(function ($p) use (&$ans) {
-					$group = Showcase::getGroup($p);
-					$ans['breadcrumbs'][] = array('href' => $group['group_nick'], 'title' => $group['group']);
-				}, $group['path']);
+
+			$path = [];
+			$parent = $group;
+			while ($parent['parent']) {
+				$path[] = array('href' => $parent['group_nick'], 'title' => $parent['group']);
+				$parent = $parent['parent'];
 			}
+
+			$ans['breadcrumbs'] = array_merge($ans['breadcrumbs'], array_reverse($path));
+
 			if (sizeof($ans['breadcrumbs']) == 1) {
 				array_unshift($ans['breadcrumbs'], array('main' => true, "title" => "Главная", "nomark" => true));
 			}
