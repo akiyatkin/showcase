@@ -6,6 +6,7 @@ use infrajs\path\Path;
 use akiyatkin\showcase\Showcase;
 use akiyatkin\showcase\Data;
 use infrajs\load\Load;
+use infrajs\access\Access;
 use infrajs\excel\Xlsx;
 use infrajs\rubrics\Rubrics;
 use infrajs\layer\seojson\Seojson;
@@ -175,129 +176,139 @@ $meta->addAction('filters', function () {
 	$group_id = Db::col('SELECT group_id from showcase_groups where group_nick = :group_nick', [
 		':group_nick' => $group_nick
 	]);
-	$group = API::getGroupById($group_id);
 
-	unset($group['options']['props']);
-	unset($group['options']['showlist']);
-	unset($group['parent']);
-	$props = Showcase::getOptions()['props'];
+	$list = Access::cache('showcase-filters', function ($group_id) {
+		$group = API::getGroupById($group_id);
 
-	$list = [];
+		unset($group['options']['props']);
+		unset($group['options']['showlist']);
+		unset($group['parent']);
+		$props = Showcase::getOptions()['props'];
 
-	$gs = Showcase::getGroupsIn($md);
-	if ($gs) $grwhere = 'm.group_id in ('.implode(',', $gs).')';
-	else $grwhere = '1=1';
+		$list = [];
+		
+		$gs = Showcase::nestedGroups($group_id);
+		$gs = array_column($gs, 'group_id');
+		$gs[] = $group_id;
 
-	foreach ($group['options']['filters'] as $name) {
-		$p = $props[$name];
-		$prop_nick = Path::encode($name);
-		$p['prop_nick'] = $prop_nick;
-		if ($prop_nick == 'producer') {
-			$values = Data::all('SELECT pr.producer as value, pr.producer_nick as value_nick, count(*) as count 
-				FROM showcase_models m
-				INNER join showcase_producers pr on m.producer_id = pr.producer_id
-			where '.$grwhere.' 
-			group by pr.producer_id 
-			order by count DESC');// order by value
+		$grwhere = 'm.group_id in ('.implode(',', $gs).')';
+		
 
-			$p['values'] = $values;
-		} else {
-			$row = Data::fetch('SELECT prop_id, prop from showcase_props where prop_nick = :prop_nick',
-				[
-					':prop_nick' => $prop_nick
-				]
-			);
-			if (!$row) continue;
-			list($prop_id, $prop) = array_values($row);
-			$type = Data::checkType($prop_nick);
-
-			$p['more'] = true;
-
-			if ($p['filter'] ?? '' == 'range') {
-				if ($type != 'number') continue;
-			
-				$row = Data::fetch('
-					SELECT min(mv.number) as min, max(mv.number) as max 
+		foreach ($group['options']['filters'] as $name) {
+			$p = $props[$name];
+			$prop_nick = Path::encode($name);
+			$p['prop_nick'] = $prop_nick;
+			if ($prop_nick == 'producer') {
+				$values = Data::all('SELECT pr.producer as value, pr.producer_nick as value_nick, count(*) as count 
 					FROM showcase_models m
-					left join showcase_iprops mv on mv.model_id = m.model_id
-					where '.$grwhere.' 
-					and mv.prop_id = :prop_id
-				', [':prop_id' => $prop_id]);
+					INNER join showcase_producers pr on m.producer_id = pr.producer_id
+				where '.$grwhere.' 
+				group by pr.producer_id 
+				order by count DESC');// order by value
 
-				$dif = round($row['max'] - $row['min']);
-				$len = strlen($dif);
-				if ($len < 2 ) {
-					$step = 1;
-				} else {
-					$step = pow(10, $len - 2);
-				}
-				$row['min'] = floor($row['min']/$step)*$step;
-				$row['max'] = ceil($row['max']/$step)*$step;
-				$row['step'] = $step;
-				$row['minval'] = $row['min'];
-				$row['maxval'] = $row['max'];
+				$p['values'] = $values;
+			} else {
+				$row = Data::fetch('SELECT prop_id, prop from showcase_props where prop_nick = :prop_nick',
+					[
+						':prop_nick' => $prop_nick
+					]
+				);
+				if (!$row) continue;
+				list($prop_id, $prop) = array_values($row);
+				$type = Data::checkType($prop_nick);
+
+				$p['more'] = true;
+
+				if ($p['filter'] ?? '' == 'range') {
+					if ($type != 'number') continue;
 				
+					$row = Data::fetch('
+						SELECT min(mv.number) as min, max(mv.number) as max 
+						FROM showcase_models m
+						left join showcase_iprops mv on mv.model_id = m.model_id
+						where '.$grwhere.' 
+						and mv.prop_id = :prop_id
+					', [':prop_id' => $prop_id]);
 
-				if (isset($md['more'][$prop_nick]['minmax'])) {
-					$minmax = $md['more'][$prop_nick]['minmax'];
-					$r = explode('/',$minmax);
-					if (sizeof($r) == 2) {
-						$row['minval'] = floor($r[0]/$step)*$step;
-						$row['maxval'] = ceil($r[1]/$step)*$step;
-						if ($row['minval'] < $row['min']) $row['minval'] = $row['min'];
-						if ($row['maxval'] > $row['max']) $row['maxval'] = $row['max'];
+					$dif = round($row['max'] - $row['min']);
+					$len = strlen($dif);
+					if ($len < 2 ) {
+						$step = 1;
+					} else {
+						$step = pow(10, $len - 2);
+					}
+					$row['min'] = floor($row['min']/$step)*$step;
+					$row['max'] = ceil($row['max']/$step)*$step;
+					$row['step'] = $step;
+					$row['minval'] = $row['min'];
+					$row['maxval'] = $row['max'];
+					
+
+					if (isset($md['more'][$prop_nick]['minmax'])) {
+						$minmax = $md['more'][$prop_nick]['minmax'];
+						$r = explode('/',$minmax);
+						if (sizeof($r) == 2) {
+							$row['minval'] = floor($r[0]/$step)*$step;
+							$row['maxval'] = ceil($r[1]/$step)*$step;
+							if ($row['minval'] < $row['min']) $row['minval'] = $row['min'];
+							if ($row['maxval'] > $row['max']) $row['maxval'] = $row['max'];
+						}
+					}
+					
+					if ($row['max'] == $row['min']) continue;
+					$p += $row;
+				} else {
+					$sql = '
+					SELECT v.value, v.value_nick, count(*) as count
+					FROM showcase_models m
+					left join showcase_iprops mv on (mv.model_id = m.model_id and mv.prop_id = :prop_id)
+					left join showcase_values v on v.value_id = mv.value_id
+					where '.$grwhere.'
+					group by v.value_id
+					order by count DESC
+					';
+					$values = Data::all($sql,[':prop_id' => $prop_id]);
+					$p['values'] = $values;
+
+					if (isset($p['chain'])) {
+						$data = Load::loadJSON($p['chain']);
+						$data = $data['data'];
+						$chain = [];
+						$el = array_reverse($data['head']);
+
+						$vals = array_reduce($p['values'], function($vals, $v){
+							$vals[$v['value_nick']] = 1;
+							return $vals;
+						},[]);
+
+						Xlsx::runPoss($data, function($pos) use (&$list, $p, &$chain, $el, $vals) {
+							if (empty($pos[$el[sizeof($el)-1]])) return;
+							$keyval = Path::encode($pos[$el[sizeof($el)-1]]);
+							if (!isset($vals[$keyval])) return;
+							array_reduce($el, function ($ar, $key) use($pos, &$chain, &$last){
+								$child = &$ar[0];
+								if(empty($child['childs'])) $child['childs'] = [];
+								$child['key'] = $key;
+								if (!isset($pos[$key])) return $ar;
+								$val = $pos[$key];
+								$nick = Path::encode($val);
+								if (empty($child['childs'][$nick])) $child['childs'][$nick] = ['value'=>$val,'nick'=>$nick];
+								return [&$child['childs'][$nick]];
+							}, [&$chain]);
+						});
+						$p['chain'] = $chain;
+						unset($p['values']);
 					}
 				}
-				
-				if ($row['max'] == $row['min']) continue;
-				$p += $row;
-			} else {
-				$sql = '
-				SELECT v.value, v.value_nick, count(*) as count
-				FROM showcase_models m
-				left join showcase_iprops mv on (mv.model_id = m.model_id and mv.prop_id = :prop_id)
-				left join showcase_values v on v.value_id = mv.value_id
-				where '.$grwhere.'
-				group by v.value_id
-				order by count DESC
-				';
-				$values = Data::all($sql,[':prop_id' => $prop_id]);
-				$p['values'] = $values;
-
-				if (isset($p['chain'])) {
-					$data = Load::loadJSON($p['chain']);
-					$data = $data['data'];
-					$chain = [];
-					$el = array_reverse($data['head']);
-
-					$vals = array_reduce($p['values'], function($vals, $v){
-						$vals[$v['value_nick']] = 1;
-						return $vals;
-					},[]);
-
-					Xlsx::runPoss($data, function($pos) use (&$list, $p, &$chain, $el, $vals) {
-						if (empty($pos[$el[sizeof($el)-1]])) return;
-						$keyval = Path::encode($pos[$el[sizeof($el)-1]]);
-						if (!isset($vals[$keyval])) return;
-						array_reduce($el, function ($ar, $key) use($pos, &$chain, &$last){
-							$child = &$ar[0];
-							if(empty($child['childs'])) $child['childs'] = [];
-							$child['key'] = $key;
-							if (!isset($pos[$key])) return $ar;
-							$val = $pos[$key];
-							$nick = Path::encode($val);
-							if (empty($child['childs'][$nick])) $child['childs'][$nick] = ['value'=>$val,'nick'=>$nick];
-							return [&$child['childs'][$nick]];
-						}, [&$chain]);
-					});
-					$p['chain'] = $chain;
-					unset($p['values']);
-				}
 			}
+			
+			$list[$prop_nick] = $p;
 		}
-		
-		$list[$prop_nick] = $p;
-	}
+		return $list;
+	}, [$group_id]);
+	//
+
+	
 
 	
 	$this->ans['list'] = $list;
