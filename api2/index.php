@@ -177,7 +177,7 @@ $meta->addAction('filters', function () {
 		':group_nick' => $group_nick
 	]);
 
-	$list = Access::cache('showcase-filters', function ($group_id) {
+	//$list = Access::cache('showcase-filters', function ($group_id) {
 		$group = API::getGroupById($group_id);
 
 		unset($group['options']['props']);
@@ -195,8 +195,9 @@ $meta->addAction('filters', function () {
 		
 
 		foreach ($group['options']['filters'] as $name) {
-			$p = $props[$name];
+			$p = $props[$name] ?? [];
 			$prop_nick = Path::encode($name);
+
 			$p['prop_nick'] = $prop_nick;
 			if ($prop_nick == 'producer') {
 				$values = Data::all('SELECT pr.producer as value, pr.producer_nick as value_nick, count(*) as count 
@@ -207,6 +208,7 @@ $meta->addAction('filters', function () {
 				order by count DESC');// order by value
 
 				$p['values'] = $values;
+				$p['prop'] = 'Производитель';
 			} else {
 				$row = Data::fetch('SELECT prop_id, prop from showcase_props where prop_nick = :prop_nick',
 					[
@@ -216,7 +218,7 @@ $meta->addAction('filters', function () {
 				if (!$row) continue;
 				list($prop_id, $prop) = array_values($row);
 				$type = Data::checkType($prop_nick);
-
+				$p['prop'] = $prop;
 				$p['more'] = true;
 
 				if ($p['filter'] ?? '' == 'range') {
@@ -273,6 +275,7 @@ $meta->addAction('filters', function () {
 					if (isset($p['chain'])) {
 						$data = Load::loadJSON($p['chain']);
 						$data = $data['data'];
+						if (!$data) continue;
 						$chain = [];
 						$el = array_reverse($data['head']);
 
@@ -304,8 +307,8 @@ $meta->addAction('filters', function () {
 			
 			$list[$prop_nick] = $p;
 		}
-		return $list;
-	}, [$group_id]);
+	//	return $list;
+	//}, [$group_id]);
 	//
 
 	
@@ -459,7 +462,9 @@ $meta->addAction('search', function () {
 	]);
 	$group = API::getGroupById($group_id);
 	
-	
+	$ans['group'] = $group;
+	unset($ans['group']['parent']);
+
 	$page = $ans['page'];
 	if (empty($md['count'])) $count = 0;
 	else $count = $md['count'];
@@ -912,6 +917,7 @@ $meta->addAction('search', function () {
 	//Отсортировать группы по их order
 
 	$nicks = [];
+	$path = [];
 	foreach ($groups as $k => $g) {
 		$parent = API::getGroupById($g['group_id']);
 
