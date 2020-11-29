@@ -371,7 +371,16 @@ $meta->addFunction('encode', function ($val) {
 	return Path::encode($val);
 });
 
-$meta->addArgument('showlist');
+$meta->addArgument('showlist', function ($str) {
+	//Имеет значение только значение 1. По умолчанию 0.
+	$realint = (int) $str;
+	$newstr = (string) $realint;
+	if ($str !== $newstr) $realint = 0;
+	if (!in_array($realint,[0,1])) $realint = 0;
+	return $realint;
+});
+
+
 $meta->addAction('searchseo', function () {
 	$ans = &$this->ans;
 	$md = Showcase::initMark($ans);
@@ -450,14 +459,7 @@ $meta->addAction('search', function () {
 	]);
 	$group = API::getGroupById($group_id);
 	
-	$ans['showlist'] = $this->get('showlist') || !empty($group['options']['showlist']);
 	
-
-
-
-
-
-	$showlist = $ans['showlist'];
 	$page = $ans['page'];
 	if (empty($md['count'])) $count = 0;
 	else $count = $md['count'];
@@ -862,10 +864,15 @@ $meta->addAction('search', function () {
 	$size = Data::col('SELECT FOUND_ROWS()');
 	$ans['count'] = (int) $size;
 
-	$limit = 500;
 
-	$ans['showlist'] = $showlist ? $showlist : $limit < $count || (!empty($ans['group']['count'])) || (sizeof($ans['filters']) && $ans['count'] < $limit);
 
+	$showlist = $this->get('showlist') || !empty($group['options']['showlist']);	
+
+	$ans['showlist'] = 
+		$showlist ? 
+		$showlist : 
+			$size < 100 
+			|| sizeof($ans['filters']);
 	if ($ans['showlist']) {
 		foreach ($models as $k => $m) {
 
@@ -879,11 +886,12 @@ $meta->addAction('search', function () {
 			$models[$k] = Showcase::getModelEasyById($m['model_id']);
 			$models[$k]['showcase'] = array();
 			$group = API::getGroupById($models[$k]['group_id']);
-			$models[$k]['showcase']['props'] = $group['options']['props'];
+			if (isset($group['options']['props'])) {
+				$models[$k]['showcase']['props'] = $group['options']['props'];
+			}
 		}
 		$ans['list'] = $models;
 	}
-
 
 
 	$groupbinds += [':image_id' => $image_id];
