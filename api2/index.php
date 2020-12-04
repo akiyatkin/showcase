@@ -1105,6 +1105,12 @@ $meta->addAction('pos', function () {
 	$md = Showcase::initMark($this->ans);
 	$pos = Showcase::getModelWhithItems($producer_nick, $article_nick, $item_num);
 	
+	
+
+	if (!$pos) {
+		http_response_code(404);
+		return $this->err();
+	}
 	if (isset($pos['files'])) {
 		foreach ($pos['files'] as $i => $path) {
 			$fd = Load::pathinfo($path);
@@ -1113,13 +1119,16 @@ $meta->addAction('pos', function () {
 			$pos['files'][$i] = $fd;
 		}
 	}
-
-	if (!$pos) {
-		http_response_code(404);
-		return $this->err();
+	if (isset($pos['texts'])) {
+		foreach ($pos['texts'] as $i => $src) {
+			$pos['texts'][$i]  =  Rubrics::article($src);
+		}
 	}
-	
-	
+	$group = API::getGroupById($pos['group_id']);
+
+	$opt = Showcase::getOptions();
+	$pos['showcase'] = [];
+	$pos['showcase']['props'] = Data::initProps($opt, array_keys($opt['props']));
 	
 	$this->ans['pos'] = $pos;
 
@@ -1130,7 +1139,7 @@ $meta->addAction('pos', function () {
 		'add' => ':group'
 	);
 
-	$group = API::getGroupById($pos['group_id']);
+	
 	$path = [];
 	do {
 		$path[] = array(
