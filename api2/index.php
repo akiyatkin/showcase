@@ -8,6 +8,7 @@ use akiyatkin\showcase\Data;
 use infrajs\load\Load;
 use infrajs\access\Access;
 use infrajs\excel\Xlsx;
+use akiyatkin\fs\FS;
 use infrajs\rubrics\Rubrics;
 use infrajs\layer\seojson\Seojson;
 
@@ -1104,7 +1105,15 @@ $meta->addAction('pos', function () {
 	$md = Showcase::initMark($this->ans);
 	$pos = Showcase::getModelWhithItems($producer_nick, $article_nick, $item_num);
 	
-	
+	if (isset($pos['files'])) {
+		foreach ($pos['files'] as $i => $path) {
+			$fd = Load::pathinfo($path);
+			$fd['size'] = round(FS::filesize($path) / 1000000, 2);
+			if (!$fd['size']) $fd['size'] = '0.01';
+			$pos['files'][$i] = $fd;
+		}
+	}
+
 	if (!$pos) {
 		http_response_code(404);
 		return $this->err();
