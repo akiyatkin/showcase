@@ -154,9 +154,9 @@ $meta->addAction('groups', function ($val, $pname) {
 	}, true);
 
 	Xlsx::runGroups($root, function &(&$group, $i, &$parent) {
-		unset($group['parent_nick']);
+		//unset($group['parent_nick']);
 		unset($group['parent']);
-		unset($group['group_id']);
+		//unset($group['group_id']);
 		unset($group['icon']);
 		unset($group['count']);
 		unset($group['parent_id']);

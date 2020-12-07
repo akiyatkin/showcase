@@ -600,10 +600,10 @@ class Showcase
 					Подготовили список items внутри найденой позиции
 					Модель в результатах поиска будет выглядеть иначе. Кликаем и видим друое количество позиций.
 				*/
-				$m['items'] = explode(',', $m['items']);
-				foreach ($m['items'] as $j => $v) if (!$v) unset($m['items'][$j]);
+				//$m['items'] = explode(',', $m['items']);
+				//foreach ($m['items'] as $j => $v) if (!$v) unset($m['items'][$j]);
 
-				$models[$k] = Showcase::getModel($m['producer_nick'], $m['article_nick'], $m['item_num'], false, $m['items']);
+				$models[$k] = Showcase::getModelWhithItems($m['producer_nick'], $m['article_nick']);
 			}
 			$ans['list'] = $models;
 		}
@@ -627,7 +627,10 @@ class Showcase
 		//Пропустить 1 вложенную группу
 		//Отсортировать группы по их order
 
-		$root = Data::getGroups();
+		
+
+
+		/*$root = Data::getGroups();
 
 		Xlsx::runGroups($root, function & (&$group) use ($groups) {
 			$r = null;
@@ -651,11 +654,11 @@ class Showcase
 
 			if (!isset($group['childs'])) return $r;
 
-			/*usort($group['childs'], function ($a, $b){
-				if ($a['found'] > $b['found']) return -1;
-				if ($a['found'] < $b['found']) return 1;
-				return 0;
-			});*/
+			// usort($group['childs'], function ($a, $b){
+			// 	if ($a['found'] > $b['found']) return -1;
+			// 	if ($a['found'] < $b['found']) return 1;
+			// 	return 0;
+			// });
 			return $r;
 		}, true);
 
@@ -689,7 +692,7 @@ class Showcase
 				}
 			}
 		}
-
+		*/
 
 
 		if ($ans['showlist'] && $count) {
