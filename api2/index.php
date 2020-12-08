@@ -206,7 +206,7 @@ $meta->addAction('filters', function () {
 					INNER join showcase_producers pr on m.producer_id = pr.producer_id
 				where '.$grwhere.' 
 				group by pr.producer_id 
-				order by count DESC');// order by value
+				order by producer');// order by value
 
 				$p['values'] = $values;
 				$p['prop'] = 'Производитель';
