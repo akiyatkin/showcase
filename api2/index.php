@@ -70,9 +70,10 @@ $meta->addAction('live', function () {
 	$props_start[] = 'p.producer_nick';
 	if (sizeof($split) == 1) {
 		$props[] = 'm.article_nick';
-	} else {
-		$props_trim[] = 'ip.text';
 	}
+	// else {
+		$props_trim[] = 'ip.text';
+	//}
 	$where = [];
 	$args = [];
 
