@@ -145,7 +145,7 @@ $meta->addAction('groups', function ($val, $pname) {
 	$root = $childs[0];
 	
 	Xlsx::runGroups($root, function &(&$group, $i, &$parent) {
-		if (!$group['count'] && empty($group['childs'])) {
+		if ($parent && !$group['count'] && empty($group['childs'])) {
 			unset($parent['childs'][$i]);
 			$parent['childs'] = array_values($parent['childs']);
 		}
