@@ -748,6 +748,13 @@ $meta->addAction('search', function () {
 			'value' => strip_tags($md['search'])
 		);
 		$no[] = $str;
+		if ($group_id != 1) {
+			$ans['filters'][] = array(
+				'title' => 'Группа',
+				'name' => 'group',
+				'value' => $group['group']
+			);
+		}
 	}
 
 
