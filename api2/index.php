@@ -302,7 +302,8 @@ $meta->addAction('filters', function () {
 				where '.$grwhere.' 
 				group by pr.producer_id 
 				order by producer');// order by value
-
+				if (sizeof($values) < 2 ) continue;
+				
 				$p['values'] = $values;
 				$p['prop'] = 'Производитель';
 			} else {
@@ -361,11 +362,12 @@ $meta->addAction('filters', function () {
 					FROM showcase_models m
 					left join showcase_iprops mv on (mv.model_id = m.model_id and mv.prop_id = :prop_id)
 					left join showcase_values v on v.value_id = mv.value_id
-					where '.$grwhere.'
+					where '.$grwhere.' and v.value is not null
 					group by v.value_id
 					order by count DESC
 					';
 					$values = Data::all($sql,[':prop_id' => $prop_id]);
+
 					$p['values'] = $values;
 
 					if (isset($p['chain'])) {

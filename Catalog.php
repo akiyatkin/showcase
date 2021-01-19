@@ -403,12 +403,13 @@ class Catalog {
 				$prop_nick = Path::encode($prop);
 				$strid = ($type == 'number')? 'number' : 'value_id';
 				$ar = (in_array($prop_nick, $options['justonevalue']))? [$val] : explode(',', $val);
-					
+				
 				foreach ($ar as $v) {
 					$order++;
 					$v = trim($v);
 					if ($v === '') continue;
-					$v = ($type=='value')? Data::initValue($v) : $v;
+					
+					$v = ($type == 'value')? Data::initValue($v) : $v;
 					$test = $prop_id.':'.$v;
 					if (isset($propvals[$test])) continue; //Уже вставлен
 					$propvals[$test] = true;
