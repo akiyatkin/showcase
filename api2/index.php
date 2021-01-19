@@ -244,7 +244,7 @@ $meta->addAction('filters', function () {
 				 order by m.model_id
 				limit 0,12';
 			$groups = Db::all($sql, $args);
-
+			
 			$nicks = [];
 			$path = [];
 			foreach ($groups as $k => $g) {
@@ -266,10 +266,12 @@ $meta->addAction('filters', function () {
 				$path = array_intersect($path, $g['path']);
 			}
 			$level = sizeof($path);
-			//Пробуем уточнить группу
-			$group_nick = $path[0];
-			$group = API::getGroupByNick($group_nick);
-			$group_id = $group['group_id'];
+			if ($path) {
+				//Пробуем уточнить группу
+				$group_nick = $path[0];
+				$group = API::getGroupByNick($group_nick);
+				$group_id = $group['group_id'];
+			}
 		}
 	}
 	
@@ -660,7 +662,8 @@ $meta->addAction('search', function () {
 					if ($row) $titles[] = $row['mean'];
 				}
 			}
-			$titles = implode(' или ', $titles);
+			//$titles = implode(' или ', $titles);
+			$titles = implode(', ', $titles);
 
 			$prop = Db::fetch('SELECT prop_id, prop from showcase_props where prop_nick = :prop_nick', [
 				':prop_nick' => $prop_nick
