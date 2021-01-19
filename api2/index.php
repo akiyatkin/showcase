@@ -56,6 +56,7 @@ $meta->addVariable('model_id@', function () {
 
 $meta->addAction('live', function () {
 	extract($this->gets(['query']), EXTR_REFS);
+
 	$split = preg_split("/[\s\-]/u", $query);
 	
 	$props_equal = [];
@@ -179,6 +180,99 @@ $meta->addAction('filters', function () {
 		':group_nick' => $group_nick
 	]);
 
+
+	if ($group_id == 1) {
+		if ($md['search']) {
+			$query = $md['search'];
+			$split = preg_split("/[\s\-]/u", $query);
+			
+			$props_equal = [];
+			$props_trim = [];
+			$props_start = [];
+			$props = [];
+
+			$props[] = 'g.group_nick';
+			$props[] = 'gp.group_nick';
+			$props[] = 'v.value_nick';
+			
+			$props_start[] = 'p.producer_nick';
+			if (sizeof($split) == 1) {
+				$props[] = 'm.article_nick';
+			}
+
+			$props_trim[] = 'ip.text';
+			
+			$where = [];
+			$args = [];
+
+			foreach ($split as $s) {
+				$s = preg_replace("/ы$/", "", $s);
+				$t = trim($s);
+				if (!$t) continue;
+				$s = Path::encode($s);
+				if (!$s) continue;
+				
+
+				$w = [];
+				foreach($props_equal as $p) {
+					$w[] = $p.' = ?';
+					$args[] = $s;
+				}
+				foreach($props as $p) {
+					$w[] = $p.' like ?';
+					$args[] = '%'.$s.'%';
+				}
+				foreach ($props_start as $p) {
+					$w[] = $p.' like ?';
+					$args[] = $s.'%';
+				}
+				foreach ($props_trim as $p) {
+					$w[] = $p.' like ?';
+					$args[] = '%'.$t.'%';
+				}
+				$where[] = '('.implode(' or ', $w).')';
+			}
+
+			$sql = 'SELECT distinct m.group_id from showcase_models m
+				left join showcase_producers p on p.producer_id = m.producer_id
+				left join showcase_iprops ip on ip.model_id = m.model_id
+				left join showcase_groups g on g.group_id = m.group_id
+				left join showcase_groups gp on g.parent_id = gp.group_id
+				left join showcase_values v on ip.value_id = v.value_id
+				where 
+				'.implode(' and ', $where).'
+				 order by m.model_id
+				limit 0,12';
+			$groups = Db::all($sql, $args);
+
+			$nicks = [];
+			$path = [];
+			foreach ($groups as $k => $g) {
+				$parent = API::getGroupById($g['group_id']);
+
+
+				$test = $parent;
+				$path = [];
+				do {
+					$nicks[$test['group_nick']] = $test;
+					$path[] = $test['group_nick'];
+					$test = $test['parent'];
+				} while ($test);
+				
+				$groups[$k]['path'] = array_reverse($path);
+			}
+			
+			foreach ($groups as $k => $g) {
+				$path = array_intersect($path, $g['path']);
+			}
+			$level = sizeof($path);
+			//Пробуем уточнить группу
+			$group_nick = $path[0];
+			$group = API::getGroupByNick($group_nick);
+			$group_id = $group['group_id'];
+		}
+	}
+	
 	//$list = Access::cache('showcase-filters', function ($group_id) {
 		$group = API::getGroupById($group_id);
 
@@ -779,6 +873,8 @@ $meta->addAction('search', function () {
 		IF(mn2.value_id = :nal5,0,1), 
 		IF(mn.number IS NULL,1,0), 
 		mn.number';
+
+
 	$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5];
 	$groupbinds = [];
 
@@ -788,6 +884,11 @@ $meta->addAction('search', function () {
 	}
 	if ($md['sort'] == 'isimage') {
 		$sort = 'ORDER BY IF(mn3.text is null,0,1)';
+		$binds = [];
+	}
+	if ($md['sort'] == 'cost') {
+		$md['reverse'] = !$md['reverse'];
+		$sort = 'ORDER BY mn.number';
 		$binds = [];
 	}
 	if ($md['sort'] == 'iscost') {
@@ -958,8 +1059,14 @@ $meta->addAction('search', function () {
 			'img' => $g['img']
 		];
 	}
-	
-	if (sizeof($childs) == 1) $childs = [];
+	if ($md['search']) {
+		if (!$childs && $group_id != $group['group_id']) {
+			$childs[] = $group;
+		}
+	} else {
+		if (sizeof($childs) == 1) $childs = [];
+	}
+
 	$ans['childs'] = array_values($childs);
 	
 	// echo sizeof($groups);

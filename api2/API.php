@@ -15,7 +15,12 @@ class API {
 		});
 		return $props[$group_nick] ?? [];
 	}
-	
+	public static function getGroupByNick($group_nick) {
+		$group_id = Db::col('SELECT group_id from showcase_groups WHERE group_nick = :group_nick', [
+			':group_nick' => $group_nick
+		]);
+		return API::getGroupById($group_id);
+	}
 	public static function getGroupById($group_id) {
 		return API::once('props', [$group_id], function ($group_id) {
 			$group = Db::fetch('SELECT group_id, `group`, parent_id, group_nick, icon from showcase_groups WHERE group_id = :group_id',[
