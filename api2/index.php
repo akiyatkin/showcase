@@ -261,10 +261,10 @@ $meta->addAction('filters', function () {
 				
 				$groups[$k]['path'] = array_reverse($path);
 			}
-			
 			foreach ($groups as $k => $g) {
 				$path = array_intersect($path, $g['path']);
 			}
+			$path = array_values($path);
 			$level = sizeof($path);
 			if ($path) {
 				//Пробуем уточнить группу
@@ -513,6 +513,7 @@ $meta->addAction('searchseo', function () {
 		unset($ans['description']);
 		unset($ans['keywords']);
 		$ans['title']  =  $val;
+
 		if ($md['group']) {
 			foreach ($md['group'] as $group_nick => $one) break;
 			$group_id = Db::col('SELECT group_id from showcase_groups where group_nick = :group_nick', [
@@ -522,9 +523,16 @@ $meta->addAction('searchseo', function () {
 				$group = API::getGroupById($group_id);
 				if ($group) {
 					$ans['title'] = $group['group'];
-
 					if (isset($group['icon'])) $ans['image_src'] = $group['icon'];
 				}
+			}
+		} else {
+			if ($md['producer']) {
+				foreach ($md['producer'] as $producer_nick => $one) break;
+				$producer = Db::col('SELECT producer from showcase_producers where producer_nick = :producer_nick', [
+					':producer_nick' => $producer_nick
+				]);
+				if ($producer) $ans['title'] = $producer;
 			}
 		}
 	
@@ -603,10 +611,11 @@ $meta->addAction('search', function () {
 		if ($prod) $prods[] = $prod;
 	}
 	if ($prods) { //Если есть группа надо достать все вложенные группы
-		$prods = array_unique($prods);
+		$prodlist = array_column($prods, 'producer');
+		$prodlist = array_unique($prodlist);
 		$ans['filters'][] = array(
 			'name' => 'producer',
-			'value' => implode(', ', array_column($prods, 'producer')),
+			'value' => implode(', ', $prodlist),
 			'title' => 'Производитель'
 		);
 
@@ -1051,6 +1060,7 @@ $meta->addAction('search', function () {
 	foreach ($groups as $k => $g) {
 		$path = array_intersect($path, $g['path']);
 	}
+	$path = array_values($path);
 	$level = sizeof($path);
 	$childs = [];
 	foreach ($groups as $k => $g) {
