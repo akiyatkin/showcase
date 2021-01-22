@@ -892,6 +892,7 @@ $meta->addAction('search', function () {
 	$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5];
 	$groupbinds = [];
 
+	$asc = false;
 	if ($md['sort'] == 'source') {
 		$sort = '';
 		$binds = [];
@@ -901,8 +902,8 @@ $meta->addAction('search', function () {
 		$binds = [];
 	}
 	if ($md['sort'] == 'cost') {
-		$md['reverse'] = !$md['reverse'];
-		$sort = 'ORDER BY mn.number';
+		$asc = true;
+		$sort = 'ORDER BY IF(mn.number IS NULL,1,0), mn.number';
 		$binds = [];
 	}
 	if ($md['sort'] == 'iscost') {
@@ -910,7 +911,7 @@ $meta->addAction('search', function () {
 		$binds = [];
 	}
 	if ($md['sort'] == 'is') {
-
+		$asc = true;
 		$sort = 'ORDER BY 
 			IF(mn3.text is null,1,0), 
 			IF(mn.number IS NULL,1,0),
@@ -946,11 +947,9 @@ $meta->addAction('search', function () {
 
 	if ($sort) {
 		if ($md['reverse']) {
-			$asc = "ASC";
-		} else {
-			$asc = "DESC";
+			$asc = !$asc;
 		}
-		$sort .= ' ' . $asc;
+		$sort .= ' ' . ($asc ? 'ASC' : 'DESC');
 	}
 
 

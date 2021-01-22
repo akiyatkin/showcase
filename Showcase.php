@@ -927,6 +927,7 @@ class Showcase
 		]);
 		foreach ($list as $p => $prop) {
 			$val = $prop['value'] ?? $prop['number'] ?? $prop['text'];
+			if ($prop['number']) $val = (float) $val;
 			$name = $prop['prop'];
 			if (in_array($name, Data::$files)) {
 				if (!isset($pos[$name])) $pos[$name] = [];
@@ -975,6 +976,7 @@ class Showcase
 		$items = [];
 		foreach ($list as $p => $prop) {
 			$val = $prop['value'] ?? $prop['number'] ?? $prop['text'];
+			if ($prop['number']) $val = (float) $val;
 			$name = $prop['prop'];
 			$item_num = $prop['item_num'];
 
@@ -1075,6 +1077,7 @@ class Showcase
 		
 		foreach ($list as $p => $prop) {
 			$val = $prop['value'] ?? $prop['number'] ?? $prop['text'];
+			if ($prop['number']) $val = (float) $val;
 			$name = $prop['prop'];
 			if (in_array($name, Data::$files)) {
 				if (!isset($pos[$name])) $pos[$name] = [];

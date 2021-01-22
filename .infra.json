@@ -6,7 +6,7 @@
 	"update":"update.php",
 	"title":"Каталог",
 	"paramsrc":"~auto/pages/Параметры.xlsx",
-	"sort":"cost",
+	"sort":"is",
 	"css":"style.css",
 	
 	"tables":"~catalog2/tables/",
