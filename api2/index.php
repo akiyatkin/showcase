@@ -1261,7 +1261,9 @@ $meta->addAction('pos', function () {
 	$opt = Showcase::getOptions();
 	$pos['showcase'] = [];
 	$pos['showcase']['props'] = Data::initProps($opt, array_keys($opt['props']));
-	
+	// echo '<pre>';
+	// print_r(Showcase::$columns);
+	// exit;
 	$this->ans['pos'] = $pos;
 
 

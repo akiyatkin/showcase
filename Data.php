@@ -77,6 +77,8 @@ class Data {
 	public static function initProps($opt, $props = []) {
 		//if (empty($props)) $props = ['producer','article','groups','Описание'];
 		foreach ($props as $j => $p) {
+			if ($p == 'Цена') continue;
+			//if (in_array($p, Showcase::$columns)) continue;
 			$ar = isset($opt['props'][$p]) ? $opt['props'][$p] : [];
 			$ar += [
 				'prop' => $p,
