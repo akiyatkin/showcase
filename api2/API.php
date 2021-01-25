@@ -26,6 +26,7 @@ class API {
 			$group = Db::fetch('SELECT group_id, `group`, parent_id, group_nick, icon from showcase_groups WHERE group_id = :group_id',[
 				':group_id' => $group_id
 			]);
+			if (!$group) return false;
 			$group['options'] = API::groupOptions($group['group_nick']);
 			if ($group['parent_id']) {
 				$group['parent'] = API::getGroupById($group['parent_id']);

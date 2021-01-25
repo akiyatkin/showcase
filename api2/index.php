@@ -142,34 +142,36 @@ $meta->addAction('groups', function ($val, $pname) {
 		if (!isset($parents[$group['group_nick']])) continue;
 		$group['childs'] = $parents[$group['group_nick']];
 	}
-	$childs = $parents[''];
-	$root = $childs[0];
-	
-	Xlsx::runGroups($root, function &(&$group, $i, &$parent) {
-		if ($parent && !$group['count'] && empty($group['childs'])) {
-			unset($parent['childs'][$i]);
-			$parent['childs'] = array_values($parent['childs']);
-		}
+	if (isset($parents[''])) {
+		$childs = $parents[''];
+		$root = $childs[0];
+		
+		Xlsx::runGroups($root, function &(&$group, $i, &$parent) {
+			if ($parent && !$group['count'] && empty($group['childs'])) {
+				unset($parent['childs'][$i]);
+				$parent['childs'] = array_values($parent['childs']);
+			}
 
-		$r = null;
-		return $r;
-	}, true);
+			$r = null;
+			return $r;
+		}, true);
 
-	Xlsx::runGroups($root, function &(&$group, $i, &$parent) {
-		//unset($group['parent_nick']);
-		unset($group['parent']);
-		//unset($group['group_id']);
-		unset($group['icon']);
-		unset($group['count']);
-		unset($group['parent_id']);
-		unset($group['order']);
-		$r = null;
-		return $r;
-	});
+		Xlsx::runGroups($root, function &(&$group, $i, &$parent) {
+			//unset($group['parent_nick']);
+			unset($group['parent']);
+			//unset($group['group_id']);
+			unset($group['icon']);
+			unset($group['count']);
+			unset($group['parent_id']);
+			unset($group['order']);
+			$r = null;
+			return $r;
+		});
 
-	
+		
 
-	$this->ans['root'] = $root;
+		$this->ans['root'] = $root;
+	}
 	return $this->ret();
 });
 $meta->addAction('filters', function () {
@@ -277,7 +279,7 @@ $meta->addAction('filters', function () {
 	
 	//$list = Access::cache('showcase-filters', function ($group_id) {
 		$group = API::getGroupById($group_id);
-
+		if (!$group) return $this->err('empty catalog');
 		unset($group['options']['props']);
 		unset($group['options']['showlist']);
 		unset($group['parent']);
@@ -1157,13 +1159,14 @@ $meta->addAction('search', function () {
 		$ans['numbers'] = Showcase::numbers($page, $pages, 6);
 	}
 
-
-	$src  =  Rubrics::find(Showcase::$conf['groups'], $ans['title']);
-	if (!$src) $src  =  Rubrics::find(Showcase::$conf['groups'], $ans['name']);
-	
-	if ($src) {
-		$ans['textinfo']  =  Rubrics::info($src); 
-		$ans['text']  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение каталога, должно быть вне кэша
+	if (isset($ans['title'])) {
+		$src  =  Rubrics::find(Showcase::$conf['groups'], $ans['title']);
+		if (!$src) $src  =  Rubrics::find(Showcase::$conf['groups'], $ans['name']);
+		
+		if ($src) {
+			$ans['textinfo']  =  Rubrics::info($src); 
+			$ans['text']  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение каталога, должно быть вне кэша
+		}
 	}
 
 	return $this->ret();

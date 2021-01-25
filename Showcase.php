@@ -1570,10 +1570,12 @@ class Showcase
 			$ans['breadcrumbs'][] = array('href' => '', 'title' => $conf['title'], 'add' => 'group:');
 
 			$path = [];
-			$parent = $group;
-			while ($parent['parent']) {
-				$path[] = array('href' => $parent['group_nick'], 'title' => $parent['group']);
-				$parent = $parent['parent'];
+			if ($group) { //Каталог может быть пустым	
+				$parent = $group;
+				while ($parent['parent']) {
+					$path[] = array('href' => $parent['group_nick'], 'title' => $parent['group']);
+					$parent = $parent['parent'];
+				}
 			}
 
 			$ans['breadcrumbs'] = array_merge($ans['breadcrumbs'], array_reverse($path));
@@ -1581,11 +1583,11 @@ class Showcase
 			if (sizeof($ans['breadcrumbs']) == 1) {
 				array_unshift($ans['breadcrumbs'], array('main' => true, "title" => "Главная", "nomark" => true));
 			}
+			if ($group) {
+				$ans['name'] = $group['group']; //имя группы длинное
+				$ans['title'] = $group['group_nick'];
 
-			$ans['name'] = $group['group']; //имя группы длинное
-			$ans['title'] = $group['group_nick'];
-
-
+			}
 			//$ans['descr']  =  isset($group['descr']['Описание группы']) ? $group['descr']['Описание группы'] : '';
 
 
