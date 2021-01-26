@@ -75,7 +75,7 @@ Showcase::add('group', function () {
 	}
 	$val = array_filter($val);
 	$values = array_keys($val);
-	$values = array_filter($values, function (&$nick) {
+	$values = array_filter($values, function ($nick) {
 		if (in_array($nick, array('yes', 'no'))) return true;
 		if (!$nick) return false;
 		$group_id = Db::col('SELECT group_id from showcase_groups where group_nick = :group_nick',[

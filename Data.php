@@ -117,9 +117,13 @@ class Data {
 		Data::initPropNick($opt['values']);
 		
 		$opt['justonevalue'][] = 'Цена';
+		$opt['justonevalue'][] = 'Старая цена';
+		$opt['justonevalue'][] = 'discount';
 		Data::initPropNick($opt['justonevalue']);
 
 		$opt['numbers'][] = 'Цена';
+		$opt['numbers'][] = 'discount';
+		$opt['numbers'][] = 'Старая цена';
 		Data::initPropNick($opt['numbers']);
 		
 		$opt['texts'][] = 'Описание';

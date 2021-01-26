@@ -292,8 +292,8 @@ $meta->addAction('filters', function () {
 		$gs[] = $group_id;
 
 		$grwhere = 'm.group_id in ('.implode(',', $gs).')';
-		
 
+		if (isset($group['options']['filters']))
 		foreach ($group['options']['filters'] as $name) {
 			$p = $props[$name] ?? [];
 			$prop_nick = Path::encode($name);
@@ -1024,15 +1024,16 @@ $meta->addAction('search', function () {
 	}
 
 
-	$groupbinds += [':image_id' => $image_id];
+	$groupbinds += [':cost_id' => $cost_id, ':image_id' => $image_id];
 
 	$groups = Data::fetchto('
-		SELECT max(mn3.text) as img, g.icon, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_items i
+		SELECT max(mn3.text) as img, min(mn2.number) as `min`, max(mn2.number) as `max`, g.icon, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_items i
 		LEFT JOIN showcase_models m on m.model_id = i.model_id
 		LEFT JOIN showcase_groups g on g.group_id = m.group_id
 		LEFT JOIN showcase_groups p on g.parent_id = p.group_id
 		LEFT JOIN showcase_producers pr on pr.producer_id = m.producer_id
 		LEFT JOIN showcase_iprops mn3 on (mn3.model_id = m.model_id and mn3.prop_id = :image_id)
+		LEFT JOIN showcase_iprops mn2 on (mn2.model_id = m.model_id and mn2.prop_id = :cost_id)
 		' . $join . '
 		WHERE m.model_id = i.model_id ' . $grquery . ' ' . $prquery . ' ' . $no . '
 		GROUP BY m.group_id
@@ -1045,8 +1046,6 @@ $meta->addAction('search', function () {
 	$path = [];
 	foreach ($groups as $k => $g) {
 		$parent = API::getGroupById($g['group_id']);
-
-
 		$test = $parent;
 		$path = [];
 		do {
@@ -1057,23 +1056,43 @@ $meta->addAction('search', function () {
 		
 		$groups[$k]['path'] = array_reverse($path);
 	}
-
 	foreach ($groups as $k => $g) {
 		$path = array_intersect($path, $g['path']);
 	}
 	$path = array_values($path);
 	$level = sizeof($path);
 	$childs = [];
+	
 	foreach ($groups as $k => $g) {
 		if (empty($g['path'][$level])) continue;
 		$nick = $g['path'][$level];
-		if (isset($childs[$nick])) continue;
-		$childs[$nick] = [
-			'group' => $nicks[$nick]['group'],
-			'group_nick' => $nicks[$nick]['group_nick'],
-			'icon' => $g['icon'],
-			'img' => $g['img']
-		];
+		$child = isset($g['path'][$level+1]) ? $g['path'][$level+1] : false;
+		if (!isset($childs[$nick])) {
+			$childs[$nick] = [
+				'group' => $nicks[$nick]['group'],
+				'group_nick' => $nicks[$nick]['group_nick'],
+				'childs' => [],
+				'min' => 0,
+				'max' => 0,
+				'icon' => $g['icon'],
+				'img' => $g['img']
+			];
+		}
+		if (!$childs[$nick]['min'] || ($g['min'] && $g['min'] < $childs[$nick]['min'])) {
+			$childs[$nick]['min'] = (float) $g['min'];
+		}
+		if (!$childs[$nick]['max'] || ($g['max'] && $g['max'] > $childs[$nick]['max'])) {
+			$childs[$nick]['max'] = (float) $g['max'];
+		}
+		
+		if ($child) {
+			if (!isset($childs[$nick]['childs'][$child])) {
+				$childs[$nick]['childs'][$child] = [
+					'group' => $nicks[$child]['group'],
+					'group_nick' => $nicks[$child]['group_nick']
+				];
+			}
+		}
 	}
 	if ($md['search']) {
 		if (!$childs && $group_id != $group['group_id']) {
@@ -1275,16 +1294,18 @@ $meta->addAction('pos', function () {
 
 	
 	$path = [];
-	do {
-		$path[] = array(
-			'title' => $group['group'],
-			'href' => $group['group_nick']
-		);
-		$group = $group['parent'];
-	} while ($group['parent']);
-	$path = array_reverse($path);
-	foreach($path as $p) {
-		$this->ans['breadcrumbs'][] = $p;
+	if ($group['parent']) { //Если позиция прям в каталоге
+		do {
+			$path[] = array(
+				'title' => $group['group'],
+				'href' => $group['group_nick']
+			);
+			$group = $group['parent'];
+		} while ($group['parent']);
+		$path = array_reverse($path);
+		foreach($path as $p) {
+			$this->ans['breadcrumbs'][] = $p;
+		}
 	}
 
 	$this->ans['breadcrumbs'][] = array(

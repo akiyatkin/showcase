@@ -707,7 +707,7 @@ class Showcase
 
 
 	public static $columns = array(
-		"model_id", "item_num", "producer", "items", "itemrows","itemmore",
+		"model_id", "item_num", "producer", "items", "itemrows","itemmore", "discount",
 		"group_nick", "group_id", "group","icon", "logo",
 		"article", "producer_nick", "article_nick", 
 		"Наименование", "Файл", "Иллюстрации", "Файлы", "Фото", "Цена", "Описание", 

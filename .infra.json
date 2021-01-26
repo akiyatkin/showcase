@@ -23,8 +23,8 @@
 	
 	
 
-	"jsonoptions":"~catalog/.prices/showcase.json",
-	"phpoptions":"~catalog/.prices/showcase.php",
+	"jsonoptions":"~auto/.prices/showcase.json",
+	"phpoptions":"~auto/.prices/showcase.php",
 	
 	"ydisk":false,
 	"cleanname":true,
