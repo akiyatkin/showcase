@@ -73,6 +73,7 @@ class Showcase
 		$nick = Path::encode($val);
 		$art = Ans::GET('art');
 
+		if ($val == 'producers') $val = '';
 		if ($val && !$art) {
 			if (!isset($_GET['m'])) $_GET['m'] = '';
 
