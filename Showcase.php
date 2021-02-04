@@ -996,6 +996,9 @@ class Showcase
 		foreach ($itemrows as $prop => $val) {
 			$euqal = true;
 			foreach($items as $item_num => $item) {
+				if (!isset($item[$prop])) {
+					$items[$item_num][$prop] = $item[$prop] = is_array($val) ? [] : null;
+				}
 				if ($val !== $item[$prop]) {
 					$euqal = false;
 					break;
