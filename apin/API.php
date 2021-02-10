@@ -206,9 +206,12 @@ class API {
 		$prop_id = Data::initProp($type, 'text');
 		Db::start();
 		Data::exec('DELETE mv FROM showcase_iprops mv, showcase_models m, showcase_producers pr
-			WHERE m.model_id = mv.model_id and m.producer_id = pr.producer_id and pr.producer_nick = ?
-			and mv.prop_id = ?', [$producer_nick, $prop_id]);
-
+			WHERE m.model_id = mv.model_id and m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick
+			and mv.prop_id = :prop_id', [
+				':producer_nick' => $producer_nick, 
+				':prop_id' => $prop_id
+			]);
+		
 		foreach ($res as $obj) {
 			$pos = $obj['pos'];
 			foreach($obj['files'] as $i => $src) {
