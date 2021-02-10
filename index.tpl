@@ -36,10 +36,16 @@
 	</ul>
 	<a class="btn btn-secondary" href="/-showcase/drop">Удалить данные и пересоздать базу данных</a>
 	<hr>
-{res:}<div class=""><pre><code>{::reskeys}</code></pre></div>
+{res:}
+	<style>
+		.hideblock {
+			display: none;
+		}
+	</style>
+	<div class=""><pre><code>{::reskeys}</code></pre></div>
 	{reskeys:}{~typeof(.)=:object?:resobj?:resstr}
 	{resstr:}<b>{~key}</b>: {.}<br>
-	{resobj:}<div onclick="$(this).next().slideToggle()"><span class="a">{~key}</span>: {~length(.)}</div><div style="display: none">{~print(.)}</div>
+	{resobj:}<div onclick="this.nextElementSibling.classList.toggle('hideblock')"><span class="a">{~key}</span></div><div class="hideblock">{~print(.)}</div>
 {MODELS:}
 	{:menu}
 	<h1>Модели</h1>
@@ -49,7 +55,7 @@
 			<a title="Позиций {count}" href="/-showcase/api/pos/{producer_nick}/{article_nick}">{producer_nick} {article_nick}</a>{img:pic}
 			<div><small>{Цена?:cost} <i>{group}</i> Данные: {catalog}</small></div>
 		</div>
-	{pic:} <small class="a" onclick="$(this).addClass('float-right').removeClass('a').html('<img src=\'/-imager/?src={.}&w=100\'>&nbsp;')">image</small>
+	{pic:} <small class="a" onclick="this.style.float = 'right'; this.classList.remove('a'); this.innerHTML = '<img src=\'/-imager/?src={.}&w=100\'>&nbsp;'">image</small>
 	{cost:}{~cost(Цена)} руб.
 {PRODUCER:}
 		{:menu}
@@ -73,8 +79,8 @@
 		</div>
 		{:foot}
 	{skip:}
-	<span class="a" onclick="$(this).next().slideToggle()">skip</span>.
-	<div style="display:none">{~print(.)}</div>
+	<span class="a" onclick="this.nextElementSibling.classList.toggle('hideblock')">skip</span>.
+	<div class="hideblock">{~print(.)}</div>
 	{prodinfo:}Моделей: <b><a href="/catalog/?m=:producer.{producer_nick}=1">{count}</a></b>, без цен: <b><a href="/catalog?m=:producer.{producer_nick}=1:more.Цена.no=1">{Без цен}</a></b>, без картинок: <b><a href="/catalog?m=:producer.{producer_nick}=1:more.images.no=1">{Без картинок}</a></b>, 
 	ошибки каталога: <b><a href="/catalog?m=:producer.{producer_nick}=1:more.Прайс.no=1">{Ошибки каталога}</a></b>
 {PRODUCERS:}
@@ -86,13 +92,18 @@
 {GROUPS:}
 	{:menu}
 	<h1>Группы</h1>
+	<style>
+		.hideblock {
+			display: none;
+		}
+	</style>
 	{list:subgroup}
 	<br><br><br><br>
 	{:foot}
 	
 	{subgroup:}
-		<div><span class="a" onclick="$(this).parent().parent().find('.sub:first').slideToggle()">{group}</span> <small> ({group_nick}) {catalog}.xlsx</small> <b>{sum}</b>{icon:pic}</div>
-		<div class="ml-4 sub" style="display:{order=:one??:none}">{childs::groups}</div>
+		<div><span class="a" onclick="this.parentElement.parentElement.querySelector('.sub').classList.toggle('hideblock')">{group}</span> <small> ({group_nick}) {catalog}.xlsx</small> <b>{sum}</b>{icon:pic}</div>
+		<div class="ml-4 sub {order=:one??:hideblock}">{childs::groups}</div>
 		{justgroup:}
 		<div>{group}</span> <small> ({group_nick}) {catalog}.xlsx</small> <b>{count}</b>{icon:pic}</div>
 		{one:}1
@@ -174,8 +185,8 @@
 	</div>
 	
 	{showopt:}
-	<span class="a" onclick="$(this).next().slideToggle()">Есть опции</span>
-	<div style="display:none">
+	<span class="a" onclick="this.nextElementSibling.classList.toggle('hideblock')">Есть опции</span>
+	<div class="hideblock">
 	<b>Синонимы</b> {~print(synonyms)}
 	<b>Параметры</b> {~print(props)}
 	</div>
@@ -195,8 +206,8 @@
 	</div>
 
 	{ans:}
-	<span class="a" onclick="$(this).next().slideToggle()">{..time??:прошлый }ответ</span>.
-	<div style="display:none" class="alert alert-success">{~print(.)}</div>
+	<span class="a" onclick="this.nextElementSibling.classList.toggle('hideblock')">{..time??:прошлый }ответ</span>.
+	<div class="hideblock alert alert-success">{~print(.)}</div>
 	{catcount:}Принято: <b>{icount}</b> {~words(icount,:позиция,:позиции,:позиций)}<br>
 	
 {pactions:}

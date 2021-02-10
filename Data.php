@@ -1,6 +1,7 @@
 <?php
 namespace akiyatkin\showcase;
 use akiyatkin\fs\FS;
+use akiyatkin\showcase\apin\API as APIN;
 use infrajs\load\Load;
 use infrajs\event\Event;
 use infrajs\path\Path;
@@ -126,9 +127,15 @@ class Data {
 		$opt['numbers'][] = 'Старая цена';
 		Data::initPropNick($opt['numbers']);
 		
+
+		$opt['texts'][] = 'Файлы';
+		$opt['texts'][] = 'Фото';
+		$opt['texts'][] = 'Файл';
+		$opt['texts'][] = 'Иллюстрации';
+
 		$opt['texts'][] = 'Описание';
 		$opt['texts'][] = 'Наименование';
-		$opt['texts'][] = 'Иллюстрации';
+		
 		foreach (Data::$files as $f) $opt['texts'][] = $f; //Все пути текстовые
 		Data::initPropNick($opt['texts']);
 
@@ -399,6 +406,18 @@ class Data {
 		return sizeof($images);
 	}
 	public static function actionAddFiles($producer_nick = false){
+		$ress = APIN::applyAll($producer_nick);
+		return $ress;
+
+
+
+
+
+
+
+
+
+
 		/*$producer_nick = false;
 		if ($name) {
 			$options = Data::getOptions('catalog');
@@ -537,6 +556,7 @@ class Data {
 		foreach($ans as $i=>$val){
 			if (is_array($ans[$i]) && sizeof($ans[$i]) > 1000) $ans[$i] = sizeof($ans[$i]);
 		}
+
 		return Data::$once[$key] = $ans;
 
 	}
@@ -563,7 +583,9 @@ class Data {
 		
 		$root = Data::getGroups();
 		$conf = Showcase::$conf;
-		Xlsx::runGroups($root, function &(&$group) use ($images_id, &$icons){
+		$groups = 0;
+		Xlsx::runGroups($root, function &(&$group) use ($images_id, &$icons, &$groups){
+			$groups++;
 			//Ищим свою картинку
 			$group['icon'] = null;
 			
@@ -629,6 +651,7 @@ class Data {
 
 		
 		$list = Data::all('SELECT producer_nick, producer FROM showcase_producers');
+		$logos = 0;
 		foreach ($list as $k => $prod) {
 			$icon = false;
 			if (!$icon) {
@@ -646,7 +669,10 @@ class Data {
 				}
 			}
 			$list[$k]['logo'] = $icon;
-			if ($icon) continue;
+			if ($icon) {
+				$logos++;
+				continue;
+			}
 			//Посмотрели в иконках
 			//$logo = Rubrics::find($conf['icons'], $prod['producer_nick'], Data::$images);
 			/*if ($conf['icons']) {
@@ -670,6 +696,7 @@ class Data {
 					return false;
 				});
 				if ($images) {
+					$logos++;
 					$list[$k]['logo'] = $dir.$images[0];
 					continue;
 				}
@@ -680,7 +707,13 @@ class Data {
 				[$prod['logo'], $prod['producer_nick']]
 			);
 		}
-		return Data::$once[$key] = $icons;
+		$ans = [];
+		$ans['Всего групп'] = $groups;
+		$ans['Всего иконок'] = sizeof($icons);
+		$ans['Всего производителей'] = sizeof($list);
+		$ans['Всего логотипов'] = $logos;
+		
+		return Data::$once[$key] = $ans;
 
 	}
 	/*public static function initArticle($value) {
