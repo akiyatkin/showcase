@@ -922,6 +922,7 @@ class Showcase
 			LEFT JOIN showcase_values v on v.value_id = ip.value_id
 			LEFT JOIN showcase_props p on p.prop_id = ip.prop_id
 			WHERE ip.model_id = :model_id and ip.item_num = :item_num
+			ORDER by `order` ASC
 		', [
 			':model_id' => $pos['model_id'],
 			":item_num" => 1
@@ -970,6 +971,7 @@ class Showcase
 			LEFT JOIN showcase_values v on v.value_id = ip.value_id
 			LEFT JOIN showcase_props p on p.prop_id = ip.prop_id
 			WHERE ip.model_id = :model_id
+			ORDER by `order` ASC
 		', [
 			':model_id' => $pos['model_id']
 		]);
@@ -1074,6 +1076,7 @@ class Showcase
 			LEFT JOIN showcase_values v on v.value_id = ip.value_id
 			LEFT JOIN showcase_props p on p.prop_id = ip.prop_id
 			WHERE ip.model_id = :model_id and ip.item_num = :item_num
+			ORDER by `order` ASC
 		', [
 			':model_id' => $pos['model_id'], 
 			':item_num' => $pos['item_num']
@@ -1121,7 +1124,7 @@ class Showcase
 			LEFT JOIN showcase_values v on v.value_id = ip.value_id
 			LEFT JOIN showcase_props p on p.prop_id = ip.prop_id
 			WHERE ip.model_id = ?
-			order by ip.item_num
+			ORDER by ip.item_num, ip.order ASC
 			', [$pos['model_id']]);
 
 		//$calc[prop_nick][value][item_num] = true

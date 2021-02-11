@@ -72,11 +72,16 @@ class API {
 		Config::scan($src, function ($src) use (&$list, $exts) {
 			$info = Load::srcInfo($src);
 			if (!in_array($info['ext'], $exts)) return;
-			$list[$src] = [
-				'src' => $src,
-				'search' => Path::encode($info['name']),
-				'file' => $info['file']
-			];
+			$file = $info['name'];
+			$s = explode(',', $file);
+			foreach ($s as $search) {
+				$search = Path::encode($search);
+				$list[$src] = [
+					'src' => $src,
+					'search' => $search,
+					'file' => $info['file']
+				];
+			}
 		}, true);
 	}
 	public static function scanDir($src, $exts, &$list, $search = false) {
@@ -95,8 +100,13 @@ class API {
 		FS::scandir($src, function ($file, $dir) use (&$list, $exts) {
 			if (!FS::is_dir($dir.$file)) return;
 			if (in_array($file, Data::$files)) return;
-			$search = Path::encode(Load::nameInfo($file)['file']);
-			API::scanDir($dir.$file.'/', $exts, $list, $search);		
+			$file = Load::nameInfo($file)['file'];
+			$s = explode(',', $file);
+			foreach ($s as $search) {
+				$search = Path::encode($search);
+				API::scanDir($dir.$file.'/', $exts, $list, $search);
+			}
+			
 		});
 	}
 	public static function getSrcFromValue($v) {
