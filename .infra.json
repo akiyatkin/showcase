@@ -8,7 +8,10 @@
 	"paramsrc":"~auto/pages/Параметры.xlsx",
 	"sort":"is",
 	"css":"style.css",
-	
+	"lang":{
+		"def":"ru",
+		"list":["ru","en"]
+	},
 	"tables":"~catalog2/tables/",
 	"prices":"~catalog2/.prices/",
 	"icons":"~catalog2/icons/",
