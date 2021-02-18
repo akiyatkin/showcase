@@ -55,6 +55,7 @@ class API {
 			$prods = [];
 			foreach (Data::$files as $type) {
 				FS::scandir(Showcase::$conf[$type], function ($proddir, $dir) use (&$prods) {
+					if (!FS::is_dir($dir.$proddir)) return;
 					$producer_nick = Path::encode($proddir);
 					$prods[$producer_nick] = ['proddir' => $proddir];
 				});
@@ -165,6 +166,16 @@ class API {
 		$poss = API::getArticles($producer_nick);
 		$res = [];
 		$empty = [];
+
+		foreach ($files as $search => $file) {
+			$psearch = str_ireplace(mb_strtolower($producer_nick), '', $search); //Удалили из артикула продусера
+			if ($psearch == $search) continue;
+			if (!isset($files[$psearch])) $files[$psearch] = [];
+			$files[$psearch] = array_merge($files[$psearch], $files[$search]);
+		}
+		
+
+
 		foreach ($poss as $pos) {			
 			$r = ['pos' => $pos, 'files' => []];
 			$search = $pos['article_nick'];
@@ -236,9 +247,9 @@ class API {
 				);	
 			}
 		}
-		Db::commit();
+		Db::commit();	
 
-		$files = $files ? array_column(call_user_func_array('array_merge', $files), 'src') : [];
+		$files = $files ? array_column(call_user_func_array('array_merge', array_values($files)), 'src') : [];
 		$find = $res ? call_user_func_array('array_merge_recursive', $res)['files'] : [];
 		if (!$find) return [];
 		if (!$files) return [];

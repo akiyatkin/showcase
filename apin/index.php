@@ -55,7 +55,7 @@ $meta->addAction('applyfiles', function () {
 	return $this->ret();
 });
 $meta->addAction('applyicons', function () {
-})
+});
 $meta->addAction('applyallfiles', function () {
 	//images, folders
 	$this->ans['ress'] = API::applyAll();
