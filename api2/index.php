@@ -821,35 +821,54 @@ $meta->addAction('search', function () {
 	if (!empty($md['search'])) {
 		$v = $md['search'];
 		//$v = Path::encode($v);
+		
 		$v = preg_split("/[\s\-]+/", mb_strtolower($v));
 		$v = array_unique($v);
+		$split = sizeof($v) != 1;
 		$str = '';
+
+		
+
+		
 		foreach ($v as $i => $s) {
 			$v[$i] = preg_replace("/ы$/", "", $s);
 			$s = $v[$i];
-			$str .= 'and (m.model_id in (SELECT smv' . $i . '.model_id from showcase_values sv' . $i . '
-				inner join showcase_iprops smv' . $i . ' on smv' . $i . '.value_id = sv' . $i . '.value_id
-				where sv' . $i . '.value_nick like "%' . $s . '%") 
+			$es = Path::encode($s);
+			if ($split) {
+				$str .= 'and (m.model_id in (SELECT smv' . $i . '.model_id from showcase_values sv' . $i . '
+					inner join showcase_iprops smv' . $i . ' on smv' . $i . '.value_id = sv' . $i . '.value_id
+					where sv' . $i . '.value_nick like "%' . $es . '%") 
 
-				OR m.model_id in (SELECT svt' . $i . '.model_id from showcase_iprops svt' . $i . '
-				where svt' . $i . '.text like "%' . $s . '%") 
+					OR m.model_id in (SELECT svt' . $i . '.model_id from showcase_iprops svt' . $i . '
+					where svt' . $i . '.text like "%' . $s . '%") 
 
-				OR m.model_id in (SELECT svn' . $i . '.model_id from showcase_iprops svn' . $i . '
-				where svn' . $i . '.number like "%' . $s . '%") 
+					OR m.article_nick LIKE "%' . $es . '%" 
+					OR g.group_nick LIKE "%' . $es . '%" 
+					OR p.group_nick LIKE "%' . $es . '%" 				
+					OR p2.group_nick LIKE "%' . $es . '%" 
 
-				OR m.article_nick LIKE "%' . $s . '%" 
-				OR m.article LIKE "%' . $s . '%" 
-				OR i.item_nick LIKE "%' . $s . '%" 
-				OR g.group_nick LIKE "%' . $s . '%" 
-				OR g.group LIKE "%' . $s . '%" 
-				OR p.group_nick LIKE "%' . $s . '%" 
-				OR p.group LIKE "%' . $s . '%" 
-				OR p2.group_nick LIKE "%' . $s . '%" 
-				OR p2.group LIKE "%' . $s . '%" 
+					OR pr.producer_nick LIKE "%' . $es . '%"
+				)';
+			} else {
+				$str .= 'and (m.model_id in (SELECT smv' . $i . '.model_id from showcase_values sv' . $i . '
+					inner join showcase_iprops smv' . $i . ' on smv' . $i . '.value_id = sv' . $i . '.value_id
+					where sv' . $i . '.value_nick like "%' . $es . '%") 
 
-				OR m.model_id LIKE "%' . $s . '%" 
-				OR pr.producer_nick LIKE "%' . $s . '%"
-			)';
+					OR m.model_id in (SELECT svt' . $i . '.model_id from showcase_iprops svt' . $i . '
+					where svt' . $i . '.text like "%' . $s . '%") 
+
+					OR m.model_id in (SELECT svn' . $i . '.model_id from showcase_iprops svn' . $i . '
+					where svn' . $i . '.number like "' . $s . '%") 
+
+					OR m.article_nick LIKE "%' . $es . '%" 
+					OR g.group_nick LIKE "%' . $es . '%" 
+					OR p.group_nick LIKE "%' . $es . '%" 				
+					OR p2.group_nick LIKE "%' . $es . '%" 
+
+					OR m.model_id LIKE "' . $es . '%" 
+					OR pr.producer_nick LIKE ""%' . $es . '%"
+				)';
+			}
 		}
 		$join[] = 'LEFT JOIN showcase_groups p2 on p.parent_id = p2.group_id';
 		$ans['filters'][] = array(
@@ -1025,9 +1044,18 @@ $meta->addAction('search', function () {
 
 
 	$groupbinds += [':cost_id' => $cost_id, ':image_id' => $image_id];
-
-	$groups = Data::fetchto('
-		SELECT max(mn3.text) as img, min(mn2.number) as `min`, max(mn2.number) as `max`, g.icon, g.group, g.group_nick, g.group_id, g.parent_id, count(DISTINCT m.model_id) as `count` from showcase_items i
+$sql = '
+		SELECT 
+				mn3.text as img, 
+				min(mn2.number) as `min`, 
+				max(mn2.number) as `max`, 
+				g.icon, 
+				g.group, 
+				g.group_nick, 
+				g.group_id, 
+				g.parent_id, 
+				count(DISTINCT m.model_id) as `count` 
+		FROM showcase_items i
 		LEFT JOIN showcase_models m on m.model_id = i.model_id
 		LEFT JOIN showcase_groups g on g.group_id = m.group_id
 		LEFT JOIN showcase_groups p on g.parent_id = p.group_id
@@ -1037,7 +1065,10 @@ $meta->addAction('search', function () {
 		' . $join . '
 		WHERE m.model_id = i.model_id ' . $grquery . ' ' . $prquery . ' ' . $no . '
 		GROUP BY m.group_id
-		', 'group_nick', $groupbinds);
+		';
+
+	
+	$groups = Data::fetchto($sql, 'group_nick', $groupbinds);
 	//Найти общего предка для всех групп
 	//Пропустить 1 вложенную группу
 	//Отсортировать группы по их order

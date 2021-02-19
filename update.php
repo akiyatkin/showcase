@@ -171,7 +171,8 @@ CREATE TABLE IF NOT EXISTS `showcase_iprops` (
 	`price_id` SMALLINT unsigned NULL COMMENT '65 тыс',
 	`order` SMALLINT unsigned NOT NULL COMMENT '',
 	UNIQUE (`model_id`, `item_num`, `prop_id`, `value_id`),
-	INDEX (prop_id, value_id)
+	INDEX (prop_id, value_id),
+	INDEX (model_id, prop_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 END;
 scexec($sql);
