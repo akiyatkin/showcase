@@ -866,7 +866,7 @@ $meta->addAction('search', function () {
 					OR p2.group_nick LIKE "%' . $es . '%" 
 
 					OR m.model_id LIKE "' . $es . '%" 
-					OR pr.producer_nick LIKE ""%' . $es . '%"
+					OR pr.producer_nick LIKE "%' . $es . '%"
 				)';
 			}
 		}
