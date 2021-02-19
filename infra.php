@@ -55,7 +55,7 @@ Showcase::add('producer', function () {
 	if (!is_array($val)) return false;
 	$val = array_filter($val);
 	$producers = array_keys($val);
-	$producers = array_filter($producers, function (&$value) {
+	$producers = array_filter($producers, function ($value) {
 		if (in_array($value,array('yes', 'no'))) return true;
 		if (Showcase::getProducer($value)) return true;
 		return false;
