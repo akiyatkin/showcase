@@ -584,6 +584,7 @@ class Data {
 		$root = Data::getGroups();
 		$conf = Showcase::$conf;
 		$groups = 0;
+
 		Xlsx::runGroups($root, function &(&$group) use ($images_id, &$icons, &$groups){
 			$groups++;
 			//Ищим свою картинку
@@ -624,6 +625,7 @@ class Data {
 					where g.group_nick = :group_nick
 					', [':images_id' => $images_id, ':group_nick' => $group['group_nick']]);
 
+
 				
 				if ($row) {
 					$group['icon'] = $row['icon'];
@@ -641,8 +643,8 @@ class Data {
 				}
 			}
 			
-			Data::exec('UPDATE showcase_groups SET icon = ? WHERE group_nick = ?',
-				[$group['icon'], $group['group_nick']]
+			Data::exec('UPDATE showcase_groups SET icon = ? WHERE group_id = ?',
+				[$group['icon'], $group['group_id']]
 			);
 			
 			$r = null;
