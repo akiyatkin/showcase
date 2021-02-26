@@ -38,5 +38,80 @@ class API {
 			return $group;
 		});
 	}
-	
+	public static function getChilds($groups, $group = false) {
+		//Найти общего предка для всех групп
+		//Пропустить 1 вложенную группу
+		//Отсортировать группы по их order
+
+		$nicks = [];
+		$path = [];
+		foreach ($groups as $k => $g) {
+			$parent = API::getGroupById($g['group_id']);
+			$test = $parent;
+			$path = [];
+			do {
+				$nicks[$test['group_nick']] = $test;
+				$path[] = $test['group_nick'];
+				$test = $test['parent'];
+			} while ($test);
+			
+			$groups[$k]['path'] = array_reverse($path);
+		}
+		foreach ($groups as $k => $g) {
+			$path = array_intersect($path, $g['path']);
+		}
+
+		$path = array_values($path);
+		$level = sizeof($path);
+		$childs = [];
+		
+		
+		foreach ($groups as $k => $g) {
+			if (empty($g['path'][$level])) continue;
+			$nick = $g['path'][$level];
+			
+			$child = isset($g['path'][$level+1]) ? $g['path'][$level+1] : false;
+			if (!isset($childs[$nick])) {
+				$childs[$nick] = [
+					'group' => $nicks[$nick]['group'],
+					'group_nick' => $nicks[$nick]['group_nick'],
+					'childs' => [],
+					'min' => 0,
+					'max' => 0
+				];
+				if (isset($g['icon'])) $childs[$nick]['icon'] = $g['icon'];
+				if (isset($g['img'])) $childs[$nick]['img'] = $g['img'];
+			}
+			if (isset($g['min'])) {
+				if (!$childs[$nick]['min'] || ($g['min'] && $g['min'] < $childs[$nick]['min'])) {
+					$childs[$nick]['min'] = (float) $g['min'];
+				}
+				if (!$childs[$nick]['max'] || ($g['max'] && $g['max'] > $childs[$nick]['max'])) {
+					$childs[$nick]['max'] = (float) $g['max'];
+				}
+			}
+			
+			if ($child) {
+				if (!isset($childs[$nick]['childs'][$child])) {
+					$childs[$nick]['childs'][$child] = [
+						'group' => $nicks[$child]['group'],
+						'group_nick' => $nicks[$child]['group_nick']
+					];
+				}
+			}
+		}
+
+		if ($group) {
+			if (!$childs
+			 //&& $group_id != $group['group_id']
+				) {
+				//$childs[] = $group;
+				if (isset($groups[0])) $childs[] = API::getGroupById($groups[0]['group_id']);
+			}
+		} else {
+			if (sizeof($childs) == 1) $childs = [];
+		}
+		$childs = array_values($childs);
+		return $childs;
+	}
 }

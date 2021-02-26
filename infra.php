@@ -93,6 +93,8 @@ Showcase::add('search', function () {
 	return '';
 }, function (&$val) {
 	$val = strip_tags($val);
+	$val = mb_strtolower($val);
+	$val = preg_replace("/[\s\-\"\']+/u", " ", $val);
 	return is_string($val);
 });
 

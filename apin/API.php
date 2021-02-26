@@ -272,7 +272,6 @@ class API {
 		$types = array_diff(Data::$files, ['folders']);
 		$ress = []; 
 		$ress['Производители'] = [];
-		$ress['Иконки'] = Data::addFilesIcons();
 		foreach ($prods as $producer_nick => $v) {
 			$ress['Производители'][$producer_nick] = [];
 			foreach ($types as $type) {
@@ -280,7 +279,7 @@ class API {
 				if ($res) $ress['Производители'][$producer_nick][$type] = $res;
 			}
 		}
-
+		$ress['Иконки'] = Data::addFilesIcons(); //Нужны уже записанные картинки для позиций
 		return $ress;
 	}
 }

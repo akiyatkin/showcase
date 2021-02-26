@@ -14,7 +14,12 @@ use infrajs\layer\seojson\Seojson;
 
 $meta = new Meta();
 
-$meta->addArgument('query');
+$meta->addArgument('query', function ($val) {
+	$val = strip_tags($val);
+	$val = mb_strtolower($val);
+	$val = preg_replace("/[\s\-\"\']+/u", " ", $val);
+	return $val;
+});
 
 $meta->addFunction('int', ['notempty'], function ($str, $pname) {
 	$realint = (int) $str;
@@ -56,8 +61,9 @@ $meta->addVariable('model_id@', function () {
 
 $meta->addAction('live', function () {
 	extract($this->gets(['query']), EXTR_REFS);
+	$this->ans['query'] = $query;
 
-	$split = preg_split("/[\s\-]/u", $query);
+	$split = preg_split("/[\s\-\"\']+/u", mb_strtolower($query));
 	
 	$props_equal = [];
 	$props_trim = [];
@@ -69,15 +75,14 @@ $meta->addAction('live', function () {
 	$props[] = 'v.value_nick';
 	
 	$props_start[] = 'p.producer_nick';
-	if (sizeof($split) == 1) {
+	//if (sizeof($split) == 1) {
 		$props[] = 'm.article_nick';
-	}
+	//}
 	// else {
 		$props_trim[] = 'ip.text';
 	//}
 	$where = [];
 	$args = [];
-
 	foreach ($split as $s) {
 		$s = preg_replace("/ы$/", "", $s);
 		$t = trim($s);
@@ -105,8 +110,29 @@ $meta->addAction('live', function () {
 		}
 		$where[] = '('.implode(' or ', $w).')';
 	}
+	if (!$where) $where[] = '1 = 1';
+	$sql = 'SELECT SQL_CALC_FOUND_ROWS distinct m.group_id
+		from showcase_models m
+		left join showcase_producers p on p.producer_id = m.producer_id
+		left join showcase_iprops ip on ip.model_id = m.model_id
+		left join showcase_groups g on g.group_id = m.group_id
+		left join showcase_groups gp on g.parent_id = gp.group_id
+		left join showcase_values v on ip.value_id = v.value_id
+		where 
+		'.implode(' and ', $where).'
+		 order by g.group
+		';
+	$list = Db::all($sql, $args);
+	$this->ans['gcount'] = (int) Data::col('SELECT FOUND_ROWS()');
+	$root = API::getGroupByNick('katalog');
+	$this->ans['groups'] = API::getChilds($list, $root);
+	// $list;
 
-	$sql = 'SELECT distinct m.model_id from showcase_models m
+
+	//$this->ans['groups'] = $groups
+
+	$sql = 'SELECT SQL_CALC_FOUND_ROWS distinct m.model_id
+		from showcase_models m
 		left join showcase_producers p on p.producer_id = m.producer_id
 		left join showcase_iprops ip on ip.model_id = m.model_id
 		left join showcase_groups g on g.group_id = m.group_id
@@ -116,9 +142,15 @@ $meta->addAction('live', function () {
 		'.implode(' and ', $where).'
 		 order by m.model_id
 		limit 0,12';
-	$list = Db::colAll($sql, $args);
-	foreach ($list as $i => $model_id) {
-		$list[$i] = Showcase::getModelEasyById($model_id);
+	$list = Db::all($sql, $args);
+	$this->ans['count'] = (int) Data::col('SELECT FOUND_ROWS()');
+	if ($this->ans['count'] > 100) {
+		$list = [];
+	} else {
+		foreach ($list as $i => $row) {
+			$model_id = $row['model_id'];
+			$list[$i] = Showcase::getModelEasyById($model_id);
+		}	
 	}
 	$this->ans['list'] = $list;
 	return $this->ret();
@@ -186,7 +218,8 @@ $meta->addAction('filters', function () {
 	if ($group_id == 1) {
 		if ($md['search']) {
 			$query = $md['search'];
-			$split = preg_split("/[\s\-]/u", $query);
+			$split = preg_split("/[\s\-\"\']/u", mb_strtolower($query));
+
 			
 			$props_equal = [];
 			$props_trim = [];
@@ -642,6 +675,9 @@ $meta->addAction('search', function () {
 	$nal5 = Db::col('SELECT value_id from showcase_values where value_nick = :value_nick', [
 		':value_nick' => Path::encode('Мало')
 	]);
+	$nal6 = Db::col('SELECT value_id from showcase_values where value_nick = :value_nick', [
+		':value_nick' => Path::encode('На заказ')
+	]);
 	
 
 	$join = [];
@@ -822,7 +858,7 @@ $meta->addAction('search', function () {
 		$v = $md['search'];
 		//$v = Path::encode($v);
 		
-		$v = preg_split("/[\s\-]+/", mb_strtolower($v));
+		$v = preg_split("/[\s\-\"\']+/u", mb_strtolower($v));
 		$v = array_unique($v);
 		$split = sizeof($v) != 1;
 		$str = '';
@@ -900,17 +936,18 @@ $meta->addAction('search', function () {
 	}
 
 	$sort .= '
-		IF(mn3.text is null,1,0),
+		IF(mn.number IS NULL,1,0), 
 		IF(mn2.value_id = :nal1,0,1),
 		IF(mn2.value_id = :nal2,0,1), 
 		IF(mn2.value_id = :nal3,0,1), 
 		IF(mn2.value_id = :nal4,0,1), 
 		IF(mn2.value_id = :nal5,0,1), 
-		IF(mn.number IS NULL,1,0), 
+		IF(mn2.value_id = :nal6,0,1), 
+		IF(mn3.text is null,1,0),
 		mn.number';
 
 
-	$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5];
+	$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5, ':nal6' => $nal6];
 	$groupbinds = [];
 
 	$asc = false;
@@ -933,17 +970,18 @@ $meta->addAction('search', function () {
 	}
 	if ($md['sort'] == 'is') {
 		$asc = true;
-		$sort = 'ORDER BY 
-			IF(mn3.text is null,1,0), 
-			IF(mn.number IS NULL,1,0),
-			IF(mn2.value_id = :nal1,0,1),
-			IF(mn2.value_id = :nal2,0,1), 
-			IF(mn2.value_id = :nal3,0,1), 
-			IF(mn2.value_id = :nal4,0,1), 
-			IF(mn2.value_id = :nal5,0,1), 
-			mn.number
-			';
-		$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5];
+		// $sort = 'ORDER BY 
+		// 	IF(mn.number IS NULL,1,0),
+		// 	IF(mn2.value_id = :nal1,0,1),
+		// 	IF(mn2.value_id = :nal2,0,1), 
+		// 	IF(mn2.value_id = :nal3,0,1), 
+		// 	IF(mn2.value_id = :nal4,0,1), 
+		// 	IF(mn2.value_id = :nal5,0,1), 
+		// 	IF(mn2.value_id = :nal6,0,1), 
+		// 	IF(mn3.text is null,1,0), 
+		// 	mn.number
+		// 	';
+		// $binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5, ':nal6' => $nal6];
 	}
 	if ($md['sort'] == 'art') {
 		$md['reverse'] = !$md['reverse'];
@@ -1044,7 +1082,7 @@ $meta->addAction('search', function () {
 
 
 	$groupbinds += [':cost_id' => $cost_id, ':image_id' => $image_id];
-$sql = '
+	$sql = '
 		SELECT 
 				mn3.text as img, 
 				min(mn2.number) as `min`, 
@@ -1069,71 +1107,11 @@ $sql = '
 
 	
 	$groups = Data::fetchto($sql, 'group_nick', $groupbinds);
-	//Найти общего предка для всех групп
-	//Пропустить 1 вложенную группу
-	//Отсортировать группы по их order
 
-	$nicks = [];
-	$path = [];
-	foreach ($groups as $k => $g) {
-		$parent = API::getGroupById($g['group_id']);
-		$test = $parent;
-		$path = [];
-		do {
-			$nicks[$test['group_nick']] = $test;
-			$path[] = $test['group_nick'];
-			$test = $test['parent'];
-		} while ($test);
-		
-		$groups[$k]['path'] = array_reverse($path);
-	}
-	foreach ($groups as $k => $g) {
-		$path = array_intersect($path, $g['path']);
-	}
-	$path = array_values($path);
-	$level = sizeof($path);
-	$childs = [];
+	$childs = API::getChilds($groups, $md['search'] ? $group : false);
 	
-	foreach ($groups as $k => $g) {
-		if (empty($g['path'][$level])) continue;
-		$nick = $g['path'][$level];
-		$child = isset($g['path'][$level+1]) ? $g['path'][$level+1] : false;
-		if (!isset($childs[$nick])) {
-			$childs[$nick] = [
-				'group' => $nicks[$nick]['group'],
-				'group_nick' => $nicks[$nick]['group_nick'],
-				'childs' => [],
-				'min' => 0,
-				'max' => 0,
-				'icon' => $g['icon'],
-				'img' => $g['img']
-			];
-		}
-		if (!$childs[$nick]['min'] || ($g['min'] && $g['min'] < $childs[$nick]['min'])) {
-			$childs[$nick]['min'] = (float) $g['min'];
-		}
-		if (!$childs[$nick]['max'] || ($g['max'] && $g['max'] > $childs[$nick]['max'])) {
-			$childs[$nick]['max'] = (float) $g['max'];
-		}
-		
-		if ($child) {
-			if (!isset($childs[$nick]['childs'][$child])) {
-				$childs[$nick]['childs'][$child] = [
-					'group' => $nicks[$child]['group'],
-					'group_nick' => $nicks[$child]['group_nick']
-				];
-			}
-		}
-	}
-	if ($md['search']) {
-		if (!$childs && $group_id != $group['group_id']) {
-			$childs[] = $group;
-		}
-	} else {
-		if (sizeof($childs) == 1) $childs = [];
-	}
 
-	$ans['childs'] = array_values($childs);
+	$ans['childs'] = $childs;
 	
 	// echo sizeof($groups);
 	// print_r($groups);

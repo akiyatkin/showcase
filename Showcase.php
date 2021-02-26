@@ -430,7 +430,7 @@ class Showcase
 		if (!empty($md['search'])) {
 			$v = $md['search'];
 			//$v = Path::encode($v);
-			$v = preg_split("/[\s\-]+/", mb_strtolower($v));
+			$v = preg_split("/[\s\-\"\']+/u", mb_strtolower($v));
 			$v = array_unique($v);
 			$str = '';
 			foreach ($v as $i => $s) {
