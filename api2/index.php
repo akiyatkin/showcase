@@ -146,7 +146,7 @@ $meta->addAction('live', function () {
 			limit 0,12';
 		$list = Db::all($sql, $args);
 		$ans['count'] = (int) Data::col('SELECT FOUND_ROWS()');
-		if ($ans['count'] > 100) {
+		if ($ans['count'] > 200) {
 			$list = [];
 		} else {
 			foreach ($list as $i => $row) {
