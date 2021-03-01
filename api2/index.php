@@ -62,97 +62,102 @@ $meta->addVariable('model_id@', function () {
 $meta->addAction('live', function () {
 	extract($this->gets(['query']), EXTR_REFS);
 	$this->ans['query'] = $query;
-
-	$split = preg_split("/[\s\-\"\']+/u", mb_strtolower($query));
-	
-	$props_equal = [];
-	$props_trim = [];
-	$props_start = [];
-	$props = [];
-
-	$props[] = 'g.group_nick';
-	$props[] = 'gp.group_nick';
-	$props[] = 'v.value_nick';
-	
-	$props_start[] = 'p.producer_nick';
-	//if (sizeof($split) == 1) {
-		$props[] = 'm.article_nick';
-	//}
-	// else {
-		$props_trim[] = 'ip.text';
-	//}
-	$where = [];
-	$args = [];
-	foreach ($split as $s) {
-		$s = preg_replace("/ы$/", "", $s);
-		$t = trim($s);
-		if (!$t) continue;
-		$s = Path::encode($s);
-		if (!$s) continue;
+	$ans = Access::cache('showcase-live', function ($query) {
+		if (strlen($query) < 2) header('Cache-Control: no-store'); //Кэшируем только если $query пустой или 1 символ
 		
+		$ans = [];
+		$split = preg_split("/[\s]/u", mb_strtolower($query));
+		$props_equal = [];
+		$props_trim = [];
+		$props_start = [];
+		$props = [];
 
-		$w = [];
-		foreach($props_equal as $p) {
-			$w[] = $p.' = ?';
-			$args[] = $s;
+		$props[] = 'g.group_nick';
+		$props[] = 'gp.group_nick';
+		$props[] = 'v.value_nick';
+		
+		$props_start[] = 'p.producer_nick';
+		//if (sizeof($split) == 1) {
+			$props[] = 'm.article_nick';
+		//}
+		// else {
+			$props_trim[] = 'ip.text';
+		//}
+		$where = [];
+		$args = [];
+		foreach ($split as $s) {
+			$s = preg_replace("/ы$/", "", $s);
+			$t = trim($s);
+			if (!$t) continue;
+			$s = Path::encode($s);
+			if (!$s) continue;
+			
+
+			$w = [];
+			foreach($props_equal as $p) {
+				$w[] = $p.' = ?';
+				$args[] = $s;
+			}
+			foreach($props as $p) {
+				$w[] = $p.' like ?';
+				$args[] = '%'.$s.'%';
+			}
+			foreach ($props_start as $p) {
+				$w[] = $p.' like ?';
+				$args[] = $s.'%';
+			}
+			foreach ($props_trim as $p) {
+				$w[] = $p.' like ?';
+				$args[] = '%'.$t.'%';
+			}
+			$where[] = '('.implode(' or ', $w).')';
 		}
-		foreach($props as $p) {
-			$w[] = $p.' like ?';
-			$args[] = '%'.$s.'%';
-		}
-		foreach ($props_start as $p) {
-			$w[] = $p.' like ?';
-			$args[] = $s.'%';
-		}
-		foreach ($props_trim as $p) {
-			$w[] = $p.' like ?';
-			$args[] = '%'.$t.'%';
-		}
-		$where[] = '('.implode(' or ', $w).')';
-	}
-	if (!$where) $where[] = '1 = 1';
-	$sql = 'SELECT SQL_CALC_FOUND_ROWS distinct m.group_id
-		from showcase_models m
-		left join showcase_producers p on p.producer_id = m.producer_id
-		left join showcase_iprops ip on ip.model_id = m.model_id
-		left join showcase_groups g on g.group_id = m.group_id
-		left join showcase_groups gp on g.parent_id = gp.group_id
-		left join showcase_values v on ip.value_id = v.value_id
-		where 
-		'.implode(' and ', $where).'
-		 order by g.group
-		';
-	$list = Db::all($sql, $args);
-	$this->ans['gcount'] = (int) Data::col('SELECT FOUND_ROWS()');
-	$root = API::getGroupByNick('katalog');
-	$this->ans['groups'] = API::getChilds($list, $root);
-	// $list;
+		if (!$where) $where[] = '1 = 1';
+		$sql = 'SELECT SQL_CALC_FOUND_ROWS distinct m.group_id
+			from showcase_models m
+			left join showcase_producers p on p.producer_id = m.producer_id
+			left join showcase_iprops ip on ip.model_id = m.model_id
+			left join showcase_groups g on g.group_id = m.group_id
+			left join showcase_groups gp on g.parent_id = gp.group_id
+			left join showcase_values v on ip.value_id = v.value_id
+			where 
+			'.implode(' and ', $where).'
+			 order by g.group
+			';
+		$list = Db::all($sql, $args);
+		$ans['gcount'] = (int) Data::col('SELECT FOUND_ROWS()');
+		$root = API::getGroupByNick('katalog');
+		$ans['groups'] = API::getChilds($list, $root);
+		// $list;
 
 
-	//$this->ans['groups'] = $groups
+		//$this->ans['groups'] = $groups
 
-	$sql = 'SELECT SQL_CALC_FOUND_ROWS distinct m.model_id
-		from showcase_models m
-		left join showcase_producers p on p.producer_id = m.producer_id
-		left join showcase_iprops ip on ip.model_id = m.model_id
-		left join showcase_groups g on g.group_id = m.group_id
-		left join showcase_groups gp on g.parent_id = gp.group_id
-		left join showcase_values v on ip.value_id = v.value_id
-		where 
-		'.implode(' and ', $where).'
-		 order by m.model_id
-		limit 0,12';
-	$list = Db::all($sql, $args);
-	$this->ans['count'] = (int) Data::col('SELECT FOUND_ROWS()');
-	if ($this->ans['count'] > 100) {
-		$list = [];
-	} else {
-		foreach ($list as $i => $row) {
-			$model_id = $row['model_id'];
-			$list[$i] = Showcase::getModelEasyById($model_id);
-		}	
-	}
-	$this->ans['list'] = $list;
+		$sql = 'SELECT SQL_CALC_FOUND_ROWS distinct m.model_id
+			from showcase_models m
+			left join showcase_producers p on p.producer_id = m.producer_id
+			left join showcase_iprops ip on ip.model_id = m.model_id
+			left join showcase_groups g on g.group_id = m.group_id
+			left join showcase_groups gp on g.parent_id = gp.group_id
+			left join showcase_values v on ip.value_id = v.value_id
+			where 
+			'.implode(' and ', $where).'
+			 order by m.model_id
+			limit 0,12';
+		$list = Db::all($sql, $args);
+		$ans['count'] = (int) Data::col('SELECT FOUND_ROWS()');
+		if ($ans['count'] > 100) {
+			$list = [];
+		} else {
+			foreach ($list as $i => $row) {
+				$model_id = $row['model_id'];
+				$list[$i] = Showcase::getModelEasyById($model_id);
+			}	
+		}
+		$ans['list'] = $list;
+		return $ans;
+	}, [$query]);
+	$this->ans = array_merge($this->ans, $ans);
 	return $this->ret();
 });
 $meta->addAction('groups', function ($val, $pname) {	
