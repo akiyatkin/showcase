@@ -181,6 +181,13 @@ class Showcase
 		unset($group['catalog']);
 		return $group;
 	}
+	public static function getPath($group_id, &$path = []) {
+		if (isset(Showcase::$once[$group_id])) return Showcase::$once[$group_id];
+		$row = Db::fetch('SELECT group_nick, parent_id from showcase_groups where group_id = ?', [$group_id]);
+		array_unshift($path, $row['group_nick']);
+		if ($row['parent_id']) Showcase::getPath($row['parent_id'], $path);
+		return Showcase::$once[$group_id] = $path;
+	}
 	public static function nestedGroups($group_id)
 	{
 		$groups = Data::all('SELECT group_id from showcase_groups where parent_id = ?', [$group_id]);
