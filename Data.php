@@ -278,7 +278,18 @@ class Data {
 		Data::exec('TRUNCATE `showcase_items`');
 		Data::exec('TRUNCATE `showcase_iprops`');
 	}
-	
+	public static function getValueId($value) {
+		$key = 'getValueId:'.$value;
+		if (isset(Data::$once[$key])) return Data::$once[$key];
+		$strid = 'value_id';
+		$strnick = 'value_nick';
+		$strval = 'value';
+		$table = 'showcase_values';
+		$nick = Path::encode($value);
+		$id = Data::col('SELECT '.$strid.' from '.$table.' where '.$strnick.' = ?', [$nick]);
+		if ($id) return Data::$once[$key] = $id;
+		return false;	
+	}
 	public static function initValue($value) {
 		$key = 'initValue:'.$value;
 		if (isset(Data::$once[$key])) return Data::$once[$key];

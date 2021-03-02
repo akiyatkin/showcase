@@ -789,7 +789,7 @@ $meta->addAction('search', function () {
 					}
 				} else {
 					$row = Showcase::getMean($prop_nick, $v);
-					if ($row) $titles[] = $row['mean'];
+					if ($row && isset($row['value'])) $titles[] = $row['mean'];
 				}
 			}
 			//$titles = implode(' или ', $titles);
@@ -824,6 +824,7 @@ $meta->addAction('search', function () {
 					$join[] = 'LEFT JOIN showcase_iprops p' . $un . ' on (p' . $un . '.model_id = m.model_id and p' . $un . '.prop_id = ' . $prop_id . ')';
 					if ($vals) {
 						$joinp = [];
+
 						foreach ($vals as $val => $one) {
 							$value_id = Data::initValue($val);
 							$joinp[] = 'p' . $un . '.value_id = ' . $value_id;
@@ -915,13 +916,13 @@ $meta->addAction('search', function () {
 					$join[] = 'INNER JOIN showcase_iprops p' . $un . ' on (p' . $un . '.model_id = m.model_id and p' . $un . '.item_num = i.item_num and p' . $un . '.prop_id = ' . $prop_id . ')';
 				}
 			}
-
 			if ($vals) {
 				$un = $prop_id . 'v';
 				$joinp = [];
 				if ($type == 'value') {
 					foreach ($vals as $val => $one) {
-						$value_id = Data::initValue($val);
+						$value_id = Data::getValueId($val);
+						if (!$value_id) continue;
 						$joinp[] = 'p' . $un . '.value_id = ' . $value_id;
 					}
 				} else if ($type == 'number') {
@@ -934,6 +935,7 @@ $meta->addAction('search', function () {
 				$joinp = implode(' OR ', $joinp);
 				$join[] = 'INNER JOIN showcase_iprops p' . $un . ' on (p' . $un . '.model_id = i.model_id and p' . $un . '.item_num = i.item_num and p' . $un . '.prop_id = ' . $prop_id . ' and (' . $joinp . '))';
 			}
+
 		}
 	}
 
@@ -1279,7 +1281,7 @@ $meta->addAction('search', function () {
 			$ans['text']  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение каталога, должно быть вне кэша
 		}
 	}
-
+	
 	return $this->ret();
 });
 $meta->addAction('columns', function () {
