@@ -3,6 +3,7 @@ namespace akiyatkin\showcase\apin;
 use akiyatkin\fs\FS;
 use akiyatkin\showcase\Showcase;
 use akiyatkin\showcase\Data;
+use akiyatkin\showcase\api2\API as GAPI;
 use infrajs\path\Path;
 use infrajs\load\Load;
 use infrajs\db\Db;
@@ -281,7 +282,10 @@ class API {
 				if ($res) $ress['Производители'][$producer_nick][$type] = $res;
 			}
 		}
+		
+		GAPI::updateSearch();
 		$ress['Иконки'] = Data::addFilesIcons(); //Нужны уже записанные картинки для позиций
+		$ress['Индекс быстрого поиска обновлён'] = 'ОК';
 		return $ress;
 	}
 }

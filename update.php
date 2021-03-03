@@ -177,46 +177,11 @@ CREATE TABLE IF NOT EXISTS `showcase_iprops` (
 END;
 scexec($sql);
 
-/*$sql = <<<END
-CREATE TABLE IF NOT EXISTS `showcase_mvalues` (
-	`model_id` MEDIUMINT unsigned NOT NULL COMMENT '',
-	`item_num` SMALLINT unsigned NOT NULL COMMENT '',
-	`prop_id` SMALLINT unsigned NOT NULL COMMENT '65 тыс',
-	`value_id` MEDIUMINT unsigned NOT NULL COMMENT '16 млн',
-	`price_id` SMALLINT unsigned NULL COMMENT '65 тыс',
-	`order` SMALLINT unsigned NOT NULL COMMENT '',
-	UNIQUE (`model_id`, `item_num`, `prop_id`, `value_id`),
-	INDEX (model_id),
-	INDEX (prop_id, value_id)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-END;
-scexec($sql);
-
 $sql = <<<END
-CREATE TABLE IF NOT EXISTS `showcase_mnumbers` (
+CREATE TABLE IF NOT EXISTS `showcase_search` (
 	`model_id` MEDIUMINT unsigned NOT NULL COMMENT '',
-	`item_num` SMALLINT unsigned NOT NULL COMMENT '',
-	`prop_id` SMALLINT unsigned NOT NULL COMMENT '65 тыс',
-	`number` DECIMAL(19,2) NOT NULL COMMENT '',
-	`price_id` SMALLINT unsigned NULL COMMENT '65 тыс',
-	`order` SMALLINT unsigned NOT NULL COMMENT '',
-	UNIQUE (`model_id`, `item_num`, `prop_id`, `number`),
-	INDEX (model_id),
-	INDEX (prop_id, number)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+	`vals` TEXT NOT NULL COMMENT 'латиница после Path::encode слова разделены пробелом',
+	FULLTEXT INDEX (`vals`)
+) DEFAULT CHARSET=latin1 COLLATE=latin1_bin;
 END;
 scexec($sql);
-
-$sql = <<<END
-CREATE TABLE IF NOT EXISTS `showcase_mtexts` (
-	`model_id` MEDIUMINT unsigned NOT NULL COMMENT '',
-	`item_num` SMALLINT unsigned NOT NULL COMMENT '',
-	`prop_id` SMALLINT unsigned NOT NULL COMMENT '',
-	`text` mediumtext NOT NULL COMMENT '',
-	`price_id` SMALLINT unsigned NULL COMMENT '65 тыс',
-	`order` SMALLINT unsigned NOT NULL COMMENT '',
-	INDEX (model_id)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-END;
-scexec($sql);
-*/
