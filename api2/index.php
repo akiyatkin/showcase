@@ -200,7 +200,7 @@ $meta->addAction('live', function () {
 			left join showcase_values v on ip.value_id = v.value_id
 			where 
 			'.implode(' and ', $where).'
-			 order by g.group
+			 order by g.`order`
 			';
 		$list = Db::all($sql, $args);
 		$ans['gcount'] = (int) Data::col('SELECT FOUND_ROWS()');
