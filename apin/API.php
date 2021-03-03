@@ -75,9 +75,11 @@ class API {
 			$info = Load::srcInfo($src);
 			if (!in_array($info['ext'], $exts)) return;
 			$file = $info['name'];
+
 			$s = explode(',', $file);
 			foreach ($s as $search) {
 				$search = Path::encode($search);
+				if (!$search) continue;
 				$list[$src] = [
 					'src' => $src,
 					'search' => $search,
@@ -165,6 +167,7 @@ class API {
 	}
 	public static function apply($producer_nick, $type) {
 		$files = API::getFiles($producer_nick, $type);
+
 		$types = Data::exts($type);
 		$poss = API::getArticles($producer_nick);
 		$res = [];
@@ -176,7 +179,7 @@ class API {
 			if (!isset($files[$psearch])) $files[$psearch] = [];
 			$files[$psearch] = array_merge($files[$psearch], $files[$search]);
 		}
-		
+
 
 
 		foreach ($poss as $pos) {			
