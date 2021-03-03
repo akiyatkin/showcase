@@ -132,25 +132,26 @@ class API {
 	public static function getFiles($producer_nick, $type = 'images') {
 		$proddir = API::getProducers()[$producer_nick]['proddir'].'/';
 		$list = [];
-	
+		$types = Data::exts($type);
+		
 		// catalog/type[images]
-		API::scanListReq(Showcase::$conf[$type].$proddir, Data::$$type, $list);
+		API::scanListReq(Showcase::$conf[$type].$proddir, $types, $list);
 
 		if (!in_array($type, ['slides'])) {
 			// catalog/folders/Kemppi/
-			API::scanDirs(Showcase::$conf['folders'].$proddir, Data::$$type, $list);
+			API::scanDirs(Showcase::$conf['folders'].$proddir, $types, $list);
 
 			// catalog/folders/Kemppi/folders/
 			$src = Showcase::$conf['folders'].$proddir.'folders/';
 			if (Path::theme($src)) {
-			 	FS::scandir($src, function ($file, $dir) use (&$list) {
-			 		API::scanDirs($dir.$file.'/', Data::$$type, $list);
+			 	FS::scandir($src, function ($file, $dir) use (&$list, $types) {
+			 		API::scanDirs($dir.$file.'/', $types, $list);
 			 	});
 			}
 		}
-
+		
 		// catalog/folders/Kemppi/type[images]
-		API::scanListReq(Showcase::$conf['folders'].$proddir.$type.'/', Data::$$type, $list);
+		API::scanListReq(Showcase::$conf['folders'].$proddir.$type.'/', $types, $list);
 		
 		//array_multisort(array_column($list, 'file'), SORT_ASC, $list);
 		$search = [];
@@ -158,11 +159,12 @@ class API {
 			if (empty($search[$f['search']])) $search[$f['search']] = [];
 			$search[$f['search']][$f['src']] = $f;
 		}
+
 		return $search;
 	}
 	public static function apply($producer_nick, $type) {
 		$files = API::getFiles($producer_nick, $type);
-		
+		$types = Data::exts($type);
 		$poss = API::getArticles($producer_nick);
 		$res = [];
 		$empty = [];
@@ -188,7 +190,7 @@ class API {
 					foreach ($search as $src) {
 						$info = Load::srcInfo($src);
 						if (FS::is_dir($src)) {
-							API::scanDir($src, Data::$$type, $r['files']);
+							API::scanDir($src, $types, $r['files']);
 						} else {
 							$r['files'][$src] = [
 								'src' => $src,

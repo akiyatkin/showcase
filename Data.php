@@ -26,10 +26,13 @@ class Data {
 		Data::$timerprev = $t;
 		echo $begin.'-'.$prev.' '.$msg.'<br>'."\n";
 	}
+	public static function exts ($type) {
+		return $type == 'files' ? Data::$loads : Data::$$type;
+	}
 	public static $iexts = ['db'];
 	public static $types = ['number','text','value'];
 	public static $files = ['texts', 'images', 'folders', 'videos','slides','files'];
-
+	public static $loads = ['pdf','rar','zip'];
 	public static $texts = ['html', 'tpl', 'mht', 'docx'];
 	public static $images = ['png', 'gif', 'jpg', 'jpeg','svg'];
 	public static $videos = ['avi','ogv','mp4','swf'];
@@ -786,7 +789,8 @@ class Data {
 		if ($type == 'folders') {
 			return Data::addFilesFSproducer($list, $prod, $dir);
 		}
-		$exts = $type == 'files' ? false : Data::$$type;
+		$types = Data::exts($type);
+		$exts = $type == 'files' ? false : $types;
 		$index = Data::getIndex($dir, $exts);
 		foreach ($index as $art => $files) {
 			if (!$art) continue;
@@ -827,7 +831,8 @@ class Data {
 					Data::addFilesFSproducer($list, $prod, $dir.$type.'/'.$userdir.'/');
 				});
 			} else {
-				$index = Data::getIndex($dir.$type.'/',  Data::$$type);
+				$types = Data::exts($type);
+				$index = Data::getIndex($dir.$type.'/',  $types);
 				foreach ($index as $art => $files) {
 					if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
 					$files = array_fill_keys($files, $type);
