@@ -1142,7 +1142,7 @@ $meta->addAction('search', function () {
 
 	
 	$groups = Data::all($sql, $groupbinds);
-	if ($groups[0]['group_id'] == $group_id) {
+	if (isset($groups[0]) && $groups[0]['group_id'] == $group_id) {
 		$childs = API::getChilds($groups, false);
 	} else {
 		$childs = API::getChilds($groups, $md['search'] ? $group : false);	
