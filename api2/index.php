@@ -62,69 +62,98 @@ $meta->addAction('livepos', function () {
 	extract($this->gets(['query']), EXTR_REFS);
 	$this->ans['query'] = $query;
 		
-	$ans = [];
-	$split = preg_split("/[\s]/u", mb_strtolower($query));
-	$props_equal = [];
-	$props_trim = [];
-	$props_start = [];
-	$props = [];
+	// $ans = [];
+	// $split = preg_split("/[\s]/u", mb_strtolower($query));
+	// $props_equal = [];
+	// $props_trim = [];
+	// $props_start = [];
+	// $props = [];
 
-	$props[] = 'g.group_nick';
-	$props[] = 'gp.group_nick';
-	$props[] = 'v.value_nick';
+	// $props[] = 'g.group_nick';
+	// $props[] = 'gp.group_nick';
+	// $props[] = 'v.value_nick';
 	
-	$props_start[] = 'p.producer_nick';
-	//if (sizeof($split) == 1) {
-		$props[] = 'm.article_nick';
-	//}
-	// else {
-		$props_trim[] = 'ip.text';
-	//}
-	$where = [];
-	$args = [];
-	foreach ($split as $s) {
-		$s = preg_replace("/ы$/", "", $s);
-		$t = trim($s);
-		if (!$t) continue;
-		$s = Path::encode($s);
-		if (!$s) continue;
+	// $props_start[] = 'p.producer_nick';
+	// //if (sizeof($split) == 1) {
+	// 	$props[] = 'm.article_nick';
+	// //}
+	// // else {
+	// 	$props_trim[] = 'ip.text';
+	// //}
+	// $where = [];
+	// $args = [];
+	// foreach ($split as $s) {
+	// 	$s = preg_replace("/ы$/", "", $s);
+	// 	$t = trim($s);
+	// 	if (!$t) continue;
+	// 	$s = Path::encode($s);
+	// 	if (!$s) continue;
 		
 
-		$w = [];
-		foreach($props_equal as $p) {
-			$w[] = $p.' = ?';
-			$args[] = $s;
-		}
-		foreach($props as $p) {
-			$w[] = $p.' like ?';
-			$args[] = '%'.$s.'%';
-		}
-		foreach ($props_start as $p) {
-			$w[] = $p.' like ?';
-			$args[] = $s.'%';
-		}
-		foreach ($props_trim as $p) {
-			$w[] = $p.' like ?';
-			$args[] = '%'.$t.'%';
-		}
-		$where[] = '('.implode(' or ', $w).')';
+	// 	$w = [];
+	// 	foreach($props_equal as $p) {
+	// 		$w[] = $p.' = ?';
+	// 		$args[] = $s;
+	// 	}
+	// 	foreach($props as $p) {
+	// 		$w[] = $p.' like ?';
+	// 		$args[] = '%'.$s.'%';
+	// 	}
+	// 	foreach ($props_start as $p) {
+	// 		$w[] = $p.' like ?';
+	// 		$args[] = $s.'%';
+	// 	}
+	// 	foreach ($props_trim as $p) {
+	// 		$w[] = $p.' like ?';
+	// 		$args[] = '%'.$t.'%';
+	// 	}
+	// 	$where[] = '('.implode(' or ', $w).')';
+	// }
+	// if (!$where) $where[] = '1 = 1';
+
+	// //$this->ans['groups'] = $groups
+
+	// $sql = 'SELECT SQL_CALC_FOUND_ROWS distinct m.model_id
+	// 	from showcase_models m
+	// 	left join showcase_producers p on p.producer_id = m.producer_id
+	// 	left join showcase_iprops ip on ip.model_id = m.model_id
+	// 	left join showcase_groups g on g.group_id = m.group_id
+	// 	left join showcase_groups gp on g.parent_id = gp.group_id
+	// 	left join showcase_values v on ip.value_id = v.value_id
+	// 	where 
+	// 	'.implode(' and ', $where).'
+	// 	 order by m.model_id
+	// 	limit 0,12';
+	$ans = [];
+	$ar = preg_split("/[\s]/u", mb_strtolower($query));
+	$split = [];
+	foreach ($ar as $s) {
+		$s = preg_replace("/ы$/", "", $s);
+		$s = Path::encode($s);
+		if (!$s) continue;
+		$split[] = $s;
 	}
-	if (!$where) $where[] = '1 = 1';
+	
+	if ($split) {
+		$sql = '
+			SELECT SQL_CALC_FOUND_ROWS s.model_id
+			FROM showcase_search s, showcase_models m
+			WHERE 
+				s.model_id = m.model_id 
+				and s.vals like "%'.implode('%" and s.vals like "%', $split).'%"
+			LIMIT 0,12
+		';
+	} else {
+		$sql = '
+			SELECT SQL_CALC_FOUND_ROWS s.model_id
+			FROM showcase_search s, showcase_models m
+			WHERE 
+				s.model_id = m.model_id
+			LIMIT 0,12
+		';
+	}
 
-	//$this->ans['groups'] = $groups
-
-	$sql = 'SELECT SQL_CALC_FOUND_ROWS distinct m.model_id
-		from showcase_models m
-		left join showcase_producers p on p.producer_id = m.producer_id
-		left join showcase_iprops ip on ip.model_id = m.model_id
-		left join showcase_groups g on g.group_id = m.group_id
-		left join showcase_groups gp on g.parent_id = gp.group_id
-		left join showcase_values v on ip.value_id = v.value_id
-		where 
-		'.implode(' and ', $where).'
-		 order by m.model_id
-		limit 0,12';
-	$list = Db::all($sql, $args);
+	$list = Db::all($sql);
 	$ans['count'] = (int) Data::col('SELECT FOUND_ROWS()');
 	
 	foreach ($list as $i => $row) {
@@ -137,107 +166,7 @@ $meta->addAction('livepos', function () {
 	$this->ans = array_merge($this->ans, $ans);
 	return $this->ret();
 });
-// $meta->addAction('live', function () {
-// 	extract($this->gets(['query']), EXTR_REFS);
-// 	$this->ans['query'] = $query;
-// 	$ans = Access::cache('showcase-live', function ($query) {
-// 		if (strlen($query) < 2) header('Cache-Control: no-store'); //Кэшируем только если $query пустой или 1 символ
-		
-// 		$ans = [];
-// 		$split = preg_split("/[\s]/u", mb_strtolower($query));
-// 		$props_equal = [];
-// 		$props_trim = [];
-// 		$props_start = [];
-// 		$props = [];
 
-// 		$props[] = 'g.group_nick';
-// 		$props[] = 'gp.group_nick';
-// 		$props[] = 'v.value_nick';
-		
-// 		$props_start[] = 'p.producer_nick';
-// 		//if (sizeof($split) == 1) {
-// 			$props[] = 'm.article_nick';
-// 		//}
-// 		// else {
-// 			$props_trim[] = 'ip.text';
-// 		//}
-// 		$where = [];
-// 		$args = [];
-// 		foreach ($split as $s) {
-// 			$s = preg_replace("/ы$/", "", $s);
-// 			$t = trim($s);
-// 			if (!$t) continue;
-// 			$s = Path::encode($s);
-// 			if (!$s) continue;
-			
-
-// 			$w = [];
-// 			foreach($props_equal as $p) {
-// 				$w[] = $p.' = ?';
-// 				$args[] = $s;
-// 			}
-// 			foreach($props as $p) {
-// 				$w[] = $p.' like ?';
-// 				$args[] = '%'.$s.'%';
-// 			}
-// 			foreach ($props_start as $p) {
-// 				$w[] = $p.' like ?';
-// 				$args[] = $s.'%';
-// 			}
-// 			foreach ($props_trim as $p) {
-// 				$w[] = $p.' like ?';
-// 				$args[] = '%'.$t.'%';
-// 			}
-// 			$where[] = '('.implode(' or ', $w).')';
-// 		}
-// 		if (!$where) $where[] = '1 = 1';
-// 		$sql = 'SELECT SQL_CALC_FOUND_ROWS distinct m.group_id
-// 			from showcase_models m
-// 			left join showcase_producers p on p.producer_id = m.producer_id
-// 			left join showcase_iprops ip on ip.model_id = m.model_id
-// 			left join showcase_groups g on g.group_id = m.group_id
-// 			left join showcase_groups gp on g.parent_id = gp.group_id
-// 			left join showcase_values v on ip.value_id = v.value_id
-// 			where 
-// 			'.implode(' and ', $where).'
-// 			 order by g.`order`
-// 			';
-// 		$list = Db::all($sql, $args);
-// 		$ans['gcount'] = (int) Data::col('SELECT FOUND_ROWS()');
-// 		$root = API::getGroupByNick('katalog');
-// 		$ans['groups'] = API::getChilds($list, $root);
-// 		// $list;
-
-
-// 		//$this->ans['groups'] = $groups
-
-// 		$sql = 'SELECT SQL_CALC_FOUND_ROWS distinct m.model_id
-// 			from showcase_models m
-// 			left join showcase_producers p on p.producer_id = m.producer_id
-// 			left join showcase_iprops ip on ip.model_id = m.model_id
-// 			left join showcase_groups g on g.group_id = m.group_id
-// 			left join showcase_groups gp on g.parent_id = gp.group_id
-// 			left join showcase_values v on ip.value_id = v.value_id
-// 			where 
-// 			'.implode(' and ', $where).'
-// 			 order by m.model_id
-// 			limit 0,12';
-// 		$list = Db::all($sql, $args);
-// 		$ans['count'] = (int) Data::col('SELECT FOUND_ROWS()');
-// 		if ($ans['count'] > 200) {
-// 			$list = [];
-// 		} else {
-// 			foreach ($list as $i => $row) {
-// 				$model_id = $row['model_id'];
-// 				$list[$i] = Showcase::getModelEasyById($model_id);
-// 			}	
-// 		}
-// 		$ans['list'] = $list;
-// 		return $ans;
-// 	}, [$query]);
-// 	$this->ans = array_merge($this->ans, $ans);
-// 	return $this->ret();
-// });
 $meta->addAction('live', function () {
 	extract($this->gets(['query']), EXTR_REFS);
 	$this->ans['query'] = $query;
@@ -249,46 +178,17 @@ $meta->addAction('live', function () {
 		$split = [];
 		foreach ($ar as $s) {
 			$s = preg_replace("/ы$/", "", $s);
-			$s = preg_replace("/ы\s/", " ", $s);
 			$s = Path::encode($s);
 			if (!$s) continue;
 			$split[] = $s;
 		}
-		// $where = [];
-		// $args = [];
-		// foreach ($split as $s) {
-		// 	$s = preg_replace("/ы$/", "", $s);
-		// 	$t = trim($s);
-		// 	if (!$t) continue;
-		// 	$s = Path::encode($s);
-		// 	if (!$s) continue;
-			
-
-		// 	$w = [];
-		// 	foreach($props_equal as $p) {
-		// 		$w[] = $p.' = ?';
-		// 		$args[] = $s;
-		// 	}
-		// 	foreach($props as $p) {
-		// 		$w[] = $p.' like ?';
-		// 		$args[] = '%'.$s.'%';
-		// 	}
-		// 	foreach ($props_start as $p) {
-		// 		$w[] = $p.' like ?';
-		// 		$args[] = $s.'%';
-		// 	}
-		// 	foreach ($props_trim as $p) {
-		// 		$w[] = $p.' like ?';
-		// 		$args[] = '%'.$t.'%';
-		// 	}
-		// 	$where[] = '('.implode(' or ', $w).')';
-		// }
+		
 		if ($split) {
 			$sql = 'SELECT s.model_id, m.group_id
 			from showcase_search s, showcase_models m
 			where 
 				s.model_id = m.model_id 
-				and s.vals like "%'.implode('%" and s.vals like "%', $split).'%"';	
+				and s.vals like "%'.implode('%" and s.vals like "%', $split).'%"';
 		} else {
 			$sql = 'SELECT s.model_id, m.group_id
 			from showcase_search s, showcase_models m
@@ -395,77 +295,63 @@ $meta->addAction('filters', function () {
 	]);
 
 
-	if ($group_id == 1) {
+	//if ($group_id == 1) {
 		if ($md['search']) {
-			$query = $md['search'];
-			$split = preg_split("/[\s\-\"\']/u", mb_strtolower($query));
-
-			
-			$props_equal = [];
-			$props_trim = [];
-			$props_start = [];
-			$props = [];
-
-			$props[] = 'g.group_nick';
-			$props[] = 'gp.group_nick';
-			$props[] = 'v.value_nick';
-			
-			$props_start[] = 'p.producer_nick';
-			if (sizeof($split) == 1) {
-				$props[] = 'm.article_nick';
-			}
-
-			$props_trim[] = 'ip.text';
-			
-			$where = [];
-			$args = [];
-
-			foreach ($split as $s) {
+			$v = $md['search'];
+		
+			$v = preg_split("/[\s]/u", mb_strtolower($v));
+			$split = array_unique($v);
+			foreach ($split as $i => $s) {
 				$s = preg_replace("/ы$/", "", $s);
-				$t = trim($s);
-				if (!$t) continue;
-				$s = Path::encode($s);
-				if (!$s) continue;
-				
-
-				$w = [];
-				foreach($props_equal as $p) {
-					$w[] = $p.' = ?';
-					$args[] = $s;
-				}
-				foreach($props as $p) {
-					$w[] = $p.' like ?';
-					$args[] = '%'.$s.'%';
-				}
-				foreach ($props_start as $p) {
-					$w[] = $p.' like ?';
-					$args[] = $s.'%';
-				}
-				foreach ($props_trim as $p) {
-					$w[] = $p.' like ?';
-					$args[] = '%'.$t.'%';
-				}
-				$where[] = '('.implode(' or ', $w).')';
+				$split[$i] = Path::encode($s);
 			}
-
-			$sql = 'SELECT distinct m.group_id from showcase_models m
-				left join showcase_producers p on p.producer_id = m.producer_id
-				left join showcase_iprops ip on ip.model_id = m.model_id
-				left join showcase_groups g on g.group_id = m.group_id
-				left join showcase_groups gp on g.parent_id = gp.group_id
-				left join showcase_values v on ip.value_id = v.value_id
-				where 
-				'.implode(' and ', $where).'
-				 order by m.model_id
-				limit 0,12';
-			$groups = Db::all($sql, $args);
+			$split = array_unique($v);
+			if ($split) {
+				$no[] = ' and m.model_id in (
+					SELECT s.model_id from showcase_search s 
+					WHERE s.vals like "%'.implode('%" and s.vals like "%', $split).'%"
+				)';
+			}
+			if ($group_id == 1) {
+				$sql = '
+					SELECT distinct m.group_id from showcase_models m
+					WHERE m.model_id in (
+						SELECT s.model_id from showcase_search s 
+						WHERE s.vals like "%'.implode('%" and s.vals like "%', $split).'%"
+					)
+				';
+				$groups = Db::all($sql);
+			} else {
+				$groups = Showcase::nestedGroups($group_id);
+				$childs = [];
+				foreach ($groups as $row) $childs[] = $row['group_id'];
+				if ($childs) {
+					$sql = '
+						SELECT distinct m.group_id from showcase_models m
+						WHERE m.group_id in ('.implode(',', $childs).') and m.model_id in (
+							SELECT s.model_id from showcase_search s 
+							WHERE s.vals like "%'.implode('%" and s.vals like "%', $split).'%"
+						)
+					';	
+				} else {
+					$sql = '
+					SELECT distinct m.group_id from showcase_models m
+					WHERE m.group_id = '.$group_id.' and m.model_id in (
+						SELECT s.model_id from showcase_search s 
+						WHERE s.vals like "%'.implode('%" and s.vals like "%', $split).'%"
+					)
+				';
+				}
+				
+				$groups = Db::all($sql);
+			}
+			
+			
 			
 			$nicks = [];
 			$path = [];
 			foreach ($groups as $k => $g) {
 				$parent = API::getGroupById($g['group_id']);
-
-
 				$test = $parent;
 				$path = [];
 				do {
@@ -488,7 +374,7 @@ $meta->addAction('filters', function () {
 				$group_id = $group['group_id'];
 			}
 		}
-	}
+	//}
 	
 	//$list = Access::cache('showcase-filters', function ($group_id) {
 		$group = API::getGroupById($group_id);
@@ -1038,63 +924,31 @@ $meta->addAction('search', function () {
 
 	if (!empty($md['search'])) {
 		$v = $md['search'];
-		//$v = Path::encode($v);
 		
-		$v = preg_split("/[\s\-\"\']+/u", mb_strtolower($v));
-		$v = array_unique($v);
-		$split = sizeof($v) != 1;
-		$str = '';
-
+		$v = preg_split("/[\s]/u", mb_strtolower($v));
+		$split = array_unique($v);
 		
-
 		
-		foreach ($v as $i => $s) {
-			$v[$i] = preg_replace("/ы$/", "", $s);
-			$s = $v[$i];
-			$es = Path::encode($s);
-			if ($split) {
-				$str .= 'and (m.model_id in (SELECT smv' . $i . '.model_id from showcase_values sv' . $i . '
-					inner join showcase_iprops smv' . $i . ' on smv' . $i . '.value_id = sv' . $i . '.value_id
-					where sv' . $i . '.value_nick like "%' . $es . '%") 
+		//$join[] = 'LEFT JOIN showcase_groups p2 on p.parent_id = p2.group_id';
 
-					OR m.model_id in (SELECT svt' . $i . '.model_id from showcase_iprops svt' . $i . '
-					where svt' . $i . '.text like "%' . $s . '%") 
-
-					OR m.article_nick LIKE "%' . $es . '%" 
-					OR g.group_nick LIKE "%' . $es . '%" 
-					OR p.group_nick LIKE "%' . $es . '%" 				
-					OR p2.group_nick LIKE "%' . $es . '%" 
-
-					OR pr.producer_nick LIKE "%' . $es . '%"
-				)';
-			} else {
-				$str .= 'and (m.model_id in (SELECT smv' . $i . '.model_id from showcase_values sv' . $i . '
-					inner join showcase_iprops smv' . $i . ' on smv' . $i . '.value_id = sv' . $i . '.value_id
-					where sv' . $i . '.value_nick like "%' . $es . '%") 
-
-					OR m.model_id in (SELECT svt' . $i . '.model_id from showcase_iprops svt' . $i . '
-					where svt' . $i . '.text like "%' . $s . '%") 
-
-					OR m.model_id in (SELECT svn' . $i . '.model_id from showcase_iprops svn' . $i . '
-					where svn' . $i . '.number like "' . $s . '%") 
-
-					OR m.article_nick LIKE "%' . $es . '%" 
-					OR g.group_nick LIKE "%' . $es . '%" 
-					OR p.group_nick LIKE "%' . $es . '%" 				
-					OR p2.group_nick LIKE "%' . $es . '%" 
-
-					OR m.model_id LIKE "' . $es . '%" 
-					OR pr.producer_nick LIKE "%' . $es . '%"
-				)';
-			}
+		foreach ($split as $i => $s) {
+			$s = preg_replace("/ы$/", "", $s);
+			$split[$i] = Path::encode($s);
 		}
-		$join[] = 'LEFT JOIN showcase_groups p2 on p.parent_id = p2.group_id';
+		$split = array_unique($v);
+		if ($split) {
+			$no[] = ' and m.model_id in (
+				SELECT s.model_id from showcase_search s 
+				WHERE s.vals like "%'.implode('%" and s.vals like "%', $split).'%"
+			)';
+		}
+		
 		$ans['filters'][] = array(
 			'title' => 'Поиск',
 			'name' => 'search',
 			'value' => strip_tags($md['search'])
 		);
-		$no[] = $str;
+		
 		if ($group_id != 1) {
 			$ans['filters'][] = array(
 				'title' => 'Группа',
@@ -1288,11 +1142,13 @@ $meta->addAction('search', function () {
 		';
 
 	
-	$groups = Data::fetchto($sql, 'group_nick', $groupbinds);
-
-	$childs = API::getChilds($groups, $md['search'] ? $group : false);
+	$groups = Data::all($sql, $groupbinds);
+	if ($groups[0]['group_id'] == $group_id) {
+		$childs = API::getChilds($groups, false);
+	} else {
+		$childs = API::getChilds($groups, $md['search'] ? $group : false);	
+	}
 	
-
 	$ans['childs'] = $childs;
 	
 	// echo sizeof($groups);
