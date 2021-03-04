@@ -305,7 +305,7 @@ $meta->addAction('filters', function () {
 				$s = preg_replace("/ы$/", "", $s);
 				$split[$i] = Path::encode($s);
 			}
-			$split = array_unique($v);
+			$split = array_unique($split);
 			if ($split) {
 				$no[] = ' and m.model_id in (
 					SELECT s.model_id from showcase_search s 
@@ -935,7 +935,7 @@ $meta->addAction('search', function () {
 			$s = preg_replace("/ы$/", "", $s);
 			$split[$i] = Path::encode($s);
 		}
-		$split = array_unique($v);
+		$split = array_unique($split);
 		if ($split) {
 			$no[] = ' and m.model_id in (
 				SELECT s.model_id from showcase_search s 
@@ -1077,7 +1077,6 @@ $meta->addAction('search', function () {
 		' . $sort . '
 		' . $limit . '
 		';
-
 
 
 	$binds += [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id];
