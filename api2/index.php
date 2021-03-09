@@ -125,14 +125,16 @@ $meta->addAction('livepos', function () {
 	// 	 order by m.model_id
 	// 	limit 0,12';
 	$ans = [];
-	$ar = preg_split("/[\s]/u", mb_strtolower($query));
-	$split = [];
-	foreach ($ar as $s) {
-		$s = preg_replace("/ы$/", "", $s);
-		$s = Path::encode($s);
-		if (!$s) continue;
-		$split[] = $s;
-	}
+	$query = Path::encode($query);
+	$split = array_filter(preg_split("/[\-]/u", $query));
+	//$ar = preg_split("/[\s]/u", mb_strtolower($query));
+	// $split = [];
+	// foreach ($ar as $s) {
+	// 	$s = preg_replace("/ы$/", "", $s);
+	// 	$s = Path::encode($s);
+	// 	if (!$s) continue;
+	// 	$split[] = $s;
+	// }
 	
 	if ($split) {
 		$sql = '
@@ -170,18 +172,12 @@ $meta->addAction('livepos', function () {
 $meta->addAction('live', function () {
 	extract($this->gets(['query']), EXTR_REFS);
 	$this->ans['query'] = $query;
+	$query = Path::encode($query);
 	$ans = Access::cache('showcase-live', function ($query) {
 		if (strlen($query) < 2) header('Cache-Control: no-store'); //Кэшируем только если $query пустой или 1 символ
 		
 		$ans = [];
-		$ar = preg_split("/[\s]/u", mb_strtolower($query));
-		$split = [];
-		foreach ($ar as $s) {
-			$s = preg_replace("/ы$/", "", $s);
-			$s = Path::encode($s);
-			if (!$s) continue;
-			$split[] = $s;
-		}
+		$split = array_filter(preg_split("/[\-]/u", $query));
 		
 		if ($split) {
 			$sql = 'SELECT s.model_id, m.group_id
@@ -298,14 +294,10 @@ $meta->addAction('filters', function () {
 	//if ($group_id == 1) {
 		if ($md['search']) {
 			$v = $md['search'];
-		
-			$v = preg_split("/[\s]/u", mb_strtolower($v));
-			$split = array_unique($v);
-			foreach ($split as $i => $s) {
-				$s = preg_replace("/ы$/", "", $s);
-				$split[$i] = Path::encode($s);
-			}
-			$split = array_unique($split);
+			$v = Path::encode($v);
+			$split = array_filter(preg_split("/[\-]/u", $v));
+			
+			
 			if ($split) {
 				$no[] = ' and m.model_id in (
 					SELECT s.model_id from showcase_search s 
@@ -924,18 +916,20 @@ $meta->addAction('search', function () {
 
 	if (!empty($md['search'])) {
 		$v = $md['search'];
+		$query = Path::encode($v);
+		$split = array_unique(array_filter(preg_split("/[\-]/u", $query)));
 		
-		$v = preg_split("/[\s]/u", mb_strtolower($v));
-		$split = array_unique($v);
+		// $v = preg_split("/[\s]/u", mb_strtolower($v));
+		// $split = array_unique($v);
 		
 		
 		//$join[] = 'LEFT JOIN showcase_groups p2 on p.parent_id = p2.group_id';
 
-		foreach ($split as $i => $s) {
-			$s = preg_replace("/ы$/", "", $s);
-			$split[$i] = Path::encode($s);
-		}
-		$split = array_unique($split);
+		// foreach ($split as $i => $s) {
+		// 	$s = preg_replace("/ы$/", "", $s);
+		// 	$split[$i] = Path::encode($s);
+		// }
+		// $split = array_unique($split);
 		if ($split) {
 			$no[] = ' and m.model_id in (
 				SELECT s.model_id from showcase_search s 
