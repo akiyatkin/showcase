@@ -196,6 +196,7 @@ class API {
 						if (FS::is_dir($src)) {
 							API::scanDir($src, $types, $r['files']);
 						} else {
+							if (!in_array($info['ext'], $types)) continue;
 							$r['files'][$src] = [
 								'src' => $src,
 								'file' => $info['file']
@@ -229,7 +230,6 @@ class API {
 			if ($r['files']) $res[] = $r;
 			else $empty[] = $pos;
 		}
-
 		$prop_id = Data::initProp($type, 'text');
 		Db::start();
 		Data::exec('DELETE mv FROM showcase_iprops mv, showcase_models m, showcase_producers pr
