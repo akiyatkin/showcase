@@ -1260,7 +1260,7 @@ $meta->addAction('posseo', function () {
 	$pos = Showcase::getModelEasy($producer_nick, $article_nick);
 	
 	if (!$pos) {
-		return Ans::err($ans, 'Position not found');
+		return $this::err($ans, 'Position not found');
 	}
 	
 	$article = $pos['article'];
