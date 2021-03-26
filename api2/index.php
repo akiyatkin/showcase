@@ -464,7 +464,7 @@ $meta->addAction('filters', function () {
 					$values = Data::all($sql,[':prop_id' => $prop_id]);
 
 					$p['values'] = $values;
-
+					if (!$values) continue;
 					if (isset($p['chain'])) {
 						$data = Load::loadJSON($p['chain']);
 						$data = $data['data'];
