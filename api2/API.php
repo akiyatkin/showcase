@@ -104,6 +104,7 @@ class API {
 		//Пропустить 1 вложенную группу
 		//Отсортировать группы по их order
 
+		
 		$nicks = [];
 		$path = [];
 		foreach ($groups as $k => $g) {
@@ -118,6 +119,7 @@ class API {
 			
 			$groups[$k]['path'] = array_reverse($path);
 		}
+
 		foreach ($groups as $k => $g) {
 			$path = array_intersect($path, $g['path']);
 		}
@@ -130,6 +132,7 @@ class API {
 		foreach ($groups as $k => $g) {
 			if (empty($g['path'][$level])) continue;
 			$nick = $g['path'][$level];
+
 			
 			$child = isset($g['path'][$level+1]) ? $g['path'][$level+1] : false;
 			if (!isset($childs[$nick])) {
@@ -137,12 +140,17 @@ class API {
 					'group' => $nicks[$nick]['group'],
 					'order' => $nicks[$nick]['order'],
 					'group_nick' => $nicks[$nick]['group_nick'],
+					'icon' => $nicks[$nick]['icon'],
 					'childs' => [],
 					'min' => 0,
 					'max' => 0
 				];
-				if (isset($g['icon'])) $childs[$nick]['icon'] = $g['icon'];
-				if (isset($g['img'])) $childs[$nick]['img'] = $g['img'];
+				if (empty($childs[$nick]['icon'])) {
+					if (isset($g['icon'])) $childs[$nick]['icon'] = $g['icon'];
+				}
+				if (empty($childs[$nick]['img'])) {
+					if (isset($g['img'])) $childs[$nick]['img'] = $g['img'];
+				}
 			}
 			if (isset($g['min'])) {
 				if (!$childs[$nick]['min'] || ($g['min'] && $g['min'] < $childs[$nick]['min'])) {
@@ -162,7 +170,7 @@ class API {
 				}
 			}
 		}
-
+		
 		if ($group) {
 			if (!$childs
 			 //&& $group_id != $group['group_id']
