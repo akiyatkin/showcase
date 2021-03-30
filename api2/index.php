@@ -138,19 +138,15 @@ $meta->addAction('livepos', function () {
 	
 	if ($split) {
 		$sql = '
-			SELECT SQL_CALC_FOUND_ROWS s.model_id
-			FROM showcase_search s, showcase_models m
-			WHERE 
-				s.model_id = m.model_id 
-				and s.vals like "%'.implode('%" and s.vals like "%', $split).'%"
+			SELECT SQL_CALC_FOUND_ROWS m.model_id
+			FROM showcase_models m
+			WHERE m.search like "%'.implode('%" and m.search like "%', $split).'%"
 			LIMIT 0,12
 		';
 	} else {
 		$sql = '
-			SELECT SQL_CALC_FOUND_ROWS s.model_id
-			FROM showcase_search s, showcase_models m
-			WHERE 
-				s.model_id = m.model_id
+			SELECT SQL_CALC_FOUND_ROWS m.model_id
+			FROM showcase_models m
 			LIMIT 0,12
 		';
 	}
@@ -180,16 +176,12 @@ $meta->addAction('live', function () {
 		$split = array_filter(preg_split("/[\-]/u", $query));
 		
 		if ($split) {
-			$sql = 'SELECT s.model_id, m.group_id
-			from showcase_search s, showcase_models m
-			where 
-				s.model_id = m.model_id 
-				and s.vals like "%'.implode('%" and s.vals like "%', $split).'%"';
+			$sql = 'SELECT m.model_id, m.group_id
+			from showcase_models m
+			WHERE m.search like "%'.implode('%" and m.search like "%', $split).'%"';
 		} else {
-			$sql = 'SELECT s.model_id, m.group_id
-			from showcase_search s, showcase_models m
-			where 
-				s.model_id = m.model_id';
+			$sql = 'SELECT m.model_id, m.group_id
+			from showcase_models m';
 		}
 		$stmt = Db::cstmt($sql);
 		$stmt->execute();
@@ -300,16 +292,16 @@ $meta->addAction('filters', function () {
 			
 			if ($split) {
 				$no[] = ' and m.model_id in (
-					SELECT s.model_id from showcase_search s 
-					WHERE s.vals like "%'.implode('%" and s.vals like "%', $split).'%"
+					SELECT s.model_id from showcase_models s 
+					WHERE s.search like "%'.implode('%" and s.search like "%', $split).'%"
 				)';
 			}
 			if ($group_id == 1) {
 				$sql = '
 					SELECT distinct m.group_id from showcase_models m
 					WHERE m.model_id in (
-						SELECT s.model_id from showcase_search s 
-						WHERE s.vals like "%'.implode('%" and s.vals like "%', $split).'%"
+						SELECT s.model_id from showcase_models s 
+						WHERE s.search like "%'.implode('%" and s.search like "%', $split).'%"
 					)
 				';
 				$groups = Db::all($sql);
@@ -321,16 +313,16 @@ $meta->addAction('filters', function () {
 					$sql = '
 						SELECT distinct m.group_id from showcase_models m
 						WHERE m.group_id in ('.implode(',', $childs).') and m.model_id in (
-							SELECT s.model_id from showcase_search s 
-							WHERE s.vals like "%'.implode('%" and s.vals like "%', $split).'%"
+							SELECT s.model_id from showcase_models s 
+							WHERE s.search like "%'.implode('%" and s.search like "%', $split).'%"
 						)
 					';	
 				} else {
 					$sql = '
 					SELECT distinct m.group_id from showcase_models m
 					WHERE m.group_id = '.$group_id.' and m.model_id in (
-						SELECT s.model_id from showcase_search s 
-						WHERE s.vals like "%'.implode('%" and s.vals like "%', $split).'%"
+						SELECT s.model_id from showcase_models s 
+						WHERE s.search like "%'.implode('%" and s.search like "%', $split).'%"
 					)
 				';
 				}
@@ -932,8 +924,8 @@ $meta->addAction('search', function () {
 		// $split = array_unique($split);
 		if ($split) {
 			$no[] = ' and m.model_id in (
-				SELECT s.model_id from showcase_search s 
-				WHERE s.vals like "%'.implode('%" and s.vals like "%', $split).'%"
+				SELECT s.model_id from showcase_models s 
+				WHERE s.search like "%'.implode('%" and s.search like "%', $split).'%"
 			)';
 		}
 		

@@ -33,6 +33,7 @@ echo Rest::get( function () {
 		showcase_values,
 		showcase_items,
 		showcase_models,
+		showcase_search,
 		showcase_mvalues,
 		showcase_mnumbers,
 		showcase_mtexts,

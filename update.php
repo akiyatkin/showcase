@@ -134,10 +134,11 @@ CREATE TABLE IF NOT EXISTS `showcase_models` (
 	`producer_id` SMALLINT unsigned COMMENT '',
 	`article_nick` varchar(255) NOT NULL COMMENT '',
 	`article` varchar(255) NOT NULL COMMENT '',
-
 	`catalog_id` SMALLINT unsigned COMMENT '',
 	`time` DATETIME NULL DEFAULT NULL COMMENT '',
 	`group_id` SMALLINT unsigned NOT NULL COMMENT '',
+	`search` TEXT NOT NULL COLLATE latin1_bin COMMENT 'латиница после Path::encode слова разделены пробелом',
+	FULLTEXT INDEX (`search`),
 	PRIMARY KEY (`model_id`),
 	UNIQUE INDEX (`producer_id`,`article_nick`),
 	INDEX (group_id, producer_id)
@@ -174,14 +175,5 @@ CREATE TABLE IF NOT EXISTS `showcase_iprops` (
 	INDEX (prop_id, value_id),
 	INDEX (model_id, prop_id)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-END;
-scexec($sql);
-
-$sql = <<<END
-CREATE TABLE IF NOT EXISTS `showcase_search` (
-	`model_id` MEDIUMINT unsigned NOT NULL COMMENT '',
-	`vals` TEXT NOT NULL COMMENT 'латиница после Path::encode слова разделены пробелом',
-	FULLTEXT INDEX (`vals`)
-) DEFAULT CHARSET=latin1 COLLATE=latin1_bin;
 END;
 scexec($sql);

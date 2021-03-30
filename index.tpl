@@ -59,6 +59,11 @@
 	{cost:}{~cost(Цена)} руб.
 {PRODUCER:}
 		{:menu}
+		<style>
+			.hideblock {
+				display: none;
+			}
+		</style>
 		<img class="float-right" src='/-imager/?src={logo}&w=100'>
 		<h1>{producer}</h1>
 		<div class="alert alert-{cls}">
@@ -81,11 +86,16 @@
 	{skip:}
 	<span class="a" onclick="this.nextElementSibling.classList.toggle('hideblock')">skip</span>.
 	<div class="hideblock">{~print(.)}</div>
-	{prodinfo:}Моделей: <b><a href="/catalog/?m=:producer.{producer_nick}=1">{count}</a></b>, без цен: <b><a href="/catalog?m=:producer.{producer_nick}=1:more.Цена.no=1">{Без цен}</a></b>, без картинок: <b><a href="/catalog?m=:producer.{producer_nick}=1:more.images.no=1">{Без картинок}</a></b>, 
-	ошибки каталога: <b><a href="/catalog?m=:producer.{producer_nick}=1:more.Прайс.no=1">{Ошибки каталога}</a></b>
+	{prodinfo:}Моделей: <b><a href="/catalog/?m=:producer.{producer_nick}=1">{count}</a></b>, без цен: <b><a href="/catalog?m=:producer.{producer_nick}=1:more.cena.no=1">{Без цен}</a></b>, без картинок: <b><a href="/catalog?m=:producer.{producer_nick}=1:more.images.no=1">{Без картинок}</a></b>, 
+	без прайса: <b><a href="/catalog?m=:producer.{producer_nick}=1:more.prays.no=1">{Без прайса}</a></b>, c прайсом: <b><a href="/catalog?m=:producer.{producer_nick}=1:more.prays.yes=1">{С прайсом}</a></b>
 {PRODUCERS:}
 		{:menu}
 		<h1>Производители</h1>
+		<style>
+		.hideblock {
+			display: none;
+		}
+	</style>
 		{list::producer}
 		{:foot}
 	{producer:}<div class="alert alert-{cls}"><a href="/-showcase/producers/{producer_nick}">{producer}</a> <div class="float-right">{logo:pic}</div> {:prodinfo} {skip:skip}</div>

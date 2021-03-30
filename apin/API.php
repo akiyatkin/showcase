@@ -286,9 +286,11 @@ class API {
 			}
 		}
 		
-		GAPI::updateSearch();
+		
 		$ress['Иконки'] = Data::addFilesIcons(); //Нужны уже записанные картинки для позиций
-		$ress['Индекс быстрого поиска обновлён'] = 'ОК';
+
+		//GAPI::updateSearch();
+		//$ress['Индекс быстрого поиска обновлён'] = 'ОК';
 		return $ress;
 	}
 }

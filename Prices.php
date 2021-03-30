@@ -9,6 +9,7 @@ use infrajs\db\Db;
 use akiyatkin\showcase\Data;
 use akiyatkin\showcase\Showcase;
 use infrajs\event\Event;
+use akiyatkin\showcase\api2\API;
 
 Event::$classes['Showcase-prices'] = function (&$obj) {
 	return '1'; //tik каждый раз
@@ -245,6 +246,13 @@ class Prices {
 			if ($r) $modified++;
 			else array_pop($mposs);
 			$list[$i]['r'] = $r;
+		}
+		$models = [];
+		foreach ($list as $i => $find) {
+			$models[] = $find['model_id'];
+		}
+		foreach ($models as $model_id) {
+			API::updateSearchId($model_id);
 		}
 		return [sizeof($list), $modified, $mposs];
 	}

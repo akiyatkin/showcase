@@ -12,6 +12,7 @@ use infrajs\event\Event;
 use infrajs\ans\Ans;
 use infrajs\access\Access;
 use akiyatkin\ydisk\Ydisk;
+use akiyatkin\showcase\api2\API;
 
 Event::$classes['Showcase-catalog'] = function (&$obj) {
 	return $obj['pos']['producer'].' '.$obj['pos']['article'].' '.$obj['name'];
@@ -299,6 +300,7 @@ class Catalog {
 
 		$ans['Принято моделей'] = 0;
 		$ans['Принято позиций'] = 0;
+		$ans['Индекс поиска обновлён'] = 0;
 		//$ans['Пропущено из-за конфликта с другими данными'] = 0;
 		$db = &Db::cpdo();
 		$db->beginTransaction();
@@ -369,6 +371,10 @@ class Catalog {
 			Data::exec('DELETE i, ip FROM showcase_items i
 				left join showcase_iprops ip on (i.model_id = ip.model_id and i.item_num = ip.item_num)
 				WHERE i.model_id = ? and i.item_num > ?', [$model_id, $item_num]);
+
+			//Нужно создать индекс поиска для данной модели $model_id
+			$r = API::updateSearchId($model_id);
+			if ($r)	$ans['Индекс поиска обновлён']++;
 		});
 		Catalog::removeOldModels($time, $catalog_id);
 		$duration = (time() - $time);
@@ -376,6 +382,9 @@ class Catalog {
 		Data::exec('UPDATE showcase_catalog SET `time` = from_unixtime(?), `duration` = ?, count = ?, ans = ? 
 			WHERE catalog_id = ?', [$time, $duration, $count, $jsonans, $catalog_id]);
 		$db->commit();
+
+		
+
 		return $ans;
 	}
 	public static function writeProps($model_id, $item, $item_num = 0) {

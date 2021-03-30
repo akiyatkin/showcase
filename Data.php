@@ -1118,12 +1118,12 @@ class Data {
 		if (empty($skip['Пояснения'])) $skip['Пояснения'] = ['Сообщение и сколько позиций оно затрагивает'=>1];
 		if (empty($skip['Без картинок'])) $skip['Без картинок'] = 0;
 		if (empty($skip['Без цен'])) $skip['Без цен'] = 0;
-		if (empty($skip['Ошибки каталога'])) $skip['Ошибки каталога'] = 0;
+		if (empty($skip['Без прайса'])) $skip['Без прайса'] = 0;
 		//if (empty($skip['Ошибки каталога'])) $skip['Ошибки каталога'] = 0;
 		
 		$images = $prod['Без картинок'] - $skip['Без картинок'];
 		$costs = $prod['Без цен'] - $skip['Без цен'];
-		$tables = $prod['Ошибки каталога'] - $skip['Ошибки каталога'];
+		$tables = $prod['Без прайса'] - $skip['Без прайса'];
 
 		$errs = ($images!=0?1:0) + ($costs!=0?1:0) + ($tables!=0?1:0);
 		if ($errs === 0)  $prod['cls'] = 'success';
@@ -1148,6 +1148,7 @@ class Data {
 				LEFT JOIN showcase_prices pp on (n.price_id = pp.price_id)
 				GROUP BY producer',[':producer_nick'=>$producer_nick,':cost_id'=>$cost_id]);
 			if (!$list) $list = [];
+
 			
 			$list['count'] = Data::col('SELECT count(*) FROM showcase_models m
 				INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = ?)
@@ -1158,6 +1159,15 @@ class Data {
 				INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = ?)
 				',[$producer_nick]);
 
+			// $costs = Data::col('SELECT count(distinct i.model_id) FROM showcase_items i
+			// 	left join showcase_models m on (m.model_id = i.model_id)
+			// 	left join showcase_producers pr on (m.producer_id = pr.producer_id)
+			// 	left join showcase_iprops ip on (i.model_id = ip.model_id and i.item_num = ip.item_num)
+			// 	WHERE 
+			// 		ip.price_id is not null
+			// 		and pr.producer_nick = :producer_nick	
+			// 	',[':producer_nick' => $producer_nick]);
+			// $list['С прайсом'] = $costs;
 
 			$costs = Data::col('SELECT count(distinct i.model_id) FROM showcase_items i
 				left join showcase_models m on (m.model_id = i.model_id)
@@ -1168,6 +1178,8 @@ class Data {
 					and pr.producer_nick = :producer_nick	
 				',[':cost_id' => $cost_id,':producer_nick' => $producer_nick]);
 			$list['Без цен'] = $costs;
+
+			
 
 			/*$costs = Data::col('SELECT count(distinct m.model_id) FROM showcase_items i 
 				left join showcase_models m on (i.model_id = m.model_id)
@@ -1204,7 +1216,8 @@ class Data {
 				inner join showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = :producer_nick)
 				inner join showcase_iprops n on (n.model_id = m.model_id and n.prop_id = :price_id)
 				',[':price_id'=>$price_id,':producer_nick'=>$producer_nick]);
-			$list['Ошибки каталога'] = $list['count'] - $prices;
+			$list['Без прайса'] = $list['count'] - $prices;
+			$list['С прайсом'] = $prices;
 
 			
 			//Есть в прайсе, но нет в каталоге
@@ -1271,9 +1284,11 @@ class Data {
 			
 			foreach($list as $i => $row) {
 				if (isset($prices[$row['producer_nick']])) {
-					$list[$i]['Ошибки каталога'] = $listcost[$row['producer_nick']]['count'] - $prices[$row['producer_nick']]['count'];
+					$list[$i]['Без прайса'] = $listcost[$row['producer_nick']]['count'] - $prices[$row['producer_nick']]['count'];
+					$list[$i]['С прайсом'] = $prices[$row['producer_nick']]['count'];
 				} else {
-					$list[$i]['Ошибки каталога'] = $listcost[$row['producer_nick']]['count'];
+					$list[$i]['Без прайса'] = $listcost[$row['producer_nick']]['count'];
+					$list[$i]['С прайсом'] = 0;
 				}
 			}
 			

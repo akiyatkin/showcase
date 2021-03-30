@@ -39,10 +39,69 @@ class API {
 			return $group;
 		});
 	}
-	public static function updateSearch() {
-		Data::exec('TRUNCATE `showcase_search`');
-		$sql = 'SELECT SQL_CALC_FOUND_ROWS 
-			m.model_id, m.group_id, 
+	// public static function updateSearch() {
+	// 	Data::exec('TRUNCATE `showcase_search`');
+	// 	$sql = 'SELECT SQL_CALC_FOUND_ROWS 
+	// 		m.model_id, m.group_id, 
+	// 		p.producer_id,
+	// 		p.producer_nick,
+	// 		g.group_nick,
+	// 		m.article_nick,
+	// 		(
+	// 			SELECT GROUP_CONCAT(v.value_nick SEPARATOR "-")
+	// 			from showcase_values v, showcase_iprops ip
+	// 			where ip.model_id = m.model_id
+	// 			and ip.value_id = v.value_id
+	// 		) as vals,
+	// 		(
+	// 			SELECT GROUP_CONCAT(ip.text SEPARATOR " ")
+	// 			from showcase_iprops ip
+	// 			where ip.model_id = m.model_id
+	// 		) as texts,
+	// 		(
+	// 			SELECT GROUP_CONCAT(FLOOR(ip.number) SEPARATOR "-")
+	// 			from showcase_iprops ip
+	// 			where ip.model_id = m.model_id
+	// 		) as numbers
+	// 		from 
+	// 			showcase_models m, 
+	// 			showcase_producers p,
+	// 			showcase_groups g
+	// 		where 
+	// 			p.producer_id = m.producer_id
+	// 			and m.group_id = g.group_id
+	// 	';
+	// 	$stmt = Db::cstmt($sql);
+	// 	$stmt->execute();	
+	// 	while ($row = $stmt->fetch()) {
+	// 		$model_id = $row['model_id'];
+	// 		$vals = $row['group_nick'].
+	// 				'-'.$row['producer_nick'].
+	// 				'-'.$row['article_nick'].
+	// 				'-'.$row['model_id'].
+	// 				'-'.$row['vals'];
+
+	// 		$texts = Path::encode($row['texts']);
+	// 		$numbers = $row['numbers'];
+	// 		if ($texts) $vals .= '-'.$texts;
+	// 		if ($numbers) $vals .= '-'.$numbers;
+			
+	// 		$vals = explode('-', $vals);
+	// 		$vals = array_unique($vals);
+	// 		$vals = implode(' ', $vals);
+
+	// 		Data::exec(
+	// 			'INSERT INTO showcase_search (model_id, vals) VALUES(:model_id,:vals)',
+	// 			[
+	// 				':model_id' => $model_id, 
+	// 				':vals' => $vals
+	// 			]
+	// 		);
+	// 	}
+	// }
+	public static function updateSearchId($model_id) {
+		$sql = 'SELECT
+			m.group_id, 
 			p.producer_id,
 			p.producer_nick,
 			g.group_nick,
@@ -68,36 +127,38 @@ class API {
 				showcase_producers p,
 				showcase_groups g
 			where 
-				p.producer_id = m.producer_id
+				m.model_id = :model_id
+				and p.producer_id = m.producer_id
 				and m.group_id = g.group_id
 		';
-		$stmt = Db::cstmt($sql);
-		$stmt->execute();	
-		while ($row = $stmt->fetch()) {
-			$model_id = $row['model_id'];
-			$vals = $row['group_nick'].
-					'-'.$row['producer_nick'].
-					'-'.$row['article_nick'].
-					'-'.$row['model_id'].
-					'-'.$row['vals'];
+		$row = Db::fetch($sql, [
+			':model_id' => $model_id
+		]);
 
-			$texts = Path::encode($row['texts']);
-			$numbers = $row['numbers'];
-			if ($texts) $vals .= '-'.$texts;
-			if ($numbers) $vals .= '-'.$numbers;
-			
-			$vals = explode('-', $vals);
-			$vals = array_unique($vals);
-			$vals = implode(' ', $vals);
+		$vals = $row['group_nick'].
+			'-'.$row['producer_nick'].
+			'-'.$row['article_nick'].
+			'-'.$model_id.
+			'-'.$row['vals'];
+		$texts = Path::encode($row['texts']);
+		$numbers = $row['numbers'];
+		if ($texts) $vals .= '-'.$texts;
+		if ($numbers) $vals .= '-'.$numbers;
 
-			Data::exec(
-				'INSERT INTO showcase_search (model_id, vals) VALUES(:model_id,:vals)',
-				[
-					':model_id' => $model_id, 
-					':vals' => $vals
-				]
-			);
-		}
+		$vals = explode('-', $vals);
+		$vals = array_unique($vals);
+		$vals = implode(' ', $vals);
+
+
+		return Data::exec('
+			UPDATE showcase_models 
+			SET `search` = :search 
+			WHERE model_id = :model_id', 
+			[
+				':model_id' => $model_id, 
+				':search' => $vals
+			]
+		);
 	}
 	public static function getChilds($groups, $group = false) {
 		//Найти общего предка для всех групп
