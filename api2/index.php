@@ -1074,32 +1074,6 @@ $meta->addAction('search', function () {
 
 
 
-	$showlist = $this->get('showlist') || !empty($group['options']['showlist']);	
-
-	$ans['showlist'] = 
-		$showlist ? 
-		$showlist : 
-			$size < 100 
-			|| sizeof($ans['filters']);
-	if ($ans['showlist']) {
-		foreach ($models as $k => $m) {
-
-			/*
-				Подготовили список items внутри найденой позиции
-				Модель в результатах поиска будет выглядеть иначе. Кликаем и видим друое количество позиций.
-			*/
-			//$m['items'] = explode(',', $m['items']);
-			//foreach ($m['items'] as $j => $v) if (!$v) unset($m['items'][$j]);
-
-			$models[$k] = Showcase::getModelEasyById($m['model_id']);
-			$models[$k]['showcase'] = array();
-			$group = API::getGroupById($models[$k]['group_id']);
-			if (isset($group['options']['props'])) {
-				$models[$k]['showcase']['props'] = $group['options']['props'];
-			}
-		}
-		$ans['list'] = $models;
-	}
 
 
 	$groupbinds += [':cost_id' => $cost_id, ':image_id' => $image_id];
@@ -1136,6 +1110,37 @@ $meta->addAction('search', function () {
 	
 	$ans['childs'] = $childs;
 	
+
+
+
+	$showlist = $this->get('showlist') || !empty($group['options']['showlist']);	
+	$ans['showlist'] = 
+		$showlist ? 
+		$showlist : 
+			$size < 100 
+			|| empty($childs)
+			|| sizeof($ans['filters']);
+
+
+	if ($ans['showlist']) {
+		foreach ($models as $k => $m) {
+
+			/*
+				Подготовили список items внутри найденой позиции
+				Модель в результатах поиска будет выглядеть иначе. Кликаем и видим друое количество позиций.
+			*/
+			//$m['items'] = explode(',', $m['items']);
+			//foreach ($m['items'] as $j => $v) if (!$v) unset($m['items'][$j]);
+
+			$models[$k] = Showcase::getModelEasyById($m['model_id']);
+			$models[$k]['showcase'] = array();
+			$group = API::getGroupById($models[$k]['group_id']);
+			if (isset($group['options']['props'])) {
+				$models[$k]['showcase']['props'] = $group['options']['props'];
+			}
+		}
+		$ans['list'] = $models;
+	}
 	// echo sizeof($groups);
 	// print_r($groups);
 	// exit;
