@@ -72,9 +72,7 @@ echo Rest::get( function () {
 }, 'prices', [function () {
 	$ans = Catalog::action('price');
 	$list = Prices::getList();
-	foreach($list as $i => $row) {
-		unset($list[$i]['ans']);
-	}
+
 	$ans['list'] = $list;
 	return Rest::parse('-showcase/index.tpl', $ans, 'PRICES');
 	}, function($a, $name){

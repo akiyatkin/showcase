@@ -22,15 +22,15 @@ class Prices {
 	}
 	public static function getList() {
 		$options = Prices::getOptions();
-		
+
 		$savedlist = Data::fetchto('
-			SELECT p.name, p.ans, count(distinct i.model_id, i.item_num) as icount from showcase_prices p
+			SELECT p.name, count(distinct i.model_id, i.item_num) as icount from showcase_prices p
 			LEFT JOIN showcase_iprops i ON i.price_id = p.price_id
 			GROUP by p.name
     	','name');
     	
 		foreach ($savedlist as $name => $row) {
-			$row['ans'] = Load::json_decode($row['ans'], true);
+			//$row['ans'] = Load::json_decode($row['ans'], true);
 			if ($name) $options[$name] += $row;
 
 		}
@@ -492,7 +492,7 @@ class Prices {
 			$list[$name]['isfile'] = true;
 		}
 
-		$savedlist = Data::fetchto('SELECT price_id, unix_timestamp(time) as time, `order`, ans, duration, name, `count` 
+		$savedlist = Data::fetchto('SELECT price_id, unix_timestamp(time) as time, `order`, duration, name, `count` 
 			FROM showcase_prices','name');
 		foreach ($savedlist as $name => $val) { // По файлам
 			if (!isset($list[$name])) {
@@ -505,7 +505,7 @@ class Prices {
 				$list[$name] = array();
 			}
 			$list[$name] += $savedlist[$name];
-			if (isset($list[$name]['ans'])) $list[$name]['ans'] = Load::json_decode($val['ans'], true);
+			//if (isset($list[$name]['ans'])) $list[$name]['ans'] = Load::json_decode($val['ans'], true);
 			if (!$savedlist[$name]['time']) continue;// Данные ещё не вносились
 			$list[$name]['isdata'] = true;	
 		}
