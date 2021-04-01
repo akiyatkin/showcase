@@ -935,7 +935,7 @@ $meta->addAction('search', function () {
 			'value' => strip_tags($md['search'])
 		);
 		
-		if ($group_id != 1) {
+		if ($group_id != 1 && $group) {
 			$ans['filters'][] = array(
 				'title' => 'Группа',
 				'name' => 'group',
