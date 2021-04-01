@@ -1114,14 +1114,12 @@ $meta->addAction('search', function () {
 
 
 	$showlist = $this->get('showlist') || !empty($group['options']['showlist']);	
+
 	$ans['showlist'] = 
 		$showlist ? 
 		$showlist : 
-			$size < 100 
-			|| empty($childs)
+			empty($childs)
 			|| sizeof($ans['filters']);
-
-
 	if ($ans['showlist']) {
 		foreach ($models as $k => $m) {
 
