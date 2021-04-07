@@ -454,7 +454,8 @@ $meta->addAction('filters', function () {
 					order by count DESC
 					';
 					$values = Data::all($sql,[':prop_id' => $prop_id]);
-
+					
+					if (sizeof($values) < 2 ) continue;
 					$p['values'] = $values;
 
 					if (isset($p['chain'])) {
