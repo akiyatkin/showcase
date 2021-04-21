@@ -175,6 +175,7 @@ class API {
 
 		foreach ($files as $search => $file) {
 			$psearch = str_ireplace(mb_strtolower($producer_nick), '', $search); //Удалили из артикула продусера
+			$psearch = Path::encode($psearch);
 			if ($psearch == $search) continue;
 			if (!isset($files[$psearch])) $files[$psearch] = [];
 			$files[$psearch] = array_merge($files[$psearch], $files[$search]);
