@@ -200,10 +200,12 @@
 	</div>
 	{com:}<b class="text-danger">{.}</b>
 	{price-count:}Обработано <b>{count}</b> {~words(count,:строка,:строки,:строк)} с ключём <b>{priceprop}</b>.
+	{strfile:}file
+	{strsrc:}src
 {itemcatalog:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">
 		<div class="p-2" style="width:220px">
-			<b>{file|:Нет файла}</b><br>
+			<b>{source=:strfile?(isfile?name?:{name} нет файла)?name}</b><br>
 			{:ctitle}<br>
 			{size:size} {mtime:time}
 		</div>
@@ -228,7 +230,7 @@
 	<span class="btn btn-sm btn-danger" onclick="ActionPrice('remove','{name}','{conf.prices}{file}')">Очистить</span>
 {cactions:}
 		<div class="p-2 text-right" style="width:400px">
-			{file?:actfile}
+			{source=:strsrc|file?:actfile}
 			{plist??(time?:actbunch)}
 			{time?:actdel}
 		</div>

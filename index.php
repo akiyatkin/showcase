@@ -61,7 +61,7 @@ echo Rest::get( function () {
 }, 'tables', function () {
 	$ans = Catalog::action('table');
 	
-
+ 	
 	$list = Catalog::getList();
 	foreach($list as $i => $row) {
 		unset($list[$i]['ans']);

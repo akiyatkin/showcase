@@ -241,7 +241,7 @@ class Data {
 			$fd['mtime'] = FS::filemtime($folder.$file);
 			$fd['order'] = ++$order;
 			$fd['size'] = round(FS::filesize($folder.$file)/1000);
-			if (!in_array($fd['ext'], array('xlsx'))) return;
+			if (!in_array($fd['ext'], array('xlsx','yml'))) return;
 			$list[$fd['name']] = $fd;
 
 		});

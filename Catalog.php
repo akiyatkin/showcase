@@ -76,13 +76,16 @@ class Catalog {
 	}
 	public static function getList() {
 		$options = Catalog::getOptions();
-
+// echo '<pre>';
+// print_r($options);
+// exit;
 		$savedlist = Data::fetchto('SELECT c.name, count(*) as icount from showcase_catalog c 
 		RIGHT JOIN showcase_models m on m.catalog_id = c.catalog_id
 		RIGHT JOIN showcase_items i on i.model_id = m.model_id
     	GROUP BY c.name','name');
-
+		
 		foreach ($savedlist as $name => $row) {
+			if (!$name) continue;
 			$options[$name] = $options[$name] + $row;
 		}
 
@@ -149,6 +152,7 @@ class Catalog {
 			'isfile' => false,
 			'isopt' => false,
 			'isdata' => false,
+			'source' => 'file', //file или src
 			'order' => 0,
 			'producer' => $name,
 			'producer_nick' => Path::encode($name)
@@ -196,38 +200,159 @@ class Catalog {
 		$conf = Showcase::$conf;
 		$options = Catalog::getOptions();
 		$list = Data::getFileList($conf['tables']);
-		$order = 0;
+		$sources = [];
 		foreach ($list as $filename => $val) {
-			$order++;	
-			$producer_nick = $filename;
-
-			if (isset($options[$filename]['producer'])) {
-				$producer_nick = $options[$filename]['producer'];
-			}
+			$sources[$filename] = isset($val['producer']) ? $val['producer'] : $filename;
+		}
+		foreach ($options as $filename => $val) {
+			if (isset($list[$filename])) continue;
+			$sources[$filename] = isset($val['producer']) ? $val['producer'] : $filename;
+		}
+		$order = 0;
+		foreach ($sources as $filename => $producer_nick) {
+			$order++;
 			Catalog::loadMeta($filename, $producer_nick, $order);
 		}
 		$savedlist = Data::fetchto('SELECT unix_timestamp(time) as time, catalog_id, name, `count` from showcase_catalog','name');
 		foreach ($savedlist as $name => $row) {
-			if (isset($list[$name])) continue; // Если нет файла
+			if (isset($sources[$name])) continue; // Если нет файла
 			if (!empty($row['time'])) continue; // Если нет даты внесения, то и данных нет
 			Data::exec('DELETE from showcase_catalog where catalog_id = ?',[$row['catalog_id']]);
 		}
 	}
 	
 	public static function readCatalog($name, $src) {
-		$conf = Showcase::$conf;
-		$opt = Catalog::getOptions($name);
-		$data = Xlsx::init($src, array(
-			'root' => $conf['title'],
-			'more' => true,
-			//'Не идентифицирующие колонки' => ["Файл","Файлы","Фото","Иллюстрации","Описание"],
-			'Группы уникальны' => $conf['Группы уникальны'],
-			'Игнорировать имена файлов' => true,
-			'Производитель по умолчанию' => $opt['producer'],
-			'Игнорировать имена листов' => $conf['ignorelistname'],
-			'listreverse' => false,
-			'Известные колонки' => array("Артикул","Производитель")
-		));
+		$ext = Path::getExt($src);
+		if ($ext == 'yml') {
+			$option = Catalog::getOptions($name);
+			$src = Path::theme($src);
+			if (!$src) return false;
+			$xml = simplexml_load_file($src);
+			$groups = [];
+			$ids = [];
+			$list = $xml->shop->categories->category;
+			
+			for ($i = 0, $l = sizeof($list); $i < $l; $i++) {
+
+				$id = $i;
+				$name = (string) $list[$i];
+				$attr = $list[$i]->attributes();
+				$id = (string) $attr['id'];
+				$parent_id = (string) $attr['parentID'];
+				$nick = Path::encode($name);
+				$ids[$id] = $nick;
+				$groups[$nick] = [
+					'parent_id' => $parent_id,
+					'name' => $name,
+					'title' => $name,
+					'group' => $name,
+					'Группа' => $name,
+					'id' => $nick,
+					'gid' => false,
+					'data' => [],
+					'childs' => []
+				];
+			}
+
+			$list = $xml->shop->offers->offer;
+			$poss = [];
+			for ($i = 0, $l = sizeof($list); $i < $l; $i++) {
+				$pos = $list[$i];
+				$id = (int) $pos->categoryId;
+				$group = &$groups[$ids[$id]];
+				$prodart = Path::encode($pos->vendor).'-'.Path::encode($pos->vendorCode);
+				$group['data'][$prodart] = [
+					'Наименование' => (string) $pos->name,
+					'Иллюстрации' => (string) $pos->picture,
+					'Цена' => (int) $pos->price,
+					'gid' => $group['id'],
+					'group' => $group['name'],
+					'Группа' => $group['name'],
+					'Производитель' => (string) $pos->vendor,
+					'Артикул' => (string) $pos->vendorCode,
+					'producer' => Path::encode($pos->vendor),
+					'article' => Path::encode($pos->vendorCode),
+					'Описание' => (string) $pos->description,
+					'Страна' => (string) $pos->country_of_origin
+				];
+
+			}
+			
+			if (isset($options['structure'])) {
+				foreach ($groups as $i => &$group) {
+					$parent_id = $group['parent_id'];
+					if (!$parent_id) continue;
+					if (empty($ids[$parent_id])) continue;
+					$parent_nick = $ids[$parent_id];
+					$parent = &$groups[$parent_nick];
+					$group['gid'] = $parent['title'];
+					$parent['childs'][] = $group;
+					$group['del'] = true;
+					unset($group['parent_id']);
+				}
+				foreach ($groups as $i => &$group) {
+					if (!empty($group['del'])) {
+						unset($groups[$i]);
+					}
+				}
+			} else {
+				foreach($groups as $k=>$group) {
+					if (empty($group['data'])) unset($groups[$k]);
+				}
+			}
+			$data = [
+				'title' => 'Каталог',
+				'name' => 'Каталог',
+				'group' => 'Каталог',
+				'gid' => false,
+				'id' => Path::encode('Каталог'),
+				'data' => [],
+				'childs' => array_values($groups)
+			];	
+
+			
+			if (isset($option['root'])) {
+				$root = Path::encode($option['root']);
+				$g = Xlsx::runGroups($data, function &($g) use ($root) {
+					//if ($g['id'] == $root) return $g;
+					//echo sizeof($g['data']).'<br>';
+					$r = null;
+					return $r;
+				});
+				// if ($g) {
+				// 	$g['title'] = 'Каталог';
+				// 	$g['name'] = 'Каталог';
+				// 	$g['group'] = 'Каталог';
+				// 	$g['Группа'] = 'Каталог';
+				// 	$g['gid'] = false;
+				// 	$g['id'] = Path::encode('Каталог');
+				// 	//$data = $g;
+					// echo '<pre>';
+					// print_r($data);
+					// exit;
+				// }
+			}
+			
+
+		} else {
+			$conf = Showcase::$conf;
+			$opt = Catalog::getOptions($name);
+			$data = Xlsx::init($src, array(
+				'root' => $conf['title'],
+				'more' => true,
+				//'Не идентифицирующие колонки' => ["Файл","Файлы","Фото","Иллюстрации","Описание"],
+				'Группы уникальны' => $conf['Группы уникальны'],
+				'Игнорировать имена файлов' => true,
+				'Производитель по умолчанию' => $opt['producer'],
+				'Игнорировать имена листов' => $conf['ignorelistname'],
+				'listreverse' => false,
+				'Известные колонки' => array("Артикул","Производитель")
+			));	
+		}
+		// echo '<pre>';
+		// print_r($data);
+		// exit;
+		
 		/*if (!empty($opt['producer'])) {
 			Xlsx::runPoss($data, function (&$pos) use (&$opt) {
 				$pos['Производитель'] = $opt['producer'];
@@ -264,7 +389,7 @@ class Catalog {
 	public static function actionRead($name, $src)
 	{
 		$data = Catalog::readCatalog($name, $src);
-		
+		if (!$data) return false;
 		Xlsx::runGroups($data, function &(&$group) {
 			$group['data'] = sizeof($group['data']);
 			unset($group['head']);
@@ -289,11 +414,16 @@ class Catalog {
 		$order = $row['order'];
 		
 		$option = Catalog::getOptions($name);
+		
+
 		$ans = array('Данные' => $src);
 		if ($option['producer']) $ans['Производитель'] = '<a href="/-showcase/producers/'.$option['producer_nick'].'">'.$option['producer'].'</a>';
 		$data = Catalog::readCatalog($name, $src);
-		
+		if (!$data) return false;
+
 		Catalog::applyGroups($data, $catalog_id, $order, $ans);
+	
+		
 		
 		
 		$count = 0;
@@ -546,8 +676,10 @@ class Catalog {
 			$gorder++;
 			$ans['Найдено групп']++;
 			$r = null;
+			
 			$group_nick =  $group['id'];
 			$parent_nick = $group['gid'];
+			
 			if (isset($groups[$group_nick])) return $r;
 			$row = Data::fetch('SELECT g1.group, g1.group_id, c.order, g2.group_nick as parent_nick, c.catalog_id 
 					FROM showcase_groups g1 

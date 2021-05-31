@@ -134,7 +134,11 @@ class API {
 		$row = Db::fetch($sql, [
 			':model_id' => $model_id
 		]);
-
+		// if (!$row) {
+		// 	echo '<pre>';
+		// 	print_r($model_id);
+		// 	exit;
+		// }
 		$vals = $row['group_nick'].
 			'-'.$row['producer_nick'].
 			'-'.$row['article_nick'].
@@ -158,7 +162,7 @@ class API {
 				':model_id' => $model_id, 
 				':search' => $vals
 			]
-		);
+		) !== false;
 	}
 	public static function getChilds($groups, $group = false) {
 		//Найти общего предка для всех групп
