@@ -5,7 +5,7 @@
 		{(:/-showcase/groups):link}Группы{:/link} |
 		{(:/-showcase/producers):link}Производители{:/link} |
 		<!--{(:/-showcase/models):link}Модели{:/link} |-->
-		{(:/-showcase/api):link}API{:/link}
+		{(:/-showcase/api2/):link}API{:/link}
 		<div class="float-right text-right">
 			<a class="btn btn-outline-info btn-sm" href="?-ydisk=true">Загрузить с Яндекс Диска</a>
 			<!--<a class="btn btn-outline-info btn-sm" href="?-ydisk=tables">Данные</a>

@@ -54,6 +54,7 @@ class API {
 		//images, folders
 		return static::once('getProducers',[], function () {
 			$prods = [];
+			
 			foreach (Data::$files as $type) {
 				FS::scandir(Showcase::$conf[$type], function ($proddir, $dir) use (&$prods) {
 					if (!FS::is_dir($dir.$proddir)) return;
@@ -61,11 +62,15 @@ class API {
 					$prods[$producer_nick] = ['proddir' => $proddir];
 				});
 			}
-			
 			FS::scandir(Showcase::$conf['folders'], function ($proddir, $dir) use (&$prods) {
 				$producer_nick = Path::encode($proddir);
 				$prods[$producer_nick] = ['proddir' => $proddir];
 			});
+			$list = Db::colAll('SELECT producer_nick FROM showcase_producers');
+			foreach($list as $producer_nick) {
+				if (isset($prods[$producer_nick])) continue;
+				$prods[$producer_nick] = ['proddir' => false];	
+			}
 			return $prods;
 		});
 	}
@@ -133,8 +138,11 @@ class API {
 		return $res;
 	}
 	public static function getFiles($producer_nick, $type = 'images') {
-		$proddir = API::getProducers()[$producer_nick]['proddir'].'/';
+		$proddir = API::getProducers()[$producer_nick]['proddir'];
 		$list = [];
+		if (!$proddir) return $list;
+		$proddir = $proddir.'/';
+		
 		$types = Data::exts($type);
 		
 		// catalog/type[images]
@@ -276,8 +284,10 @@ class API {
 	public static function applyAll($producer_nick = false) {
 		if ($producer_nick) $prods = [$producer_nick => true];
 		else $prods = API::getProducers();
+
 		$types = array_diff(Data::$files, ['folders']);
 		$ress = []; 
+
 		$ress['Производители'] = [];
 		foreach ($prods as $producer_nick => $v) {
 			$ress['Производители'][$producer_nick] = [];
@@ -286,7 +296,7 @@ class API {
 				if ($res) $ress['Производители'][$producer_nick][$type] = $res;
 			}
 		}
-		
+
 		
 		$ress['Иконки'] = Data::addFilesIcons(); //Нужны уже записанные картинки для позиций
 

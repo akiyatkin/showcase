@@ -225,6 +225,8 @@ class Catalog {
 		$ext = Path::getExt($src);
 		if ($ext == 'yml') {
 			$option = Catalog::getOptions($name);
+			$roottitle = 'Каталог';
+			$rootid = Path::encode($roottitle);
 			$src = Path::theme($src);
 			if (!$src) return false;
 			$xml = simplexml_load_file($src);
@@ -247,8 +249,8 @@ class Catalog {
 					'title' => $name,
 					'group' => $name,
 					'Группа' => $name,
+					'gid' => $rootid,
 					'id' => $nick,
-					'gid' => false,
 					'data' => [],
 					'childs' => []
 				];
@@ -262,18 +264,20 @@ class Catalog {
 				$group = &$groups[$ids[$id]];
 				$prodart = Path::encode($pos->vendor).'-'.Path::encode($pos->vendorCode);
 				$group['data'][$prodart] = [
-					'Наименование' => (string) $pos->name,
-					'Иллюстрации' => (string) $pos->picture,
-					'Цена' => (int) $pos->price,
+					'more' => [
+						'Наименование' => (string) $pos->name,
+						'Иллюстрации' => (string) $pos->picture,
+						'Цена' => (int) $pos->price,
+						'Описание' => (string) $pos->description,
+						'Страна' => (string) $pos->country_of_origin
+					],
 					'gid' => $group['id'],
 					'group' => $group['name'],
 					'Группа' => $group['name'],
 					'Производитель' => (string) $pos->vendor,
 					'Артикул' => (string) $pos->vendorCode,
 					'producer' => Path::encode($pos->vendor),
-					'article' => Path::encode($pos->vendorCode),
-					'Описание' => (string) $pos->description,
-					'Страна' => (string) $pos->country_of_origin
+					'article' => Path::encode($pos->vendorCode)
 				];
 
 			}
@@ -300,12 +304,13 @@ class Catalog {
 					if (empty($group['data'])) unset($groups[$k]);
 				}
 			}
+
 			$data = [
-				'title' => 'Каталог',
-				'name' => 'Каталог',
-				'group' => 'Каталог',
+				'title' => $roottitle,
+				'name' => $roottitle,
+				'group' => $roottitle,
 				'gid' => false,
-				'id' => Path::encode('Каталог'),
+				'id' => $rootid,
 				'data' => [],
 				'childs' => array_values($groups)
 			];	
@@ -327,12 +332,14 @@ class Catalog {
 				// 	$g['gid'] = false;
 				// 	$g['id'] = Path::encode('Каталог');
 				// 	//$data = $g;
-					// echo '<pre>';
-					// print_r($data);
-					// exit;
+					
 				// }
 			}
-			
+			$g = Xlsx::runGroups($data, function &(&$g) {
+				$g['data'] = array_values($g['data']);
+				$r = null;
+				return $r;
+			});
 
 		} else {
 			$conf = Showcase::$conf;
@@ -359,6 +366,9 @@ class Catalog {
 				$pos['producer'] = $opt['producer_nick'];
 			});
 		}*/
+		// echo '<pre>';
+		// 			print_r($data);
+		// 			exit;
 		return $data;
 	}
 	
