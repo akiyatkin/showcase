@@ -611,7 +611,7 @@ class Showcase
 				//$m['items'] = explode(',', $m['items']);
 				//foreach ($m['items'] as $j => $v) if (!$v) unset($m['items'][$j]);
 
-				$models[$k] = Showcase::getModelWhithItems($m['producer_nick'], $m['article_nick']);
+				$models[$k] = Showcase::getModelWithItems($m['producer_nick'], $m['article_nick']);
 			}
 			$ans['list'] = $models;
 		}
@@ -949,7 +949,7 @@ class Showcase
 		$pos['item_num'] = "1";
 		return $pos;
 	}
-	public static function getModelWhithItems($producer_nick, $article_nick, $choice_item_num = 1)
+	public static function getModelWithItems($producer_nick, $article_nick, $choice_item_num = 1)
 	{
 
 		$sql = 'SELECT 
@@ -982,7 +982,9 @@ class Showcase
 		', [
 			':model_id' => $pos['model_id']
 		]);
-		
+	// 	echo '<pre>';
+	// print_r($pos);
+	// exit;
 		$items = [];
 		foreach ($list as $p => $prop) {
 			$val = $prop['value'] ?? $prop['number'] ?? $prop['text'];
@@ -1000,15 +1002,20 @@ class Showcase
 				else $items[$item_num][$name] = $val;
 			}	
 		}
-		$itemrows = $items["1"];
-	
+		$itemrows = [];
+		foreach ($items as $item) {
+			foreach ($item as $prop => $i) {
+				if (isset($itemrows[$prop])) continue;
+				$itemrows[$prop] = $i;
+			}
+		}
 		foreach ($itemrows as $prop => $val) {
 			$euqal = true;
-			foreach($items as $item_num => $item) {
+			foreach ($items as $item_num => $item) {
 				if (!isset($item[$prop])) {
+					$euqal = false;
 					$items[$item_num][$prop] = $item[$prop] = is_array($val) ? [] : null;
-				}
-				if ($val !== $item[$prop]) {
+				} else if ($val !== $item[$prop]) {
 					$euqal = false;
 					break;
 				}
@@ -1019,6 +1026,11 @@ class Showcase
 					unset($items[$item_num][$prop]);
 				}
 			}
+		}
+		ksort($items);
+		foreach ($items as $n => $item) {
+			ksort($item);
+			$items[$n] = $item;
 		}
 		if (!isset($items[$choice_item_num])) $choice_item_num = 1;
 		$pos = $pos + $items[$choice_item_num];

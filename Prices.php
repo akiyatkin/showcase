@@ -342,6 +342,7 @@ class Prices {
 		$ans['Найдено соответствий'] = [];
 		$ans['Количество позиций в каталоге'] = 0;
 		$ans['Изменено моделей в каталоге'] = [];
+		$ans['Принято позиций прайса к изменению в каталоге'] = 0;
 		$ans['Изменено позиций в каталоге'] = 0;
 		$ans['Ошибки каталога'] = [];
 		
@@ -398,6 +399,7 @@ class Prices {
 				}
 				
 				list($c, $modified, $mposs) = Prices::updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value, $name, $time);
+				$ans['Принято позиций прайса к изменению в каталоге']++;
 				$ans['Изменено позиций в каталоге']+=$modified;
 				if ($c == 0) {
 					$ans['Ошибки прайса'][] = $value;
@@ -412,15 +414,24 @@ class Prices {
 			});
 		}
 		if ($producer_id) {
-			$ans['Количество позиций в каталоге'] = Data::col('SELECT count(*) from showcase_items i
-					INNER JOIN showcase_models m on m.model_id = i.model_id and m.producer_id=:producer_id',[':producer_id'=>$producer_id]);
+			$ans['Количество позиций в каталоге'] = Data::col('
+				SELECT count(i.item_num) 
+				FROM showcase_items i, showcase_models m
+				WHERE m.model_id = i.model_id and m.producer_id = :producer_id
+			',[':producer_id' => $producer_id]);
 
 			//У всех позиций добавляется свойство Прайс, даже если ничего не внесено
-			$ans['Ошибки каталога'] = Data::all('SELECT * from (SELECT p.producer, m.article, max(mv.price_id) as price_id FROM showcase_models m
-			LEFT JOIN showcase_producers p on m.producer_id = p.producer_id
-			LEFT JOIN showcase_iprops mv on (mv.model_id = m.model_id and mv.price_id = :price_id)
-			where m.producer_id = :producer_id
-			GROUP BY m.model_id) t WHERE t.price_id is null
+			$ans['Ошибки каталога'] = Data::all('
+				SELECT * from (
+					SELECT p.producer, m.article, max(mv.price_id) as price_id
+					FROM showcase_items i
+					LEFT JOIN showcase_iprops mv on (mv.model_id = i.model_id and mv.item_num = i.item_num and mv.price_id = :price_id)
+					LEFT JOIN showcase_models m on m.model_id = i.model_id
+					LEFT JOIN showcase_producers p on m.producer_id = p.producer_id
+					
+					WHERE m.producer_id = :producer_id
+					GROUP BY i.model_id, i.item_num
+				) t WHERE t.price_id is null
 			', [':producer_id'=> $producer_id, ':price_id' => $option['price_id']]);
 		} else {
 			$ans['Количество позиций в каталоге'] = Data::col('SELECT count(*) from showcase_items i');

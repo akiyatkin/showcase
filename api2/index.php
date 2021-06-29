@@ -1290,8 +1290,8 @@ $meta->addAction('posseo', function () {
 $meta->addAction('pos', function () {
 	extract($this->gets(['producer_nick','article_nick','item_num','catkit']), EXTR_REFS);
 	$md = Showcase::initMark($this->ans);
-	$pos = Showcase::getModelWhithItems($producer_nick, $article_nick, $item_num);
-	
+	$pos = Showcase::getModelWithItems($producer_nick, $article_nick, $item_num);
+
 	
 
 	if (!$pos) {
