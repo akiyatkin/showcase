@@ -1057,7 +1057,7 @@ class Showcase
 			unset($pos[$i]);
 		}
 		$pos['more'] = $more;
-		
+		Event::fire('Showcase-position.onshow', $pos);
 		return $pos;
 	}
 
