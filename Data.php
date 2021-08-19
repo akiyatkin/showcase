@@ -37,6 +37,7 @@ class Data {
 	public static $images = ['png', 'gif', 'jpg', 'jpeg','svg'];
 	public static $videos = ['avi','ogv','mp4','swf'];
 	public static $slides = ['png', 'jpg', 'jpeg'];
+	public static $folders = [];
 	public static function fetch($sql, $args = []) {
 		$stmt = Db::cstmt($sql);
 		$stmt->execute($args);

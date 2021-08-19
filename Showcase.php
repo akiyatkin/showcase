@@ -809,8 +809,7 @@ class Showcase
 		if (!$ar) return false;
 		return Showcase::getModel($ar['producer_nick'], $ar['article_nick'], $item_nicknum, $catkit, $myitems);
 	}
-	public static function getCost($producer_nick, $article_nick, $item_num = 1) {
-		
+	public static function getCost($pos) {
 		$sql = 'SELECT ip.number from showcase_models m
 			left join showcase_producers p on p.producer_id = m.producer_id
 			left join showcase_items i on i.model_id = m.model_id
@@ -820,15 +819,18 @@ class Showcase
 			m.article_nick = :article_nick
 			and p.producer_nick = :producer_nick
 			and pr.prop_nick = :prop_nick
+			and i.item_num = :item_num
 		';
 		$prop_nick = Path::encode('Цена');
 		
-		$cost = Db::col($sql, [
-			'article_nick'=> $article_nick,
+		$pos['Цена'] = Db::col($sql, [
+			'article_nick'=> $pos['article_nick'],
 			'prop_nick' => $prop_nick,
-			'producer_nick'=> $producer_nick
+			'item_num' => $pos['item_num'],
+			'producer_nick'=> $pos['producer_nick']
 		]);
-		return (float) $cost;
+		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
+		return (float) $pos['Цена'];
 	}
 	public static function getModel($producer_nick, $article_nick, $item_nicknum = '', $catkit = '', $myitems = [])
 	{
@@ -897,7 +899,6 @@ class Showcase
 			//if ($catkit) $data['catkit'] = implode('&', $catkit); //Выбраная комплектация
 			$data['catkit'] = $catkit; //Выбраная комплектация
 			//Event::tik('Showcase-position.onsearch');
-
 			Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
 
 			return $data;
@@ -947,6 +948,7 @@ class Showcase
 			}	
 		}
 		$pos['item_num'] = "1";
+		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
 		return $pos;
 	}
 	public static function getModelWithItems($producer_nick, $article_nick, $choice_item_num = 1)
@@ -1048,7 +1050,7 @@ class Showcase
 			}
 		}
 		
-		
+		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
 		$more = [];
 		foreach ($pos as $i => $v) {
 			$nick = Path::encode($i);
@@ -1056,12 +1058,14 @@ class Showcase
 			$more[$i] = $v;
 			unset($pos[$i]);
 		}
+
 		$pos['more'] = $more;
+		
 		Event::fire('Showcase-position.onshow', $pos);
 		return $pos;
 	}
 
-	public static function getModelEasy($producer_nick, $article_nick, $item_num = 1)
+	public static function getModelEasy($producer_nick, $article_nick, $item_num = 1, $catkit = '')
 	{
 
 		$sql = 'SELECT 
@@ -1113,6 +1117,8 @@ class Showcase
 				else $pos[$name] = $val;
 			}	
 		}
+		$pos['catkit'] = $catkit;
+		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
 		return $pos;
 	}
 	public static function getFullModel($producer_nick, $article_nick)
