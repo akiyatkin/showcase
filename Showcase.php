@@ -951,8 +951,9 @@ class Showcase
 		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
 		return $pos;
 	}
-	public static function getModelWithItems($producer_nick, $article_nick, $choice_item_num = 1)
+	public static function getModelWithItems($producer_nick, $article_nick, $choice_item_num = 1, $catkit = '')
 	{
+		
 
 		$sql = 'SELECT 
 			m.model_id, m.group_id, m.article_nick, m.article, 
@@ -1049,7 +1050,7 @@ class Showcase
 				$pos['itemmore'][] = $name;
 			}
 		}
-		
+		$pos['catkit'] = $catkit;
 		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
 		$more = [];
 		foreach ($pos as $i => $v) {
@@ -1061,7 +1062,9 @@ class Showcase
 
 		$pos['more'] = $more;
 		
+
 		Event::fire('Showcase-position.onshow', $pos);
+
 		return $pos;
 	}
 
