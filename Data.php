@@ -637,11 +637,21 @@ class Data {
 				$row = Data::fetch('SELECT g.group_nick, g.group, g.group_id, mv.text as icon from showcase_groups g
 					inner join showcase_models m on (m.group_id = g.group_id)	
 					inner join showcase_iprops mv on (mv.model_id = m.model_id and mv.prop_id = :images_id)
-					where g.group_nick = :group_nick
-					', [':images_id' => $images_id, ':group_nick' => $group['group_nick']]);
+					where g.group_id = :group_id
+					', [':images_id' => $images_id, ':group_id' => $group['group_id']]);
 
 
-				
+				if ($group['group_nick'] == 'tig') {
+					echo '<pre>';
+					print_r($group);
+					print_r($row);
+					exit;
+				}
+				if ($group['group_nick'] == 'mma') {
+					echo '<pre>';
+					print_r($group);
+					print_r($row);
+				}
 				if ($row) {
 					$group['icon'] = $row['icon'];
 				} else {

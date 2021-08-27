@@ -747,33 +747,33 @@ class Showcase
 		$options = Data::getOptions();
 		return $options;
 	}
-	public static function getModelShow($producer_nick, $article_nick, $item_nicknum = '', $catkit = false, $items = [])
-	{
-		$pos = Showcase::getModel($producer_nick, $article_nick, $item_nicknum, $catkit, $items);
+	// public static function getModelShow($producer_nick, $article_nick, $item_nicknum = '', $catkit = false, $items = [])
+	// {
+	// 	$pos = Showcase::getModel($producer_nick, $article_nick, $item_nicknum, $catkit, $items);
 
-		if (!$pos) return $pos;
-		$pos['show'] = true; //Метка что даные для показа... На странице модели покаываем цену позиции! Одну цену. А в карточке товра вилку.
-		if (isset($pos['texts'])) {
-			foreach ($pos['texts'] as $i => $src) {
-				$pos['texts'][$i]  =  Rubrics::article($src); //Изменение текста не отражается как изменение 
-				//$pos['texts'][$i]  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение 
-			}
-		}
-		if (isset($pos['files'])) {
-			foreach ($pos['files'] as $i => $path) {
-				$fd = Load::pathinfo($path);
-				$fd['size'] = round(FS::filesize($path) / 1000000, 2);
-				if (!$fd['size']) $fd['size'] = '0.01';
-				$pos['files'][$i] = $fd;
-			}
-		}
-		//Event::tik('Showcase-position.onshow'); //Позиция вызывается в двух слоях по разным запросам - ошибка в этом
-		$opt = Showcase::getOptions();
-		$pos['showcase']['props'] = Data::initProps($opt, array_keys($opt['props']));
+	// 	if (!$pos) return $pos;
+	// 	$pos['show'] = true; //Метка что даные для показа... На странице модели покаываем цену позиции! Одну цену. А в карточке товра вилку.
+	// 	if (isset($pos['texts'])) {
+	// 		foreach ($pos['texts'] as $i => $src) {
+	// 			$pos['texts'][$i]  =  Rubrics::article($src); //Изменение текста не отражается как изменение 
+	// 			//$pos['texts'][$i]  =  Load::loadTEXT('-doc/get.php?src='.$src);//Изменение текста не отражается как изменение 
+	// 		}
+	// 	}
+	// 	if (isset($pos['files'])) {
+	// 		foreach ($pos['files'] as $i => $path) {
+	// 			$fd = Load::pathinfo($path);
+	// 			$fd['size'] = round(FS::filesize($path) / 1000000, 2);
+	// 			if (!$fd['size']) $fd['size'] = '0.01';
+	// 			$pos['files'][$i] = $fd;
+	// 		}
+	// 	}
+	// 	//Event::tik('Showcase-position.onshow'); //Позиция вызывается в двух слоях по разным запросам - ошибка в этом
+	// 	$opt = Showcase::getOptions();
+	// 	$pos['showcase']['props'] = Data::initProps($opt, array_keys($opt['props']));
 
-		Event::fire('Showcase-position.onshow', $pos);
-		return $pos;
-	}
+	// 	Event::fire('Showcase-position.onshow', $pos);
+	// 	return $pos;
+	// }
 	public static function setItem($data, $item_nick)
 	{
 		$item = $data['items'][$item_nick];
@@ -800,15 +800,15 @@ class Showcase
 		$idi = (string) $idi; //12 = '12 asdf' а если и то и то строка '12'!='12 asdf'
 		return $id == $idi;
 	}
-	public static function getModelById($model_id, $item_nicknum = '', $catkit = '', $myitems = []) {
-		$sql = 'select m.article_nick, p.producer_nick from showcase_models m
-			left join showcase_producers p on p.producer_id = m.producer_id
-			where m.model_id = :model_id
-		';
-		$ar = Db::fetch($sql,['model_id'=> $model_id]);
-		if (!$ar) return false;
-		return Showcase::getModel($ar['producer_nick'], $ar['article_nick'], $item_nicknum, $catkit, $myitems);
-	}
+	// public static function getModelById($model_id, $item_nicknum = '', $catkit = '', $myitems = []) {
+	// 	$sql = 'select m.article_nick, p.producer_nick from showcase_models m
+	// 		left join showcase_producers p on p.producer_id = m.producer_id
+	// 		where m.model_id = :model_id
+	// 	';
+	// 	$ar = Db::fetch($sql,['model_id'=> $model_id]);
+	// 	if (!$ar) return false;
+	// 	return Showcase::getModel($ar['producer_nick'], $ar['article_nick'], $item_nicknum, $catkit, $myitems);
+	// }
 	public static function getCost($pos) {
 		$sql = 'SELECT ip.number from showcase_models m
 			left join showcase_producers p on p.producer_id = m.producer_id
@@ -832,77 +832,77 @@ class Showcase
 		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
 		return (float) $pos['Цена'];
 	}
-	public static function getModel($producer_nick, $article_nick, $item_nicknum = '', $catkit = '', $myitems = [])
-	{
-		return static::once('getModel', [$producer_nick, $article_nick, $item_nicknum, $catkit, $myitems], function ($producer_nick, $article_nick, $item_nicknum, $catkit, $myitems) {
-			// $catkit - выбранная комплектация
-			// $myitems - какие позиции будут внутри модели
-			if ($item_nicknum && $myitems) $myitems[] = $item_nicknum;
+	// public static function getModel($producer_nick, $article_nick, $item_nicknum = '', $catkit = '', $myitems = [])
+	// {
+	// 	return static::once('getModel', [$producer_nick, $article_nick, $item_nicknum, $catkit, $myitems], function ($producer_nick, $article_nick, $item_nicknum, $catkit, $myitems) {
+	// 		// $catkit - выбранная комплектация
+	// 		// $myitems - какие позиции будут внутри модели
+	// 		if ($item_nicknum && $myitems) $myitems[] = $item_nicknum;
 
 
-			/*uasort($data['items'], function ($a, $b) {
-				if ($a['item_num'] == $b['item_num']) {
-					return 0;
-				}
-				return ($a['item_num'] < $b['item_num']) ? -1 : 1;
-			});*/
-			$data = Showcase::getFullModel($producer_nick, $article_nick);
-			if (!$data) return false;
-			if ($item_nicknum && $data['item_nick'] != $item_nicknum && $data['item_num'] != $item_nicknum) {
-				//Первая позиция не подходим ищим в items
+	// 		/*uasort($data['items'], function ($a, $b) {
+	// 			if ($a['item_num'] == $b['item_num']) {
+	// 				return 0;
+	// 			}
+	// 			return ($a['item_num'] < $b['item_num']) ? -1 : 1;
+	// 		});*/
+	// 		$data = Showcase::getFullModel($producer_nick, $article_nick);
+	// 		if (!$data) return false;
+	// 		if ($item_nicknum && $data['item_nick'] != $item_nicknum && $data['item_num'] != $item_nicknum) {
+	// 			//Первая позиция не подходим ищим в items
 
-				if (empty($data['items'])) return false;
+	// 			if (empty($data['items'])) return false;
 
-				$item_nick = false;
-				if (Showcase::isInt($item_nicknum) && $item_nicknum <= sizeof($data['items'])) {
-					$keys = array_keys($data['items']);
-					$item_nick = $keys[--$item_nicknum];
-					$data = Showcase::setItem($data, $item_nick);
-				} else if (isset($data['items'][$item_nicknum])) {
-					$data = Showcase::setItem($data, $item_nicknum);
-				} else {
-					return false;
-				}
-			}
+	// 			$item_nick = false;
+	// 			if (Showcase::isInt($item_nicknum) && $item_nicknum <= sizeof($data['items'])) {
+	// 				$keys = array_keys($data['items']);
+	// 				$item_nick = $keys[--$item_nicknum];
+	// 				$data = Showcase::setItem($data, $item_nick);
+	// 			} else if (isset($data['items'][$item_nicknum])) {
+	// 				$data = Showcase::setItem($data, $item_nicknum);
+	// 			} else {
+	// 				return false;
+	// 			}
+	// 		}
 
-			if (!empty($data['items']) && $myitems) {
-				foreach ($data['items'] as $k => $item) {
-					if (!in_array($item['item_num'], $myitems)) unset($data['items'][$k]);
-				}
-				if (sizeof($data['items']) == 0) return false;
-				if (sizeof($data['items']) == 1) {
-					unset($data['items']);
-					unset($data['itemrows']);
-					unset($data['itemmore']);
-				}
-			}
+	// 		if (!empty($data['items']) && $myitems) {
+	// 			foreach ($data['items'] as $k => $item) {
+	// 				if (!in_array($item['item_num'], $myitems)) unset($data['items'][$k]);
+	// 			}
+	// 			if (sizeof($data['items']) == 0) return false;
+	// 			if (sizeof($data['items']) == 1) {
+	// 				unset($data['items']);
+	// 				unset($data['itemrows']);
+	// 				unset($data['itemmore']);
+	// 			}
+	// 		}
 
+	// 		Showcase::addMinMaxPosCost($data);
+	// 		//if ($catkit) $data['catkit'] = implode('&', $catkit); //Выбраная комплектация
+	// 		$data['catkit'] = $catkit; //Выбраная комплектация
+	// 		//Event::tik('Showcase-position.onsearch');
+	// 		Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
 
-			if (!empty($data['items'])) {
-				$min = false;
-				$max = false;
-				if (!empty($data['Цена'])) {
-					$min = $data['Цена'];
-					$max = $data['Цена'];
-				}
-				foreach ($data['items'] as $item) {
-					if (empty($item['Цена'])) continue;
-					if (!$min || $min > $item['Цена']) $min = $item['Цена'];
-					if (!$max || $max < $item['Цена']) $max = $item['Цена'];
-				}
-				if ($min != $max) {
-					$data['min'] = $min;
-					$data['max'] = $max;
-				}
-			}
-
-			//if ($catkit) $data['catkit'] = implode('&', $catkit); //Выбраная комплектация
-			$data['catkit'] = $catkit; //Выбраная комплектация
-			//Event::tik('Showcase-position.onsearch');
-			Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
-
-			return $data;
-		});
+	// 		return $data;
+	// 	});
+	// }
+	public static function addMinMaxPosCost(&$data) {
+		if (empty($data['items'])) return;
+		$min = false;
+		$max = false;
+		if (!empty($data['Цена'])) {
+			$min = $data['Цена'];
+			$max = $data['Цена'];
+		}
+		foreach ($data['items'] as $item) {
+			if (empty($item['Цена'])) continue;
+			if (!$min || $min > $item['Цена']) $min = $item['Цена'];
+			if (!$max || $max < $item['Цена']) $max = $item['Цена'];
+		}
+		if ($min != $max) {
+			$data['min'] = $min;
+			$data['max'] = $max;
+		}
 	}
 	public static function getModelEasyById($model_id)
 	{
@@ -948,7 +948,7 @@ class Showcase
 			}	
 		}
 		$pos['item_num'] = "1";
-		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
+		//Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
 		return $pos;
 	}
 	public static function getModelWithItems($producer_nick, $article_nick, $choice_item_num = 1, $catkit = '')
@@ -1062,8 +1062,8 @@ class Showcase
 
 		$pos['more'] = $more;
 		
-
-		Event::fire('Showcase-position.onshow', $pos);
+		Showcase::addMinMaxPosCost($pos);
+		
 
 		return $pos;
 	}
@@ -1121,7 +1121,7 @@ class Showcase
 			}	
 		}
 		$pos['catkit'] = $catkit;
-		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
+		//Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
 		return $pos;
 	}
 	public static function getFullModel($producer_nick, $article_nick)

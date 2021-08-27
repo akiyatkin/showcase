@@ -6,6 +6,7 @@ use infrajs\path\Path;
 use akiyatkin\showcase\Showcase;
 use akiyatkin\showcase\Data;
 use infrajs\load\Load;
+use infrajs\event\Event;
 use infrajs\access\Access;
 use infrajs\excel\Xlsx;
 use akiyatkin\fs\FS;
@@ -1130,8 +1131,7 @@ $meta->addAction('search', function () {
 			*/
 			//$m['items'] = explode(',', $m['items']);
 			//foreach ($m['items'] as $j => $v) if (!$v) unset($m['items'][$j]);
-
-			$models[$k] = Showcase::getModelEasyById($m['model_id']);
+			$models[$k] = Showcase::getModelWithItems($m['producer_nick'], $m['article_nick'], $m['item_num']);
 			$models[$k]['showcase'] = array();
 			$group = API::getGroupById($models[$k]['group_id']);
 			if (isset($group['options']['props'])) {
@@ -1320,6 +1320,7 @@ $meta->addAction('pos', function () {
 	// echo '<pre>';
 	// print_r(Showcase::$columns);
 	// exit;
+	Event::fire('Showcase-position.onshow', $pos);
 	$this->ans['pos'] = $pos;
 
 
@@ -1349,7 +1350,7 @@ $meta->addAction('pos', function () {
 		'active' => true, 
 		'title' => $pos['producer'].'&nbsp;'.$pos['article']
 	);
-
+	
 	return $this->ret();
 });
 
