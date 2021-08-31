@@ -434,8 +434,8 @@ $meta->addAction('filters', function () {
 							$minmax = $md['more'][$prop_nick]['minmax'];
 							$r = explode('/',$minmax);
 							if (sizeof($r) == 2) {
-								$row['minval'] = floor($r[0]/$step)*$step;
-								$row['maxval'] = ceil($r[1]/$step)*$step;
+								$row['minval'] = floor((int) $r[0]/$step)*$step;
+								$row['maxval'] = ceil((int) $r[1]/$step)*$step;
 								if ($row['minval'] < $row['min']) $row['minval'] = $row['min'];
 								if ($row['maxval'] > $row['max']) $row['maxval'] = $row['max'];
 							}
