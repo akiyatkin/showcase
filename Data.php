@@ -165,6 +165,14 @@ class Data {
 				'prop'=>'Группа',
 				'nick' =>'group_nick'
 			],
+			'Цена' => [
+				"tplprop"=>"prop-empty",
+				"tplfilter"=>"prop-cost",
+				'value'=>'Цена',
+				'prop'=>'Цена',
+				'nick' =>'cena',
+				'filter'=>'range'
+			],
 			'Описание' => [
 				"tplprop"=>"prop-p",
 				'value'=>'Описание',
@@ -640,18 +648,6 @@ class Data {
 					where g.group_id = :group_id
 					', [':images_id' => $images_id, ':group_id' => $group['group_id']]);
 
-
-				if ($group['group_nick'] == 'tig') {
-					echo '<pre>';
-					print_r($group);
-					print_r($row);
-					exit;
-				}
-				if ($group['group_nick'] == 'mma') {
-					echo '<pre>';
-					print_r($group);
-					print_r($row);
-				}
 				if ($row) {
 					$group['icon'] = $row['icon'];
 				} else {

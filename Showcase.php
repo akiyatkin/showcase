@@ -948,7 +948,7 @@ class Showcase
 			}	
 		}
 		$pos['item_num'] = "1";
-		//Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
+		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
 		return $pos;
 	}
 	public static function getModelWithItems($producer_nick, $article_nick, $choice_item_num = 1, $catkit = '')
@@ -1121,7 +1121,7 @@ class Showcase
 			}	
 		}
 		$pos['catkit'] = $catkit;
-		//Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
+		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
 		return $pos;
 	}
 	public static function getFullModel($producer_nick, $article_nick)
