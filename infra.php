@@ -75,6 +75,9 @@ Showcase::add('group', function () {
 	}
 	$val = array_filter($val);
 	$values = array_keys($val);
+	$values = array_map(function ($nick) {
+		return Path::encode($nick);
+	}, $values);
 	$values = array_filter($values, function ($nick) {
 		if (in_array($nick, array('yes', 'no'))) return true;
 		if (!$nick) return false;
@@ -119,6 +122,15 @@ Showcase::add('more', function () {
 	return array();
 }, function (&$val) {
 	if (!is_array($val)) return;
+	
+	foreach ($val as $name => $values) {
+		$newvalues = [];
+		foreach ($values as $key => $v) {
+			$newkey = Path::encode($key);
+			$newvalues[$newkey] = $v;
+		}
+		$val[$name] = $newvalues;
+	}
 
 	foreach ($val as $k => $v){
 		if (!is_array($v)) {
