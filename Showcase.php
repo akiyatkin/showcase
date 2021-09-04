@@ -720,6 +720,8 @@ class Showcase
 		"article", "producer_nick", "article_nick", 
 		"Наименование", "Файл", "Иллюстрации", "Файлы", "Фото", "Цена", "Описание", 
 		"Скрыть-фильтры-в-полном-описании", "Наличие", "Прайс"
+
+		, "kit","kitcount","iscatkit","catkits","catkit", "compatibilities","Совместимость","Группа в комплекте"
 	);
 	public static function getOption($right = [], $def = null)
 	{
@@ -767,11 +769,10 @@ class Showcase
 	// 			$pos['files'][$i] = $fd;
 	// 		}
 	// 	}
-	// 	//Event::tik('Showcase-position.onshow'); //Позиция вызывается в двух слоях по разным запросам - ошибка в этом
+	// 	
 	// 	$opt = Showcase::getOptions();
 	// 	$pos['showcase']['props'] = Data::initProps($opt, array_keys($opt['props']));
 
-	// 	Event::fire('Showcase-position.onshow', $pos);
 	// 	return $pos;
 	// }
 	public static function setItem($data, $item_nick)
@@ -829,7 +830,6 @@ class Showcase
 			'item_num' => $pos['item_num'],
 			'producer_nick'=> $pos['producer_nick']
 		]);
-		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
 		return (float) $pos['Цена'];
 	}
 	// public static function getModel($producer_nick, $article_nick, $item_nicknum = '', $catkit = '', $myitems = [])
@@ -880,8 +880,7 @@ class Showcase
 	// 		Showcase::addMinMaxPosCost($data);
 	// 		//if ($catkit) $data['catkit'] = implode('&', $catkit); //Выбраная комплектация
 	// 		$data['catkit'] = $catkit; //Выбраная комплектация
-	// 		//Event::tik('Showcase-position.onsearch');
-	// 		Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
+
 
 	// 		return $data;
 	// 	});
@@ -948,7 +947,7 @@ class Showcase
 			}	
 		}
 		$pos['item_num'] = "1";
-		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
+		//Catkit::setKitPhoto($pos);
 		return $pos;
 	}
 	public static function getModelWithItems($producer_nick, $article_nick, $choice_item_num = 1, $catkit = '')
@@ -1051,7 +1050,10 @@ class Showcase
 			}
 		}
 		$pos['catkit'] = $catkit;
-		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
+		
+		Catkit::apply($pos); //Нужно показать комплектацию по умолчанию
+		Catkit::setKitPhoto($pos);
+		
 		$more = [];
 		foreach ($pos as $i => $v) {
 			$nick = Path::encode($i);
@@ -1121,7 +1123,9 @@ class Showcase
 			}	
 		}
 		$pos['catkit'] = $catkit;
-		Event::fire('Showcase-position.onsearch', $pos); //Позиция для общего списка
+
+		Catkit::apply($pos);
+		Catkit::setKitPhoto($pos);
 		return $pos;
 	}
 	public static function getFullModel($producer_nick, $article_nick)
@@ -1399,7 +1403,6 @@ class Showcase
 		
 		if ($catkit) $data['catkit'] = implode('&', $catkit); //Выбраная комплектация
 
-		Event::fire('Showcase-position.onsearch', $data); //Позиция для общего списка
 		return $data;
 	}*/
 	public static function isColumn($prop)

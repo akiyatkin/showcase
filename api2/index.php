@@ -2,6 +2,7 @@
 use akiyatkin\meta\Meta;
 use infrajs\db\Db;
 use akiyatkin\showcase\api2\API;
+use akiyatkin\showcase\Catkit;
 use infrajs\path\Path;
 use akiyatkin\showcase\Showcase;
 use akiyatkin\showcase\Data;
@@ -1287,9 +1288,46 @@ $meta->addAction('posseo', function () {
 	
 	return $this->ret();
 });
+$meta->addAction('posimages', function () {
+	extract($this->gets(['producer_nick','article_nick','item_num','catkit']));
+	$pos = Showcase::getModelEasy($producer_nick, $article_nick, $item_num, $catkit);
+	if (!$pos) {
+		http_response_code(404);
+		return $this->err();
+	}
+	$pos = array_intersect_key($pos, array_flip(['article','producer','images','group_nick','Наименование']));
+	$this->ans['pos'] = $pos;
+	return $this->ret();
+});
+$meta->addAction('poskit', function () {
+	extract($this->gets(['producer_nick','article_nick','item_num','catkit']));
+	$pos = Showcase::getModelEasy($producer_nick, $article_nick, $item_num, $catkit);
+	if (!$pos) {
+		http_response_code(404);
+		return $this->err();
+	}
+	$pos['catkit'] = $catkit;
+	Catkit::apply($pos);
+
+	$mark = Showcase::getDefaultMark();
+	$kit = Catkit::implode(['sadf'=>[$pos]]); //Группа не участует в запросе (safd)
+	$mark->setVal(':more.compatibilities.'.$kit.'=1:count=1');
+	$md = $mark->getData();
+	$data = Showcase::search($md);
+	$pos['kitlist'] = !empty($data['list']);
+
+	Catkit::setKitPhoto($pos);
+
+	$pos = array_intersect_key($pos, array_flip([
+		'Наименование','article','item_num','producer_nick','article_nick','Код','kit','Цена','kitlist',
+		'catkit', 'iscatkit'
+	]));
+	$this->ans['pos'] = $pos;
+	return $this->ret();
+});
 $meta->addAction('pos', function () {
 	extract($this->gets(['producer_nick','article_nick','item_num','catkit']));
-	$md = Showcase::initMark($this->ans);
+	//$md = Showcase::initMark($this->ans);
 	
 	$pos = Showcase::getModelWithItems($producer_nick, $article_nick, $item_num, $catkit);
 
@@ -1312,7 +1350,7 @@ $meta->addAction('pos', function () {
 			$pos['texts'][$i]  =  Rubrics::article($src);
 		}
 	}
-	$group = API::getGroupById($pos['group_id']);
+	
 
 	$opt = Showcase::getOptions();
 	$pos['showcase'] = [];
@@ -1320,6 +1358,10 @@ $meta->addAction('pos', function () {
 	// echo '<pre>';
 	// print_r(Showcase::$columns);
 	// exit;
+	Catkit::apply($pos);
+	Catkit::setCompatibilities($pos);
+	Catkit::setKitlist($pos);
+	Catkit::setKitPhoto($pos);
 	Event::fire('Showcase-position.onshow', $pos);
 	$this->ans['pos'] = $pos;
 
@@ -1330,7 +1372,7 @@ $meta->addAction('pos', function () {
 		'add' => ':group'
 	);
 
-	
+	$group = API::getGroupById($pos['group_id']);
 	$path = [];
 	if ($group['parent']) { //Если позиция прям в каталоге
 		do {
