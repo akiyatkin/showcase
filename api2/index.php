@@ -1249,9 +1249,14 @@ $meta->addArgument('article_nick',['encode','notempty']);
 $meta->addArgument('item_num', ['int'], function ($item_num, $pname) {
 	if ($item_num > 255) return $this->fail('meta.required', $pname);
 });
-$meta->addArgument('catkit');
+$meta->addArgument('catkit', function ($val) {
+	extract($this->gets(['producer_nick']));
+	$r = Catkit::explode($val, $producer_nick);
+	$val = Catkit::implode($r);
+	return $val;
+});
 $meta->addAction('posseo', function () {
-	extract($this->gets(['producer_nick','article_nick']), EXTR_REFS);
+	extract($this->gets(['producer_nick','article_nick']));
 	$ans = &$this->ans;
 	
 	$pos = Showcase::getModelEasy($producer_nick, $article_nick);
@@ -1320,7 +1325,7 @@ $meta->addAction('poskit', function () {
 
 	$pos = array_intersect_key($pos, array_flip([
 		'Наименование','article','item_num','producer_nick','article_nick','Код','kit','Цена','kitlist',
-		'catkit', 'iscatkit'
+		'catkit', 'iscatkit','kitcount'
 	]));
 	$this->ans['pos'] = $pos;
 	return $this->ret();
