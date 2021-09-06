@@ -8,6 +8,7 @@ use akiyatkin\showcase\Data;
 use akiyatkin\showcase\Prices;
 use akiyatkin\showcase\Catalog;
 use infrajs\event\Event;
+use akiyatkin\showcase\Catkit;
 
 /*
 Всё что добавляется в общий адресный параметр "m" как криетрий поиска, сортировки, вывода должно быть обработано 
