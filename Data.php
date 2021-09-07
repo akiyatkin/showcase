@@ -705,16 +705,19 @@ class Data {
 
 			//Посмотрели в папках с файлами
 			if ($conf['folders']) {
-				$dir = Rubrics::find($conf['folders'], $prod['producer_nick'], 'dir');
-				$images = FS::scandir($dir, function ($file) {
-					$fd = Load::nameInfo($file);
-					if (in_array($fd['ext'], Data::$images)) return true;
-					return false;
-				});
-				if ($images) {
-					$logos++;
-					$list[$k]['logo'] = $dir.$images[0];
-					continue;
+				$dirfolders = Data::dirNickFolders($conf['folders']);
+				if (isset($dirfolders[$prod['producer_nick']])) { //Есть папка производителя
+					$dir = $conf['folders'].$dirfolders[$prod['producer_nick']].'/';
+					$images = FS::scandir($dir, function ($file) {
+						$fd = Load::nameInfo($file);
+						if (in_array($fd['ext'], Data::$images)) return true;
+						return false;
+					});
+					if ($images) {
+						$logos++;
+						$list[$k]['logo'] = $dir.$images[0];
+						continue;
+					}
 				}
 			}
 		}
@@ -748,6 +751,18 @@ class Data {
 			);	
 		}, [$value]);
 	}*/
+	public static function dirNickFolders($src){
+		$key = 'dirNickFolders:'.$src;
+		if (isset(Data::$once[$key])) return Data::$once[$key];
+
+		$list = [];
+		FS::scandir($src, function ($name) use (&$list, $src) {
+			if (!FS::is_dir($src.$name)) return;
+			$nick = Path::encode($name);
+			$list[$nick] = $name;
+		});
+		return Data::$once[$key] = $list;
+	}
 	public static function getProdFS(){
 		$key = 'getProdFS:';
 		if (isset(Data::$once[$key])) return Data::$once[$key];
