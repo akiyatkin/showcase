@@ -7,6 +7,8 @@ use akiyatkin\ydisk\Ydisk;
 use akiyatkin\showcase\Data;
 use akiyatkin\showcase\Prices;
 use akiyatkin\showcase\Catalog;
+use infrajs\event\Event;
+use akiyatkin\showcase\Catkit;
 
 /*
 Всё что добавляется в общий адресный параметр "m" как криетрий поиска, сортировки, вывода должно быть обработано 
@@ -26,7 +28,25 @@ if (isset($_GET['-showcase'])) {
 		$res = Data::actionAddFiles();
 	}
 }
-
+Event::handler('Showcase-priceonload', function () {
+	//Нужно посчитать комплекты для всех позиций по умолчанию
+	//Есть Комлпектация и нет Цены
+	$mark = Showcase::getDefaultMark();
+	$mark->setVal(':more.'.Path::encode('Комплектация').'yes=1:count=5000');
+	$md = $mark->getData();
+	$data = Showcase::search($md); //Здесь выполнилось onshow и цена установилась
+	foreach ($data['list'] as $pos) {
+		//Позиции у которых есть Комплектация, были найдены и для них рассчиталась цена, которую и нужно записать в цену по умаолчанию.
+		Prices::deleteProp($pos['model_id'], $pos['item_num'], 'Цена');
+		if (isset($pos['Цена'])) Prices::insertProp($pos['model_id'], $pos['item_num'], 'Цена', $pos['Цена']);
+	}
+});
+Event::handler('Showcase-catalog.onload', function ($obj) {
+	$pos = &$obj['pos']; //pos после Xlsx::make()
+	if (empty($pos['more']['Совместимость'])) return; //Комплект к которому относится позиция
+	$kit = Catkit::explode($pos['more']['Совместимость'], $pos['producer']);
+	$pos['more']['compatibilities'] = Catkit::implode($kit,',');//compatibilities комплекты в правильной записи
+});
 Showcase::add('count', function () {
 	$conf = Showcase::$conf;
 	return 12;
@@ -75,6 +95,9 @@ Showcase::add('group', function () {
 	}
 	$val = array_filter($val);
 	$values = array_keys($val);
+	$values = array_map(function ($nick) {
+		return Path::encode($nick);
+	}, $values);
 	$values = array_filter($values, function ($nick) {
 		if (in_array($nick, array('yes', 'no'))) return true;
 		if (!$nick) return false;
@@ -119,6 +142,16 @@ Showcase::add('more', function () {
 	return array();
 }, function (&$val) {
 	if (!is_array($val)) return;
+	
+	foreach ($val as $name => $values) {
+		$newvalues = [];
+		if (!is_array($values)) continue;
+		foreach ($values as $key => $v) {
+			$newkey = Path::encode($key);
+			$newvalues[$newkey] = $v;
+		}
+		$val[$name] = $newvalues;
+	}
 
 	foreach ($val as $k => $v){
 		if (!is_array($v)) {

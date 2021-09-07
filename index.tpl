@@ -176,7 +176,7 @@
 	{nofile:}Нет файла {name}
 	{notime:}файл не внесён.
 	{noans:}раньше не вносился.
-	{noduration:}Время загрузки не известно,
+	{noduration:}Время загрузки неизвестно,
 {itemprice:}
 	<div class="d-flex table {mtime>time?:bg-warning} rounded">
 		<div class="p-2" style="width:220px">

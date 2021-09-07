@@ -2,10 +2,12 @@
 use akiyatkin\meta\Meta;
 use infrajs\db\Db;
 use akiyatkin\showcase\api2\API;
+use akiyatkin\showcase\Catkit;
 use infrajs\path\Path;
 use akiyatkin\showcase\Showcase;
 use akiyatkin\showcase\Data;
 use infrajs\load\Load;
+use infrajs\event\Event;
 use infrajs\access\Access;
 use infrajs\excel\Xlsx;
 use akiyatkin\fs\FS;
@@ -375,123 +377,123 @@ $meta->addAction('filters', function () {
 		$gs[] = $group_id;
 
 		$grwhere = 'm.group_id in ('.implode(',', $gs).')';
+		if (isset($group['options']['filters'])) {
+			foreach ($group['options']['filters'] as $name) {
+				$p = $props[$name] ?? [];
+				$prop_nick = Path::encode($name);
 
-		if (isset($group['options']['filters']))
-		foreach ($group['options']['filters'] as $name) {
-			$p = $props[$name] ?? [];
-			$prop_nick = Path::encode($name);
-
-			$p['prop_nick'] = $prop_nick;
-			if ($prop_nick == 'producer') {
-				$values = Data::all('SELECT pr.producer as value, pr.producer_nick as value_nick, count(*) as count 
-					FROM showcase_models m
-					INNER join showcase_producers pr on m.producer_id = pr.producer_id
-				where '.$grwhere.' 
-				group by pr.producer_id 
-				order by producer');// order by value
-				if (sizeof($values) < 2 ) continue;
-				
-				$p['values'] = $values;
-				$p['prop'] = 'Производитель';
-			} else {
-				$row = Data::fetch('SELECT prop_id, prop from showcase_props where prop_nick = :prop_nick',
-					[
-						':prop_nick' => $prop_nick
-					]
-				);
-				if (!$row) continue;
-				list($prop_id, $prop) = array_values($row);
-				$type = Data::checkType($prop_nick);
-				$p['prop'] = $prop;
-				$p['more'] = true;
-
-				if ($p['filter'] ?? '' == 'range') {
-					if ($type != 'number') continue;
-				
-					$row = Data::fetch('
-						SELECT min(mv.number) as min, max(mv.number) as max 
+				$p['prop_nick'] = $prop_nick;
+				if ($prop_nick == 'producer') {
+					$values = Data::all('SELECT pr.producer as value, pr.producer_nick as value_nick, count(*) as count 
 						FROM showcase_models m
-						left join showcase_iprops mv on mv.model_id = m.model_id
-						where '.$grwhere.' 
-						and mv.prop_id = :prop_id
-					', [':prop_id' => $prop_id]);
-
-					$dif = round($row['max'] - $row['min']);
-					$len = strlen($dif);
-					if ($len < 2 ) {
-						$step = 1;
-					} else {
-						$step = pow(10, $len - 2);
-					}
-					$row['min'] = floor($row['min']/$step)*$step;
-					$row['max'] = ceil($row['max']/$step)*$step;
-					$row['step'] = $step;
-					$row['minval'] = $row['min'];
-					$row['maxval'] = $row['max'];
+						INNER join showcase_producers pr on m.producer_id = pr.producer_id
+					where '.$grwhere.' 
+					group by pr.producer_id 
+					order by producer');// order by value
+					if (sizeof($values) < 2 ) continue;
 					
+					$p['values'] = $values;
+					$p['prop'] = 'Производитель';
+				} else {
+					$row = Data::fetch('SELECT prop_id, prop from showcase_props where prop_nick = :prop_nick',
+						[
+							':prop_nick' => $prop_nick
+						]
+					);
+					if (!$row) continue;
+					list($prop_id, $prop) = array_values($row);
+					$type = Data::checkType($prop_nick);
+					$p['prop'] = $prop;
+					$p['more'] = true;
+					
+					if ($p['filter'] ?? '' == 'range') {
+						if ($type != 'number') continue;
+					
+						$row = Data::fetch('
+							SELECT min(mv.number) as min, max(mv.number) as max 
+							FROM showcase_models m
+							left join showcase_iprops mv on mv.model_id = m.model_id
+							where '.$grwhere.' 
+							and mv.prop_id = :prop_id
+						', [':prop_id' => $prop_id]);
 
-					if (isset($md['more'][$prop_nick]['minmax'])) {
-						$minmax = $md['more'][$prop_nick]['minmax'];
-						$r = explode('/',$minmax);
-						if (sizeof($r) == 2) {
-							$row['minval'] = floor($r[0]/$step)*$step;
-							$row['maxval'] = ceil($r[1]/$step)*$step;
-							if ($row['minval'] < $row['min']) $row['minval'] = $row['min'];
-							if ($row['maxval'] > $row['max']) $row['maxval'] = $row['max'];
+						$dif = round($row['max'] - $row['min']);
+						$len = strlen($dif);
+						if ($len < 2 ) {
+							$step = 1;
+						} else {
+							$step = pow(10, $len - 2);
+						}
+						$row['min'] = floor($row['min']/$step)*$step;
+						$row['max'] = ceil($row['max']/$step)*$step;
+						$row['step'] = $step;
+						$row['minval'] = $row['min'];
+						$row['maxval'] = $row['max'];
+						
+
+						if (isset($md['more'][$prop_nick]['minmax'])) {
+							$minmax = $md['more'][$prop_nick]['minmax'];
+							$r = explode('/',$minmax);
+							if (sizeof($r) == 2) {
+								$row['minval'] = floor((int) $r[0]/$step)*$step;
+								$row['maxval'] = ceil((int) $r[1]/$step)*$step;
+								if ($row['minval'] < $row['min']) $row['minval'] = $row['min'];
+								if ($row['maxval'] > $row['max']) $row['maxval'] = $row['max'];
+							}
+						}
+						
+						if ($row['max'] == $row['min']) continue;
+						$p += $row;
+					} else {
+						$sql = '
+						SELECT v.value, v.value_nick, count(*) as count
+						FROM showcase_models m
+						left join showcase_iprops mv on (mv.model_id = m.model_id and mv.prop_id = :prop_id)
+						left join showcase_values v on v.value_id = mv.value_id
+						where '.$grwhere.' and v.value is not null
+						group by v.value_id
+						order by count DESC
+						';
+						$values = Data::all($sql,[':prop_id' => $prop_id]);
+						
+						if (sizeof($values) < 2 ) continue;
+						$p['values'] = $values;
+
+						if (isset($p['chain'])) {
+							$data = Load::loadJSON($p['chain']);
+							$data = $data['data'];
+							if (!$data) continue;
+							$chain = [];
+							$el = array_reverse($data['head']);
+
+							$vals = array_reduce($p['values'], function($vals, $v){
+								$vals[$v['value_nick']] = 1;
+								return $vals;
+							},[]);
+
+							Xlsx::runPoss($data, function($pos) use (&$list, $p, &$chain, $el, $vals) {
+								if (empty($pos[$el[sizeof($el)-1]])) return;
+								$keyval = Path::encode($pos[$el[sizeof($el)-1]]);
+								if (!isset($vals[$keyval])) return;
+								array_reduce($el, function ($ar, $key) use($pos, &$chain, &$last){
+									$child = &$ar[0];
+									if(empty($child['childs'])) $child['childs'] = [];
+									$child['key'] = $key;
+									if (!isset($pos[$key])) return $ar;
+									$val = $pos[$key];
+									$nick = Path::encode($val);
+									if (empty($child['childs'][$nick])) $child['childs'][$nick] = ['value'=>$val,'nick'=>$nick];
+									return [&$child['childs'][$nick]];
+								}, [&$chain]);
+							});
+							$p['chain'] = $chain;
+							unset($p['values']);
 						}
 					}
-					
-					if ($row['max'] == $row['min']) continue;
-					$p += $row;
-				} else {
-					$sql = '
-					SELECT v.value, v.value_nick, count(*) as count
-					FROM showcase_models m
-					left join showcase_iprops mv on (mv.model_id = m.model_id and mv.prop_id = :prop_id)
-					left join showcase_values v on v.value_id = mv.value_id
-					where '.$grwhere.' and v.value is not null
-					group by v.value_id
-					order by count DESC
-					';
-					$values = Data::all($sql,[':prop_id' => $prop_id]);
-					
-					if (sizeof($values) < 2 ) continue;
-					$p['values'] = $values;
-
-					if (isset($p['chain'])) {
-						$data = Load::loadJSON($p['chain']);
-						$data = $data['data'];
-						if (!$data) continue;
-						$chain = [];
-						$el = array_reverse($data['head']);
-
-						$vals = array_reduce($p['values'], function($vals, $v){
-							$vals[$v['value_nick']] = 1;
-							return $vals;
-						},[]);
-
-						Xlsx::runPoss($data, function($pos) use (&$list, $p, &$chain, $el, $vals) {
-							if (empty($pos[$el[sizeof($el)-1]])) return;
-							$keyval = Path::encode($pos[$el[sizeof($el)-1]]);
-							if (!isset($vals[$keyval])) return;
-							array_reduce($el, function ($ar, $key) use($pos, &$chain, &$last){
-								$child = &$ar[0];
-								if(empty($child['childs'])) $child['childs'] = [];
-								$child['key'] = $key;
-								if (!isset($pos[$key])) return $ar;
-								$val = $pos[$key];
-								$nick = Path::encode($val);
-								if (empty($child['childs'][$nick])) $child['childs'][$nick] = ['value'=>$val,'nick'=>$nick];
-								return [&$child['childs'][$nick]];
-							}, [&$chain]);
-						});
-						$p['chain'] = $chain;
-						unset($p['values']);
-					}
 				}
+				
+				$list[$prop_nick] = $p;
 			}
-			
-			$list[$prop_nick] = $p;
 		}
 	//	return $list;
 	//}, [$group_id]);
@@ -1130,8 +1132,7 @@ $meta->addAction('search', function () {
 			*/
 			//$m['items'] = explode(',', $m['items']);
 			//foreach ($m['items'] as $j => $v) if (!$v) unset($m['items'][$j]);
-
-			$models[$k] = Showcase::getModelEasyById($m['model_id']);
+			$models[$k] = Showcase::getModelWithItems($m['producer_nick'], $m['article_nick'], $m['item_num']);
 			$models[$k]['showcase'] = array();
 			$group = API::getGroupById($models[$k]['group_id']);
 			if (isset($group['options']['props'])) {
@@ -1248,9 +1249,14 @@ $meta->addArgument('article_nick',['encode','notempty']);
 $meta->addArgument('item_num', ['int'], function ($item_num, $pname) {
 	if ($item_num > 255) return $this->fail('meta.required', $pname);
 });
-$meta->addArgument('catkit');
+$meta->addArgument('catkit', function ($val) {
+	extract($this->gets(['producer_nick']));
+	$r = Catkit::explode($val, $producer_nick);
+	$val = Catkit::implode($r);
+	return $val;
+});
 $meta->addAction('posseo', function () {
-	extract($this->gets(['producer_nick','article_nick']), EXTR_REFS);
+	extract($this->gets(['producer_nick','article_nick']));
 	$ans = &$this->ans;
 	
 	$pos = Showcase::getModelEasy($producer_nick, $article_nick);
@@ -1287,10 +1293,48 @@ $meta->addAction('posseo', function () {
 	
 	return $this->ret();
 });
+$meta->addAction('posimages', function () {
+	extract($this->gets(['producer_nick','article_nick','item_num','catkit']));
+	$pos = Showcase::getModelEasy($producer_nick, $article_nick, $item_num, $catkit);
+	if (!$pos) {
+		http_response_code(404);
+		return $this->err();
+	}
+	$pos = array_intersect_key($pos, array_flip(['article','producer','images','group_nick','Наименование']));
+	$this->ans['pos'] = $pos;
+	return $this->ret();
+});
+$meta->addAction('poskit', function () {
+	extract($this->gets(['producer_nick','article_nick','item_num','catkit']));
+	$pos = Showcase::getModelEasy($producer_nick, $article_nick, $item_num, $catkit);
+	if (!$pos) {
+		http_response_code(404);
+		return $this->err();
+	}
+	$pos['catkit'] = $catkit;
+	Catkit::apply($pos);
+
+	$mark = Showcase::getDefaultMark();
+	$kit = Catkit::implode(['sadf'=>[$pos]]); //Группа не участует в запросе (safd)
+	$mark->setVal(':more.compatibilities.'.$kit.'=1:count=1');
+	$md = $mark->getData();
+	$data = Showcase::search($md);
+	$pos['kitlist'] = !empty($data['list']);
+
+	Catkit::setKitPhoto($pos);
+
+	$pos = array_intersect_key($pos, array_flip([
+		'Наименование','article','item_num','producer_nick','article_nick','Код','kit','Цена','kitlist',
+		'catkit', 'iscatkit','kitcount'
+	]));
+	$this->ans['pos'] = $pos;
+	return $this->ret();
+});
 $meta->addAction('pos', function () {
-	extract($this->gets(['producer_nick','article_nick','item_num','catkit']), EXTR_REFS);
-	$md = Showcase::initMark($this->ans);
-	$pos = Showcase::getModelWithItems($producer_nick, $article_nick, $item_num);
+	extract($this->gets(['producer_nick','article_nick','item_num','catkit']));
+	//$md = Showcase::initMark($this->ans);
+	
+	$pos = Showcase::getModelWithItems($producer_nick, $article_nick, $item_num, $catkit);
 
 	
 
@@ -1311,7 +1355,7 @@ $meta->addAction('pos', function () {
 			$pos['texts'][$i]  =  Rubrics::article($src);
 		}
 	}
-	$group = API::getGroupById($pos['group_id']);
+	
 
 	$opt = Showcase::getOptions();
 	$pos['showcase'] = [];
@@ -1319,6 +1363,11 @@ $meta->addAction('pos', function () {
 	// echo '<pre>';
 	// print_r(Showcase::$columns);
 	// exit;
+	Catkit::apply($pos);
+	Catkit::setCompatibilities($pos);
+	Catkit::setKitlist($pos);
+	Catkit::setKitPhoto($pos);
+	Event::fire('Showcase-position.onshow', $pos);
 	$this->ans['pos'] = $pos;
 
 
@@ -1328,7 +1377,7 @@ $meta->addAction('pos', function () {
 		'add' => ':group'
 	);
 
-	
+	$group = API::getGroupById($pos['group_id']);
 	$path = [];
 	if ($group['parent']) { //Если позиция прям в каталоге
 		do {
@@ -1348,7 +1397,7 @@ $meta->addAction('pos', function () {
 		'active' => true, 
 		'title' => $pos['producer'].'&nbsp;'.$pos['article']
 	);
-
+	
 	return $this->ret();
 });
 

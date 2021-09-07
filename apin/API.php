@@ -94,6 +94,13 @@ class API {
 		}, true);
 	}
 	public static function scanDir($src, $exts, &$list, $search = false) {
+		if (!$exts) {
+			$list[$src] = [ //Это папка
+				'src' => $src,
+				'search' => $search,
+				'file' => $src
+			];
+		}
 		FS::scandir($src, function ($file, $dir) use (&$list, $search, $exts) {
 			$ext = Path::getExt($file);
 		 	if (!in_array($ext, $exts)) return;
@@ -170,12 +177,11 @@ class API {
 			if (empty($search[$f['search']])) $search[$f['search']] = [];
 			$search[$f['search']][$f['src']] = $f;
 		}
-
+		
 		return $search;
 	}
 	public static function apply($producer_nick, $type) {
 		$files = API::getFiles($producer_nick, $type);
-
 		$types = Data::exts($type);
 		$poss = API::getArticles($producer_nick);
 		$res = [];
@@ -239,6 +245,7 @@ class API {
 			if ($r['files']) $res[] = $r;
 			else $empty[] = $pos;
 		}
+
 		$prop_id = Data::initProp($type, 'text');
 		Db::start();
 		Data::exec('DELETE mv FROM showcase_iprops mv, showcase_models m, showcase_producers pr
@@ -285,7 +292,8 @@ class API {
 		if ($producer_nick) $prods = [$producer_nick => true];
 		else $prods = API::getProducers();
 
-		$types = array_diff(Data::$files, ['folders']);
+		//$types = array_diff(Data::$files, ['folders']);
+		$types = Data::$files;
 		$ress = []; 
 
 		$ress['Производители'] = [];

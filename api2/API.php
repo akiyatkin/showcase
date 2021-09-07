@@ -23,7 +23,7 @@ class API {
 		return API::getGroupById($group_id);
 	}
 	public static function getGroupById($group_id) {
-		return API::once('props', [$group_id], function ($group_id) {
+		return API::once('getGroupById', [$group_id], function ($group_id) {
 			$group = Db::fetch('SELECT group_id, `order`, `group`, parent_id, group_nick, icon from showcase_groups WHERE group_id = :group_id',[
 				':group_id' => $group_id
 			]);
@@ -184,7 +184,9 @@ class API {
 			
 			$groups[$k]['path'] = array_reverse($path);
 		}
-
+		// echo '<pre>';
+		// print_r($groups);
+		// exit;
 		foreach ($groups as $k => $g) {
 			$path = array_intersect($path, $g['path']);
 		}
@@ -192,7 +194,7 @@ class API {
 		$path = array_values($path);
 		$level = sizeof($path);
 		$childs = [];
-		
+
 		
 		foreach ($groups as $k => $g) {
 			if (empty($g['path'][$level])) continue;
