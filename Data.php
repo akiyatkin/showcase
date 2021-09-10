@@ -34,7 +34,7 @@ class Data {
 	public static $files = ['texts', 'images', 'folders', 'videos','slides','files'];
 	public static $loads = ['pdf','rar','zip'];
 	public static $texts = ['html', 'tpl', 'mht', 'docx'];
-	public static $images = ['png', 'gif', 'jpg', 'jpeg','svg'];
+	public static $images = ['png', 'gif', 'jpg', 'jpeg','svg', 'webp'];
 	public static $videos = ['avi','ogv','mp4','swf'];
 	public static $slides = ['png', 'jpg', 'jpeg'];
 	public static $folders = [];
