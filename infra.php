@@ -44,7 +44,7 @@ Event::handler('Showcase-priceonload', function () {
 Event::handler('Showcase-catalog.onload', function ($obj) {
 	$pos = &$obj['pos']; //pos после Xlsx::make()
 	if (empty($pos['more']['Совместимость'])) return; //Комплект к которому относится позиция
-	$kit = Catkit::explode($pos['more']['Совместимость'], $pos['producer']);
+	$kit = Catkit::explode($pos['more']['Совместимость'], $pos['producer']); //Это данные из Execl ещё не база данных producer = producer_nick
 	$pos['more']['compatibilities'] = Catkit::implode($kit,',');//compatibilities комплекты в правильной записи
 });
 Showcase::add('count', function () {

@@ -1328,16 +1328,12 @@ $meta->addAction('poskit', function () {
 		'catkit', 'iscatkit','kitcount'
 	]));
 	$this->ans['pos'] = $pos;
+
 	return $this->ret();
 });
 $meta->addAction('pos', function () {
 	extract($this->gets(['producer_nick','article_nick','item_num','catkit']));
-	//$md = Showcase::initMark($this->ans);
-	
 	$pos = Showcase::getModelWithItems($producer_nick, $article_nick, $item_num, $catkit);
-
-	
-
 	if (!$pos) {
 		http_response_code(404);
 		return $this->err();
@@ -1360,18 +1356,14 @@ $meta->addAction('pos', function () {
 	$opt = Showcase::getOptions();
 	$pos['showcase'] = [];
 	$pos['showcase']['props'] = Data::initProps($opt, array_keys($opt['props']));
-	// echo '<pre>';
-	// print_r(Showcase::$columns);
-	// exit;
-	//Catkit::apply($pos);
+
 	Catkit::setCompatibilities($pos);
 	Catkit::setKitlist($pos);
-	//Catkit::setKitPhoto($pos);
+
 	Event::fire('Showcase-position.onshow', $pos);
 	$this->ans['pos'] = $pos;
 
 	
-
 	$this->ans['breadcrumbs'][] = array(
 		'title' => Showcase::$conf['title'],
 		'href' => '',
