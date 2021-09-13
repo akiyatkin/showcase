@@ -1363,13 +1363,14 @@ $meta->addAction('pos', function () {
 	// echo '<pre>';
 	// print_r(Showcase::$columns);
 	// exit;
-	Catkit::apply($pos);
+	//Catkit::apply($pos);
 	Catkit::setCompatibilities($pos);
 	Catkit::setKitlist($pos);
-	Catkit::setKitPhoto($pos);
+	//Catkit::setKitPhoto($pos);
 	Event::fire('Showcase-position.onshow', $pos);
 	$this->ans['pos'] = $pos;
 
+	
 
 	$this->ans['breadcrumbs'][] = array(
 		'title' => Showcase::$conf['title'],
