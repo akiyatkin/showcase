@@ -20,6 +20,7 @@ $meta->addArgument('query', function ($val) {
 	$val = strip_tags($val);
 	$val = mb_strtolower($val);
 	$val = preg_replace("/[\s\-\"\']+/u", " ", $val);
+
 	return $val;
 });
 
@@ -127,8 +128,9 @@ $meta->addAction('livepos', function () {
 	// 	 order by m.model_id
 	// 	limit 0,12';
 	$ans = [];
-	$query = Path::encode($query);
-	$split = array_filter(preg_split("/[\-]/u", $query));
+	$split = Showcase::getQuerySplit($query);
+	// $query = Path::encode($query);
+	// $split = array_filter(preg_split("/[\-]/u", $query));
 	//$ar = preg_split("/[\s]/u", mb_strtolower($query));
 	// $split = [];
 	// foreach ($ar as $s) {
@@ -170,13 +172,13 @@ $meta->addAction('livepos', function () {
 $meta->addAction('live', function () {
 	extract($this->gets(['query']), EXTR_REFS);
 	$this->ans['query'] = $query;
-	$query = Path::encode($query);
+	
+
+
 	$ans = Access::cache('showcase-live', function ($query) {
 		if (strlen($query) < 2) header('Cache-Control: no-store'); //Кэшируем только если $query пустой или 1 символ
-		
 		$ans = [];
-		$split = array_filter(preg_split("/[\-]/u", $query));
-		
+		$split = Showcase::getQuerySplit($query);
 		if ($split) {
 			$sql = 'SELECT m.model_id, m.group_id
 			from showcase_models m
@@ -288,8 +290,10 @@ $meta->addAction('filters', function () {
 	//if ($group_id == 1) {
 		if ($md['search']) {
 			$v = $md['search'];
-			$v = Path::encode($v);
-			$split = array_filter(preg_split("/[\-]/u", $v));
+
+			$split = Showcase::getQuerySplit($v);
+			// $v = Path::encode($v);
+			// $split = array_filter(preg_split("/[\-]/u", $v));
 			
 			
 			if ($split) {
@@ -911,9 +915,7 @@ $meta->addAction('search', function () {
 
 	if (!empty($md['search'])) {
 		$v = $md['search'];
-		$query = Path::encode($v);
-		$split = array_unique(array_filter(preg_split("/[\-]/u", $query)));
-		
+		$split = Showcase::getQuerySplit($v);
 		// $v = preg_split("/[\s]/u", mb_strtolower($v));
 		// $split = array_unique($v);
 		

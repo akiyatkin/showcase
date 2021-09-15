@@ -437,11 +437,12 @@ class Showcase
 		if (!empty($md['search'])) {
 			$v = $md['search'];
 			//$v = Path::encode($v);
-			$v = preg_split("/[\s\-\"\']+/u", mb_strtolower($v));
-			$v = array_unique($v);
+			$v = Showcase::getQuerySplit($v);
+			//$v = preg_split("/[\s\-\"\']+/u", mb_strtolower($v));
+			//$v = array_unique($v);
 			$str = '';
 			foreach ($v as $i => $s) {
-				$v[$i] = preg_replace("/ы$/", "", $s);
+				
 				$s = $v[$i];
 				$str .= 'and (m.model_id in (SELECT smv' . $i . '.model_id from showcase_values sv' . $i . '
 					inner join showcase_iprops smv' . $i . ' on smv' . $i . '.value_id = sv' . $i . '.value_id
@@ -712,8 +713,35 @@ class Showcase
 		}
 		return $ans;
 	}
+	public static function getQuerySplit($query) {
+		
+		/*
+		Инцидентные правки
+		1. Горелки с поворотной головкой
+			и, ой
+			Горелк с повторон головк
+		2. Сварочные аппараты
+			ые, ы 
+		*/
 
-
+		$split = array_unique(array_filter(preg_split("/[\s]/u", $query)));	
+		foreach($split as $k => $s) {
+			if (strlen($s) < 5) continue;
+			$s = preg_replace("/ы$/", "", $s);
+			$s = preg_replace("/и$/", "", $s);
+			$s = preg_replace("/ой$/", "", $s);
+			$s = preg_replace("/ые$/u", "", $s);
+			if (!$s) {
+				unset($split[$k]);
+				continue;
+			}
+			$split[$k] = $s;
+		}
+		$query = implode(' ', $split);
+		$query = Path::encode($query);
+		$split = array_unique(array_filter(preg_split("/[\-]/u", $query)));	
+		return $split;
+	}
 	public static $columns = array(
 		"model_id", "item_num", "producer", "items", "itemrows","itemmore", "discount",
 		"group_nick", "group_id", "group","icon", "logo",
