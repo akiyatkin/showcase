@@ -1008,20 +1008,21 @@ class Showcase
 			LEFT JOIN showcase_values v on v.value_id = ip.value_id
 			LEFT JOIN showcase_props p on p.prop_id = ip.prop_id
 			WHERE ip.model_id = :model_id
-			ORDER by `order` ASC
+			ORDER by `item_num`, `order` ASC
 		', [
 			':model_id' => $pos['model_id']
 		]);
 	// 	echo '<pre>';
 	// print_r($pos);
 	// exit;
+
+		
 		$items = [];
 		foreach ($list as $p => $prop) {
 			$val = $prop['value'] ?? $prop['number'] ?? $prop['text'];
 			if ($prop['number']) $val = (float) $val;
 			$name = $prop['prop'];
 			$item_num = $prop['item_num'];
-
 			if (empty($items[$item_num])) $items[$item_num] = [];
 
 			if (in_array($name, Data::$files)) {
