@@ -382,6 +382,7 @@ $meta->addAction('filters', function () {
 
 		$grwhere = 'm.group_id in ('.implode(',', $gs).')';
 		if (isset($group['options']['filters'])) {
+
 			foreach ($group['options']['filters'] as $name) {
 				$p = $props[$name] ?? [];
 				$prop_nick = Path::encode($name);
@@ -399,6 +400,7 @@ $meta->addAction('filters', function () {
 					$p['values'] = $values;
 					$p['prop'] = 'Производитель';
 				} else {
+					
 					$row = Data::fetch('SELECT prop_id, prop from showcase_props where prop_nick = :prop_nick',
 						[
 							':prop_nick' => $prop_nick
@@ -407,12 +409,13 @@ $meta->addAction('filters', function () {
 					if (!$row) continue;
 					list($prop_id, $prop) = array_values($row);
 					$type = Data::checkType($prop_nick);
+					
 					$p['prop'] = $prop;
 					$p['more'] = true;
 					
-					if ($p['filter'] ?? '' == 'range') {
-						if ($type != 'number') continue;
-					
+					//if ($p['filter'] ?? '' == 'range') {
+					//	if ($type != 'number') continue;
+					if ($type == 'number') {
 						$row = Data::fetch('
 							SELECT min(mv.number) as min, max(mv.number) as max 
 							FROM showcase_models m
@@ -589,7 +592,7 @@ $meta->addAction('searchseo', function () {
 		$link = $link.'/'.Path::encode($val);
 	} else if($md['search']){
 		$val = $md['search'];
-		$link = $link.'/'.Path::encode($val);
+		$link = $link.'?m=:search='.$val;
 	} else {
 		$val = 'Каталог';
 	}
@@ -1077,7 +1080,10 @@ $meta->addAction('search', function () {
 	$size = Data::col('SELECT FOUND_ROWS()');
 	$ans['count'] = (int) $size;
 
-
+	if (!$ans['count']) {
+		http_response_code(404);
+		return $this->err();
+	}
 
 
 
