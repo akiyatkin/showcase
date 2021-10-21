@@ -261,16 +261,47 @@ class Catalog {
 			for ($i = 0, $l = sizeof($list); $i < $l; $i++) {
 				$pos = $list[$i];
 				$id = (int) $pos->categoryId;
-				$group = &$groups[$ids[$id]];
+				$group = $groups[$ids[$id]];
 				$prodart = Path::encode($pos->vendor).'-'.Path::encode($pos->vendorCode);
-				$group['data'][$prodart] = [
-					'more' => [
-						'Наименование' => (string) $pos->name,
-						'Иллюстрации' => (string) $pos->picture,
-						'Цена' => (int) $pos->price,
-						'Описание' => (string) $pos->description,
-						'Страна' => (string) $pos->country_of_origin
-					],
+				$cost = (int) $pos->price;
+				$more = [];
+				$more['Наименование'] = strip_tags($pos->name);
+				$more['Цена'] = $cost;
+				$more['Описание'] = strip_tags($pos->description);
+				$more['Страна'] = strip_tags($pos->country_of_origin);
+				$more['Иллюстрации'] = strip_tags($pos->picture);
+
+				foreach ($pos->param as $param) {
+					$name = strip_tags($param->attributes()['name']);
+					if ($name == 'articul') continue;
+					$unit = strip_tags($param->attributes()['unit']);
+					if ($unit) $name .= ', '. $unit;
+				
+					$more[$name] = strip_tags($param);
+				}
+				
+				
+				
+				$r = $pos->attributes()['available'] == 'true';
+				if ($r) $more['Наличие'] = 'В наличии';
+				else $more['Наличие'] = 'На заказ';
+
+				if ($r) {
+
+					$buy = (int) $pos->buy_price;
+					if ($buy) {
+						//Максимальная скидка которую можно дать от розничной цены
+						$discount = round((1 - $buy / $cost) * 100);
+						if ($discount >= 25) {
+							$more['Наличие'] = 'Выгодно';
+						}
+					}
+				}
+				
+
+				
+				$groups[$ids[$id]]['data'][$prodart] = [
+					'more' => $more,
 					'gid' => $group['id'],
 					'group' => $group['name'],
 					'Группа' => $group['name'],
@@ -316,31 +347,33 @@ class Catalog {
 			];	
 
 			
-			if (isset($option['root'])) {
-				$root = Path::encode($option['root']);
-				$g = Xlsx::runGroups($data, function &($g) use ($root) {
-					//if ($g['id'] == $root) return $g;
-					//echo sizeof($g['data']).'<br>';
-					$r = null;
-					return $r;
-				});
-				// if ($g) {
-				// 	$g['title'] = 'Каталог';
-				// 	$g['name'] = 'Каталог';
-				// 	$g['group'] = 'Каталог';
-				// 	$g['Группа'] = 'Каталог';
-				// 	$g['gid'] = false;
-				// 	$g['id'] = Path::encode('Каталог');
-				// 	//$data = $g;
+			// if (isset($option['root'])) {
+			// 	$root = Path::encode($option['root']);
+			// 	$g = Xlsx::runGroups($data, function &($g) use ($root) {
+			// 		//if ($g['id'] == $root) return $g;
+			// 		//echo sizeof($g['data']).'<br>';
+			// 		$r = null;
+			// 		return $r;
+			// 	});
+			// 	if ($g) {
+			// 		$g['title'] = 'Каталог';
+			// 		$g['name'] = 'Каталог';
+			// 		$g['group'] = 'Каталог';
+			// 		$g['Группа'] = 'Каталог';
+			// 		$g['gid'] = false;
+			// 		$g['id'] = Path::encode('Каталог');
+			// 		//$data = $g;
 					
-				// }
-			}
+			// 	}
+			// }
 			$g = Xlsx::runGroups($data, function &(&$g) {
 				$g['data'] = array_values($g['data']);
 				$r = null;
 				return $r;
 			});
 
+			
+			
 		} else {
 			$conf = Showcase::$conf;
 			$opt = Catalog::getOptions($name);

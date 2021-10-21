@@ -719,7 +719,9 @@ $meta->addAction('search', function () {
 		$prquery = 'and m.producer_id in (' . $prquery . ')';
 	}
 
-
+	$nal0 = Db::col('SELECT value_id from showcase_values where value_nick = :value_nick', [
+		':value_nick' => Path::encode('Выгодно')
+	]);
 	$nal1 = Db::col('SELECT value_id from showcase_values where value_nick = :value_nick', [
 		':value_nick' => Path::encode('Акция')
 	]);
@@ -967,6 +969,7 @@ $meta->addAction('search', function () {
 
 	$sort .= '
 		IF(mn.number IS NULL,1,0), 
+		IF(mn2.value_id = :nal0,0,1),
 		IF(mn2.value_id = :nal1,0,1),
 		IF(mn2.value_id = :nal2,0,1), 
 		IF(mn2.value_id = :nal3,0,1), 
@@ -977,7 +980,7 @@ $meta->addAction('search', function () {
 		mn.number';
 
 
-	$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5, ':nal6' => $nal6];
+	$binds = [':nal0' => $nal0, ':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5, ':nal6' => $nal6];
 	$groupbinds = [];
 
 	$asc = false;

@@ -251,6 +251,7 @@ class Showcase
 			$prquery = implode(',', $prods);
 			$prquery = 'and m.producer_id in (' . $prquery . ')';
 		}
+		$nal0 = Data::initValue("Выгодно");
 		$nal1 = Data::initValue("Акция");
 		$nal2 = Data::initValue("Распродажа");
 		$nal3 = Data::initValue("В наличии");
@@ -492,6 +493,7 @@ class Showcase
 
 		$sort .= '
 			IF(mn3.text is null,1,0),
+			IF(mn2.value_id = :nal0,0,1),
 			IF(mn2.value_id = :nal1,0,1),
 			IF(mn2.value_id = :nal2,0,1), 
 			IF(mn2.value_id = :nal3,0,1), 
@@ -499,7 +501,7 @@ class Showcase
 			IF(mn2.value_id = :nal5,0,1), 
 			IF(mn.number IS NULL,1,0), 
 			mn.number';
-		$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5];
+		$binds = [':nal0' => $nal0, ':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5];
 		$groupbinds = [];
 
 		if ($md['sort'] == 'source') {
@@ -519,6 +521,7 @@ class Showcase
 			$sort = 'ORDER BY 
 				IF(mn3.text is null,1,0), 
 				IF(mn.number IS NULL,1,0),
+				IF(mn2.value_id = :nal0,0,1),
 				IF(mn2.value_id = :nal1,0,1),
 				IF(mn2.value_id = :nal2,0,1), 
 				IF(mn2.value_id = :nal3,0,1), 
@@ -526,7 +529,7 @@ class Showcase
 				IF(mn2.value_id = :nal5,0,1), 
 				mn.number
 				';
-			$binds = [':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5];
+			$binds = [':nal0' => $nal0, ':nal1' => $nal1, ':nal2' => $nal2, ':nal3' => $nal3, ':nal4' => $nal4, ':nal5' => $nal5];
 		}
 		if ($md['sort'] == 'art') {
 			$md['reverse'] = !$md['reverse'];
