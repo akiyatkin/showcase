@@ -75,7 +75,8 @@ class API {
 		});
 	}
 	public static function scanListReq($src, $exts, &$list) {
-		if (!Path::theme($src)) return;
+		$src = Path::theme($src);
+		if (!$src) return;
 		Config::scan($src, function ($src) use (&$list, $exts) {
 			$info = Load::srcInfo($src);
 			if (!in_array($info['ext'], $exts)) return;
@@ -154,7 +155,7 @@ class API {
 		
 		// catalog/type[images]
 		API::scanListReq(Showcase::$conf[$type].$proddir, $types, $list);
-
+		
 		if (!in_array($type, ['slides'])) {
 			// catalog/folders/Kemppi/
 			API::scanDirs(Showcase::$conf['folders'].$proddir, $types, $list);
@@ -170,7 +171,6 @@ class API {
 		
 		// catalog/folders/Kemppi/type[images]
 		API::scanListReq(Showcase::$conf['folders'].$proddir.$type.'/', $types, $list);
-		
 		//array_multisort(array_column($list, 'file'), SORT_ASC, $list);
 		$search = [];
 		foreach ($list as $f) {

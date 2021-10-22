@@ -679,7 +679,7 @@ class Data {
 		$list = Data::all('SELECT producer_nick, producer FROM showcase_producers');
 		$logos = 0;
 		foreach ($list as $k => $prod) {
-			$icon = false;
+			$icon = null;
 			if (!$icon) {
 				$nick = Path::encode($prod['producer']);
 				if (isset($icons[$nick])) {
@@ -725,7 +725,7 @@ class Data {
 					});
 					if ($images) {
 						$logos++;
-						$list[$k]['logo'] = $dir.$images[0];
+						$list[$k]['logo'] = Path::theme($dir.$images[0]);
 						continue;
 					}
 				}
