@@ -256,7 +256,7 @@ class Prices {
 		}
 		return [sizeof($list), $modified, $mposs];
 	}
-	public static function insertProp($model_id, $item_num, $prop, $value, $oldorder = 0, $price_id = 0) {
+	public static function insertProp($model_id, $item_num, $prop, $value, $oldorder, $price_id = null) {
 		$ptype = Data::checkType($prop);
 		$pid = Data::initProp($prop, $ptype);
 		if ($ptype == 'number') {
@@ -466,10 +466,12 @@ class Prices {
 	public static function deleteProp($model_id, $item_num, $prop) {
 		$prop_id = Data::initProp($prop);
 		if (!$prop_id) return;
-		foreach (Data::$types as $type) {
-			Data::exec('DELETE FROM showcase_iprops WHERE model_id = ? and item_num = ? and prop_id =?', 
-				[$model_id, $item_num, $prop_id]);	
-		}
+		//foreach (Data::$types as $type) {
+		$oldorder = Db::col('SELECT `order` from showcase_iprops where model_id = ? and item_num = ? and prop_id =?', [$model_id, $item_num, $prop_id]);
+		Data::exec('DELETE FROM showcase_iprops WHERE model_id = ? and item_num = ? and prop_id =?', 
+			[$model_id, $item_num, $prop_id]);	
+		//}
+		return $oldorder;
 	}
 	public static function actionRemove($name, $src, $time = false) {
 		if (!$time) $time = time();

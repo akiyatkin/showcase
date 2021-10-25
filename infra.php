@@ -32,13 +32,15 @@ Event::handler('Showcase-priceonload', function () {
 	//Нужно посчитать комплекты для всех позиций по умолчанию
 	//Есть Комлпектация и нет Цены
 	$mark = Showcase::getDefaultMark();
-	$mark->setVal(':more.'.Path::encode('Комплектация').'yes=1:count=5000');
+	$mark->setVal(':more.'.Path::encode('Комплектация').'.yes=1:count=5000');
 	$md = $mark->getData();
 	$data = Showcase::search($md); //Здесь выполнилось onshow и цена установилась
 	foreach ($data['list'] as $pos) {
-		//Позиции у которых есть Комплектация, были найдены и для них рассчиталась цена, которую и нужно записать в цену по умаолчанию.
-		Prices::deleteProp($pos['model_id'], $pos['item_num'], 'Цена');
-		if (isset($pos['Цена'])) Prices::insertProp($pos['model_id'], $pos['item_num'], 'Цена', $pos['Цена']);
+		//Позиции у которых есть Комплектация, были найдены и для них рассчиталась цена, которую и нужно записать в цену по умолчанию.
+		$oldorder = Prices::deleteProp($pos['model_id'], $pos['item_num'], 'Цена');
+		if (isset($pos['Цена'])) {
+			Prices::insertProp($pos['model_id'], $pos['item_num'], 'Цена', $pos['Цена'], $oldorder, 0);
+		}
 	}
 });
 Event::handler('Showcase-catalog.onload', function ($obj) {

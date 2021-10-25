@@ -572,7 +572,7 @@ class Catalog {
 			$prop_id = Data::initProp($prop, $type);
 
 			$isprice = Data::col('SELECT price_id from `showcase_iprops` where prop_id = ? and model_id = ? and item_num = ?',[$prop_id, $model_id, $item_num]);//Если этой свойство у модели установлено из прайса, пропускаем
-			if ($isprice) continue;
+			if ($isprice !== false) continue;
 
 			if ($type == 'text') {
 				$order++;
