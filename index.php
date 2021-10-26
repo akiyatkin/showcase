@@ -23,10 +23,11 @@ echo Rest::get( function () {
 	return Rest::parse('-showcase/index.tpl', $ans);
 }, 'drop', function () {
 	
+	/*showcase_groups,*/
+
 	Data::exec('DROP TABLE IF EXISTS 
 		showcase_prices,
-		showcase_catalog,
-		showcase_groups,
+		showcase_catalog,	
 		showcase_producers,
 		showcase_articles,
 		showcase_props,

@@ -1101,7 +1101,18 @@ class Showcase
 
 		return $pos;
 	}
+	public static function addMore(&$pos) {
+		$columns = Showcase::getOption()['columns'];
+		$more = [];
+		foreach ($pos as $i => $v) {
+			$nick = Path::encode($i);
+			if (in_array($nick, $columns)) continue;
+			$more[$i] = $v;
+			unset($pos[$i]);
+		}
 
+		$pos['more'] = $more;
+	}
 	public static function getModelEasy($producer_nick, $article_nick, $item_num = 1, $catkit = '')
 	{
 
