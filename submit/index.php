@@ -129,6 +129,7 @@ $meta->addAction('clearfreefiles', function () {
 
 	if (sizeof($files)) {
 		if (is_dir('data/clearfreefiles/')) return $this->err('Сохраните себе резервную копию прошлой обработки и удалить папку с сервера. Папка data/clearfreefiles/');
+		$oldmask = umask(000);//it will set the new umask and returns the old one 
 		mkdir('data/clearfreefiles/', 0777);
 		foreach ($files as $i => $file) {
 			$newfile = 'data/clearfreefiles/'.$file;
@@ -136,6 +137,7 @@ $meta->addAction('clearfreefiles', function () {
 			if (!is_dir($dir)) mkdir($dir,0777,TRUE);	
 			rename($file, $newfile);
 		}
+		umask($oldmask);//reset the old umask
 	}
 	$this->ans['res']['Перемещено файлов'] = sizeof($files);
 	$this->ans['res']['Файлов осталось'] = $this->ans['res']['Найдено файлов'] - $this->ans['res']['Перемещено файлов'];
