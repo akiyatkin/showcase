@@ -77,16 +77,18 @@ class API {
 	public static function scanListReq($src, $exts, &$list) {
 		$src = Path::theme($src);
 		if (!$src) return;
+
 		Config::scan($src, function ($src) use (&$list, $exts) {
 			$info = Load::srcInfo($src);
 			if (!in_array($info['ext'], $exts)) return;
 			$file = $info['name'];
 
 			$s = explode(',', $file);
+
 			foreach ($s as $search) {
 				$search = Path::encode($search);
 				if (!$search) continue;
-				$list[$src] = [
+				$list[$src.$search] = [
 					'src' => $src,
 					'search' => $search,
 					'file' => $info['file']
