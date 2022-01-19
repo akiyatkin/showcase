@@ -233,18 +233,19 @@ class Catalog {
 			$groups = [];
 			$ids = [];
 			$list = $xml->shop->categories->category;
-			
-			for ($i = 0, $l = sizeof($list); $i < $l; $i++) {
 
+			for ($i = 0, $l = sizeof($list); $i < $l; $i++) {
 				$id = $i;
 				$name = (string) $list[$i];
 				$attr = $list[$i]->attributes();
 				$id = (string) $attr['id'];
-				$parent_id = (string) $attr['parentID'];
+				$parent_id = (string) $attr['parentId'];
 				$nick = Path::encode($name);
 				$ids[$id] = $nick;
 				$groups[$nick] = [
 					'parent_id' => $parent_id,
+					//'parent_nick' => isset($ids[$parent_id]) ? $ids[$parent_id] : false,
+					'yes' => isset($attr['yes']) ? true : false,
 					'name' => $name,
 					'title' => $name,
 					'group' => $name,
@@ -257,6 +258,7 @@ class Catalog {
 			}
 
 			$list = $xml->shop->offers->offer;
+
 			$poss = [];
 			for ($i = 0, $l = sizeof($list); $i < $l; $i++) {
 				$pos = $list[$i];
@@ -273,14 +275,14 @@ class Catalog {
 
 				foreach ($pos->param as $param) {
 					$name = strip_tags($param->attributes()['name']);
+					$name = trim($name);
+					if (!$name) continue;
 					if ($name == 'articul') continue;
 					$unit = strip_tags($param->attributes()['unit']);
+					$unit = trim($unit);
 					if ($unit) $name .= ', '. $unit;
-				
 					$more[$name] = strip_tags($param);
 				}
-				
-				
 				
 				$r = $pos->attributes()['available'] == 'true';
 				if ($r) $more['Наличие'] = 'В наличии';
@@ -288,7 +290,8 @@ class Catalog {
 
 				if ($r) {
 
-					$buy = (int) $pos->buy_price;
+					$buy_price = $option['buy_price'];
+					$buy = (int) $pos->$buy_price;
 					if ($buy) {
 						//Максимальная скидка которую можно дать от розничной цены
 						$discount = round((1 - $buy / $cost) * 100);
@@ -298,82 +301,80 @@ class Catalog {
 					}
 				}
 				
-
+				$producer = !empty($option['producer']) ? $option['producer'] : (string) $pos->vendor;
 				
 				$groups[$ids[$id]]['data'][$prodart] = [
 					'more' => $more,
 					'gid' => $group['id'],
 					'group' => $group['name'],
 					'Группа' => $group['name'],
-					'Производитель' => (string) $pos->vendor,
+					'Производитель' => $producer,
 					'Артикул' => (string) $pos->vendorCode,
-					'producer' => Path::encode($pos->vendor),
+					'producer' => Path::encode($producer),
 					'article' => Path::encode($pos->vendorCode)
 				];
 
 			}
 			
-			if (isset($options['structure'])) {
+			if (!empty($option['structure'])) {
 				foreach ($groups as $i => &$group) {
+					if (!empty($option['groupsyes']) && !$group['yes']) {
+						$group['del'] = true;
+						continue;
+					}
 					$parent_id = $group['parent_id'];
 					if (!$parent_id) continue;
 					if (empty($ids[$parent_id])) continue;
 					$parent_nick = $ids[$parent_id];
-					$parent = &$groups[$parent_nick];
-					$group['gid'] = $parent['title'];
-					$parent['childs'][] = $group;
+					$group['gid'] = Path::encode($groups[$parent_nick]['group']);
+
+					$groups[$parent_nick]['childs'][] = $group;
 					$group['del'] = true;
 					unset($group['parent_id']);
 				}
 				foreach ($groups as $i => &$group) {
 					if (!empty($group['del'])) {
 						unset($groups[$i]);
+						continue;
 					}
+					
 				}
+				
 			} else {
 				foreach($groups as $k=>$group) {
 					if (empty($group['data'])) unset($groups[$k]);
 				}
 			}
-
 			$data = [
 				'title' => $roottitle,
 				'name' => $roottitle,
 				'group' => $roottitle,
 				'gid' => false,
 				'id' => $rootid,
-				'data' => [],
-				'childs' => array_values($groups)
-			];	
+				'data' => []
+			];
+
+			$data['childs'] = array_values($groups);
+			
+			//Удаляем пустые группы
+			Xlsx::runGroups($data, function &(&$group, $i, &$parent) {
+				if (empty($group['data']) && empty($group['childs'])) {
+					unset($parent['childs'][$i]);
+					$parent['childs'] = array_values($parent['childs']);
+				} else {
+					$group['id'] = Path::encode($group['group']);
+				}
+				$r = null;
+				return $r;
+			}, true);
 
 			
-			// if (isset($option['root'])) {
-			// 	$root = Path::encode($option['root']);
-			// 	$g = Xlsx::runGroups($data, function &($g) use ($root) {
-			// 		//if ($g['id'] == $root) return $g;
-			// 		//echo sizeof($g['data']).'<br>';
-			// 		$r = null;
-			// 		return $r;
-			// 	});
-			// 	if ($g) {
-			// 		$g['title'] = 'Каталог';
-			// 		$g['name'] = 'Каталог';
-			// 		$g['group'] = 'Каталог';
-			// 		$g['Группа'] = 'Каталог';
-			// 		$g['gid'] = false;
-			// 		$g['id'] = Path::encode('Каталог');
-			// 		//$data = $g;
-					
-			// 	}
-			// }
-			$g = Xlsx::runGroups($data, function &(&$g) {
+			Xlsx::runGroups($data, function &(&$g) {
 				$g['data'] = array_values($g['data']);
 				$r = null;
 				return $r;
 			});
 
-			
-			
 		} else {
 			$conf = Showcase::$conf;
 			$opt = Catalog::getOptions($name);
@@ -389,9 +390,7 @@ class Catalog {
 				'Известные колонки' => array("Артикул","Производитель")
 			));	
 		}
-		// echo '<pre>';
-		// print_r($data);
-		// exit;
+		
 		
 		/*if (!empty($opt['producer'])) {
 			Xlsx::runPoss($data, function (&$pos) use (&$opt) {
@@ -399,9 +398,7 @@ class Catalog {
 				$pos['producer'] = $opt['producer_nick'];
 			});
 		}*/
-		// echo '<pre>';
-		// 			print_r($data);
-		// 			exit;
+		
 		return $data;
 	}
 	
@@ -447,6 +444,7 @@ class Catalog {
 			$r = null;
 			return $r;
 		});
+
 		return $data;
 	}
 	public static function actionLoad($name, $src)
@@ -463,6 +461,8 @@ class Catalog {
 		if ($option['producer']) $ans['Производитель'] = '<a href="/-showcase/producers/'.$option['producer_nick'].'">'.$option['producer'].'</a>';
 		$data = Catalog::readCatalog($name, $src);
 		if (!$data) return false;
+
+
 
 		Catalog::applyGroups($data, $catalog_id, $order, $ans);
 	
@@ -493,7 +493,7 @@ class Catalog {
 			$group_id = Data::col('SELECT group_id FROM showcase_groups WHERE group_nick = ?',[$group_nick]);
 
 			$model_id = Catalog::initModel($producer_id, $pos['Артикул'], $catalog_id, $order, $time, $group_id); //У существующей модели указывается time
-
+		
 			if (!$model_id) {
 				//$ans['Пропущено из-за конфликта с другими данными']++;
 				return; //Каталог не может управлять данной моделью, так как есть более приоритетный источник
@@ -565,7 +565,6 @@ class Catalog {
 		$options = Data::loadShowcaseConfig();
 		$order = 0;
 		$r = false;
-		
 		$propval = []; //Нужно убедится что нет дублей с разным написанием.
 		foreach ($item['more'] as $prop => $val) {
 			$type = Data::checkType($prop);

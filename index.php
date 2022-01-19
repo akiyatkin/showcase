@@ -26,6 +26,9 @@ echo Rest::get( function () {
 	/*showcase_groups,*/
 
 	Data::exec('DROP TABLE IF EXISTS 
+
+		showcase_groups,
+
 		showcase_prices,
 		showcase_catalog,	
 		showcase_producers,
