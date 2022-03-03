@@ -1335,7 +1335,7 @@ $meta->addAction('poskit', function () {
 	Catkit::setKitPhoto($pos);
 
 	$pos = array_intersect_key($pos, array_flip([
-		'Наименование','article','item_num','producer_nick','article_nick','Код','kit','Цена','kitlist',
+		'Наименование','article','item_num','producer','producer_nick','article_nick','Код','kit','Цена','kitlist',
 		'catkit', 'iscatkit','kitcount'
 	]));
 	$this->ans['pos'] = $pos;
