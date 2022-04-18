@@ -1345,6 +1345,8 @@ $meta->addAction('poskit', function () {
 $meta->addAction('pos', function () {
 	extract($this->gets(['producer_nick','article_nick','item_num','catkit']));
 	$pos = Showcase::getModelWithItems($producer_nick, $article_nick, $item_num, $catkit);
+	unset($pos['min']);
+	unset($pos['max']);
 	if (!$pos) {
 		http_response_code(404);
 		return $this->err();
