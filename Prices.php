@@ -28,13 +28,13 @@ class Prices {
 			LEFT JOIN showcase_iprops i ON i.price_id = p.price_id
 			GROUP by p.name
     	','name');
-    	
+
 		foreach ($savedlist as $name => $row) {
 			//$row['ans'] = Load::json_decode($row['ans'], true);
 			if ($name) $options[$name] += $row;
 
 		}
-		
+
 		return $options;
 	}
 	public static function actionLoadAll() {
@@ -51,7 +51,7 @@ class Prices {
 				if (!isset($row['time']) || $row['time'] < $row['mtime']) {
 					$src = Showcase::$conf['prices'].$row['file'];
 					$res['Прайс - вносим '.$name] = Prices::actionLoad($name, $src);
-				} 
+				}
 			}
 		}
 		return $res;
@@ -59,7 +59,7 @@ class Prices {
 	public static function init() {
 		Data::init();
 		$conf = Showcase::$conf;
-		
+
 		$options = Data::getOptions('prices');
 
 		$list = Data::getFileList($conf['prices']);
@@ -72,18 +72,18 @@ class Prices {
 			}
 			Prices::activatePrice($filename, $producer, $order);
 		}
-		
+
 	}
 	public static function activatePrice($name, $producer, $order) {
 		$producer_id = Data::initProducer($producer);
-		$row = Data::fetch('SELECT price_id, `order`, producer_id from showcase_prices WHERE name = ?', 
-			[$name]);		
+		$row = Data::fetch('SELECT price_id, `order`, producer_id from showcase_prices WHERE name = ?',
+			[$name]);
 		if (!$row) return Data::lastId(
 			'INSERT INTO `showcase_prices`(`name`,`producer_id`,`order`) VALUES(?,?,?)',
 			[$name, $producer_id, $order]
 		);
 		if ($row['order'] != $order || $row['producer_id'] != $producer_id) {
-			Data::exec('UPDATE showcase_prices SET `order` = ?, producer_id = ? WHERE price_id = ?', 
+			Data::exec('UPDATE showcase_prices SET `order` = ?, producer_id = ? WHERE price_id = ?',
 				[$order, $producer_id, $row['price_id']]);
 		}
 		return $row['price_id'];
@@ -116,15 +116,15 @@ class Prices {
 			}
 			return $list;
 		}
-		
+
 		if ($producer_id) {
 			$list = Data::all('SELECT m.model_id, n.item_num
-				FROM showcase_iprops n 
+				FROM showcase_iprops n
 				RIGHT JOIN showcase_models m ON (m.model_id = n.model_id AND m.producer_id = ?)
 				WHERE n.prop_id = ?
 				AND '.$mainprop.' = ?
 			', [$producer_id, $prop_id, $id]);
-			
+
 			Data::exec('UPDATE showcase_models m
 				LEFT JOIN showcase_iprops n ON (m.model_id = n.model_id AND m.producer_id = ?)
 				SET m.time = from_unixtime(?)
@@ -153,7 +153,7 @@ class Prices {
 
 
 		$list = Prices::getMyItems($type, $producer_id, $prop_id, $value, $time);
-		
+
 		$modified = 0;
 		$misorder = 0;
 		$misvalue = 0;
@@ -164,7 +164,7 @@ class Prices {
 			$model_id = $find['model_id'];
 			$item_num = $find['item_num'];
 
-			
+
 			$row = Data::fetch('SELECT p.producer, m.article, i.item FROM showcase_items i
 				INNER JOIN showcase_models m on i.model_id = m.model_id
 				INNER JOIN showcase_producers p on p.producer_id = m.producer_id
@@ -175,11 +175,11 @@ class Prices {
 			if ($row['item']) $str .= ' '.$row['item'];
 			$mposs[] = $str;
 
-			
+
 
 			//Для этих моделей нужно записать новые свойства из props, но надо чтобы текущие значения не были более приоритеными
-			
-			
+
+
 			Once::func(function($price_id, $model_id, $item_num) use ($name, $order) {
 				$p = [
 					'prop'=>'Прайс',
@@ -189,23 +189,23 @@ class Prices {
 
 				$value_id = Data::initValue($name);
 				Data::exec('INSERT showcase_iprops (model_id, item_num, prop_id, value_id, price_id, `order`)
-				VALUES(?,?,?,?,?,?)', [$model_id, $item_num, $p['prop_id'], $value_id, $price_id, $order]);	
+				VALUES(?,?,?,?,?,?)', [$model_id, $item_num, $p['prop_id'], $value_id, $price_id, $order]);
 			},[$price_id, $model_id, $item_num]);
-			
+
 
 
 			$r = false;
 
 			foreach ($props as $p) {
 				//Смотрим что установлено для нашей модели. Будет insert или update
-				
+
 				$oldorder = 0;
 				$t = 'm'.$p['type'].'s';	//mvalues
-				
+
 				$row = Data::fetch('SELECT p.order from showcase_iprops v
 					left join showcase_prices p on p.price_id = v.price_id
 					WHERE
-					model_id = ? 
+					model_id = ?
 					AND item_num = ? AND prop_id = ?',
 					[$model_id, $item_num, $p['prop_id']]);
 
@@ -219,17 +219,17 @@ class Prices {
 					}
 					Prices::deleteProp($model_id, $item_num, $p['prop']);
 				}
-				
+
 				//Может пусто и записывать ничего не надо?
 				if (!isset($pos[$p['prop']])) {
 					$misvalue++;
 					continue;
 				}
-				
-				
+
+
 				$prop = $p['prop'];
 				$value = $pos[$prop];
-				
+
 				if ($p['type'] == 'number') {
 					$value = (float) $value;
 					if (!$value) {
@@ -266,7 +266,7 @@ class Prices {
 			return false;
 		}
 
-		
+
 		$mainprop = ($ptype == 'value') ? 'value_id' : $ptype;
 		$ar = ($ptype == 'text') ? [$value] : explode(',', $value);
 		$table = 'm'.$ptype.'s';	//mvalues
@@ -294,15 +294,25 @@ class Prices {
 		$time = time();
 		$ans = array();
 
-		$row = Data::fetch('SELECT price_id, `order` from showcase_prices where name = ?',[$name]);	
+		$row = Data::fetch('SELECT price_id, `order` from showcase_prices where name = ?',[$name]);
 		$price_id = $row['price_id'];
 		$order = $row['order'];
 		$count = 0;
 		$data = Prices::readPrice($name, $src);
 		$option = Prices::getOptions($name);
-		
+
 		$ans['Прайс'] = $name;
 		if ($option['producer']) $ans['Производитель'] = '<a href="/-showcase/producers/'.$option['producer_nick'].'">'.$option['producer'].'</a>';
+
+		if (isset($option['producers'])) {
+			$ar = [];
+			foreach ($option['producers'] as $prod) {
+				$nick = Path::encode($prod);
+				$ar[] = '<a href="/-showcase/producers/'.$nick.'">'.$prod.'</a>';;
+			}
+
+			$ans['Производитель'] = implode(', ', $ar);
+		}
 		$ans['Внесение параметров'] = implode(', ',$option['props']);
 		$ans['Ключ прайса'] = $option['priceprop'];
 		$ans['Ключ каталога'] = $option['catalogprop'];
@@ -324,16 +334,16 @@ class Prices {
 			$prop_id = false;
 			$type = false;
 		}
-		
+
 		$db = &Db::pdo();
 		$db->beginTransaction();
 		Prices::actionRemove($name, $src, $time);
-		$producer_id = $option['producer'] ? Data::initProducer($option['producer']) : false;
-		
+
+
 		$ans['Синонимы'] = $option['synonyms'];
 		//$ans['Принимаемые параметры'] = $option['props'];
 		$ans['Колонки на листах'] = [];
-		
+
 		$ans['Количество позиций в прайсе'] = 0;
 		$ans['У позиции в прайсе не указан ключ'] = [];
 		$ans['Позиции в прайсе игнорируется в результате обработки'] = [];
@@ -345,9 +355,9 @@ class Prices {
 		$ans['Принято позиций прайса к изменению в каталоге'] = 0;
 		$ans['Изменено позиций в каталоге'] = 0;
 		$ans['Ошибки каталога'] = [];
-		
-		
-		
+
+
+
 		$heads = [];
 		Xlsx::runGroups($data, function &($group) use (&$heads) {
 			if ($group['type'] == 'list' ) {
@@ -358,13 +368,14 @@ class Prices {
 		});
 		$ans['Колонки на листах'] = $heads;
 
+		$producer_id = $option['producer'] ? Data::initProducer($option['producer']) : false;
 		if ($option['isaccurate']) {
 			Xlsx::runPoss( $data, function &(&$pos, $i, &$group) use ($props, $name, &$ans, &$option, $prop_id, $type, $producer_id, $order, $price_id, $time) {
 				$r = null;
 
 				Prices::checkSynonyms($pos, $option);
 
-				
+
 				$obj = [
 					'option' => $option,
 					'name' => $name,
@@ -385,19 +396,19 @@ class Prices {
 					$ans['Позиции в прайсе игнорируется в результате обработки'][] = $pos;
 					return $r;
 				}
-				
+
 				Event::tik('Showcase-prices.onload');
 				$res = Event::fire('Showcase-prices.onload', $obj); //В событии дописываем нужное свойство которое уже есть в props
 				if ($res === false) {
 					$ans['Позиции в прайсе игнорируется в результате обработки'][] = $pos;
 					return $r;
 				}
-				
+
 				$value = $pos[$option['priceprop']];
 				if (!empty($option['cleararticle']) && $option['producer_nick']) {
 					$value = str_ireplace($option['producer_nick'], '', $value); //Удалили из кода продусера
 				}
-				
+
 				list($c, $modified, $mposs) = Prices::updateProps($type, $props, $pos, $price_id, $order, $producer_id, $prop_id, $value, $name, $time);
 				$ans['Принято позиций прайса к изменению в каталоге']++;
 				$ans['Изменено позиций в каталоге']+=$modified;
@@ -408,27 +419,27 @@ class Prices {
 					$ans['Найдено соответствий'][] = $value;
 				}
 				if ($c > 1) $ans['Дубли позиций по ключу прайса в каталоге'][] = $value;
-				
+
 				$ans['Изменено моделей в каталоге'] = array_merge($ans['Изменено моделей в каталоге'], $mposs); //Включая дубли по ключу в каталоге
 				return $r;
 			});
 		}
 		if ($producer_id) {
-			$ans['Количество позиций в каталоге'] = Data::col('
-				SELECT count(i.item_num) 
+			$ans['Количество позиций в каталоге'] = Data::col('SELECT
+				count(i.item_num)
 				FROM showcase_items i, showcase_models m
 				WHERE m.model_id = i.model_id and m.producer_id = :producer_id
 			',[':producer_id' => $producer_id]);
 
 			//У всех позиций добавляется свойство Прайс, даже если ничего не внесено
-			$ans['Ошибки каталога'] = Data::all('
-				SELECT * from (
+			$ans['Ошибки каталога'] = Data::all('SELECT
+				 * from (
 					SELECT p.producer, m.article, max(mv.price_id) as price_id
 					FROM showcase_items i
 					LEFT JOIN showcase_iprops mv on (mv.model_id = i.model_id and mv.item_num = i.item_num and mv.price_id = :price_id)
 					LEFT JOIN showcase_models m on m.model_id = i.model_id
 					LEFT JOIN showcase_producers p on m.producer_id = p.producer_id
-					
+
 					WHERE m.producer_id = :producer_id
 					GROUP BY i.model_id, i.item_num
 				) t WHERE t.price_id is null
@@ -443,50 +454,50 @@ class Prices {
 			GROUP BY i.model_id, i.item_num) t WHERE t.price_id is null
 			', [':price_id' => $option['price_id']]);
 		}
-		
+
 		$ans['Ошибки каталога'] = array_reduce($ans['Ошибки каталога'], function ($ak, $row){
 			$str = $row['producer'].' '.$row['article'];
 			$ak[] = $str;
 			return $ak;
 		},[]);
-		
+
 		$duration = (time() - $time);
-		
+
 		foreach($ans as $i=>$val){
 			if (is_array($ans[$i]) && sizeof($ans[$i]) > 1000) $ans[$i] = sizeof($ans[$i]);
 		}
 
 		$jsonans = Load::json_encode($ans);
-		
+
 		$r = Data::exec('UPDATE showcase_prices SET `time` = from_unixtime(?), `duration` = ?, `count` = ?, ans = ? WHERE price_id = ?', [$time, $duration, $ans['Изменено позиций в каталоге'], $jsonans, $price_id]);
 		$db->commit();
 		return $ans;
 	}
-	
+
 	public static function deleteProp($model_id, $item_num, $prop) {
 		$prop_id = Data::initProp($prop);
 		if (!$prop_id) return;
 		//foreach (Data::$types as $type) {
 		$oldorder = Db::col('SELECT `order` from showcase_iprops where model_id = ? and item_num = ? and prop_id =?', [$model_id, $item_num, $prop_id]);
-		Data::exec('DELETE FROM showcase_iprops WHERE model_id = ? and item_num = ? and prop_id =?', 
-			[$model_id, $item_num, $prop_id]);	
+		Data::exec('DELETE FROM showcase_iprops WHERE model_id = ? and item_num = ? and prop_id =?',
+			[$model_id, $item_num, $prop_id]);
 		//}
 		return $oldorder;
 	}
 	public static function actionRemove($name, $src, $time = false) {
 		if (!$time) $time = time();
-		
+
 		$price_id = Data::col('SELECT pr.price_id FROM showcase_prices pr WHERE pr.name = ?', [$name]);
 		if (!$price_id) return;
 
 		Data::exec('UPDATE showcase_models m
 			LEFT JOIN showcase_iprops i on (i.model_id = m.model_id)
-			SET m.time = from_unixtime(?) 
+			SET m.time = from_unixtime(?)
 			WHERE i.price_id = ?', [$time, $price_id]);
 
-		Data::exec('DELETE t FROM showcase_iprops t WHERE t.price_id = ?', [$price_id]);	
+		Data::exec('DELETE t FROM showcase_iprops t WHERE t.price_id = ?', [$price_id]);
 
-		
+
 
 		if (FS::is_file($src)) { //ФАйл есть запись остаётся
 			Data::exec('UPDATE showcase_prices SET time = null WHERE name = ?', [$name]);
@@ -496,21 +507,21 @@ class Prices {
 	}
 	public static function getOptions($filename = false) {//3 пересечения Опциии, Файлы, БазаДанных
 		$list = Data::getOptions('prices');
-	
+
 		$filelist = Data::getFileList(Showcase::$conf['prices']);
-		
+
 		foreach ($filelist as $name => $val) { // По файлам
 			if (!isset($list[$name])) $list[$name] = array();
 			$list[$name] += $filelist[$name];
 			$list[$name]['isfile'] = true;
 		}
 
-		$savedlist = Data::fetchto('SELECT price_id, unix_timestamp(time) as time, `order`, duration, name, `count` 
+		$savedlist = Data::fetchto('SELECT price_id, unix_timestamp(time) as time, `order`, duration, name, `count`
 			FROM showcase_prices','name');
 		foreach ($savedlist as $name => $val) { // По файлам
 			if (!isset($list[$name])) {
-				//Есть запись в бд, но нет файла. 
-				//Надо проверить вносился ли раньеш файл, которого нет. 
+				//Есть запись в бд, но нет файла.
+				//Надо проверить вносился ли раньеш файл, которого нет.
 				if (!$val['time']) {
 					Data::exec('DELETE FROM showcase_prices WHERE price_id = ?', [$val['price_id']]);
 					continue;
@@ -520,9 +531,9 @@ class Prices {
 			$list[$name] += $savedlist[$name];
 			//if (isset($list[$name]['ans'])) $list[$name]['ans'] = Load::json_decode($val['ans'], true);
 			if (!$savedlist[$name]['time']) continue;// Данные ещё не вносились
-			$list[$name]['isdata'] = true;	
+			$list[$name]['isdata'] = true;
 		}
-		
+
 		foreach ($list as $name => $opt) { // По опциям
 			$list[$name] += array(
 				'start' => 0,
@@ -546,11 +557,11 @@ class Prices {
 		}
 		/*
 		Конфиг прайса	(producer, isglob, isaccurate, catalogkeytpl, pricekeytpl, priceprop, catalogprop propisnumber в конфиге)
-	true, false		- pricekey_value глобальный, 
+	true, false		- pricekey_value глобальный,
 	true, true 		- pricekey_id по priceprop_id, catalogprop_id, глобальный поиск
 	false, false 	- pricekey_value уникальный для producer
 	false, true	 	- pricekey_id по priceprop_id, catalogprop_id, уникальный для producer
-	parse - заменяется с обновлением прайса, удаляется с пропажей прайса		
+	parse - заменяется с обновлением прайса, удаляется с пропажей прайса
 */
 		if ($filename) {
 			if (isset($list[$filename])) return $list[$filename];
@@ -578,7 +589,7 @@ class Prices {
 			if ($rule['lists'] && !in_array($sheetname, $rule['lists'])) {
 				unset($data[$sheetname]);
 				continue;
-			} 
+			}
 			if (in_array($sheetname, $rule['ignore'])) {
 				unset($data[$sheetname]);
 				continue;
@@ -591,7 +602,7 @@ class Prices {
 			*/
 			foreach ($data as $sheetname => $sheet) {
 				foreach ($sheet as $index => $row) {
-					
+
 					if (sizeof($row)>2 && isset($data[$sheetname][$index+1])) {
 						$data[$sheetname][$index+1] = $data[$sheetname][$index+1] + $data[$sheetname][$index];
 						ksort($data[$sheetname][$index+1]);
@@ -602,7 +613,7 @@ class Prices {
 			}
 		}
 
-		
+
 
 		foreach ($data as $sheetname => $sheet) {
 			if (isset($rule['starts'][$sheetname])) $start = $rule['starts'][$sheetname];
@@ -617,7 +628,7 @@ class Prices {
 			foreach ($data as $name => $list) {
 				$head = array_shift($list);
 				if (!$head) continue;
-				
+
 				foreach ($head as $i => $val) {
 					$head[$i] = array_shift($rule['head']);
 				}
@@ -625,7 +636,7 @@ class Prices {
 			}
 		}
 	}
-	public static function checkSynonyms(&$pos, $rule) 
+	public static function checkSynonyms(&$pos, $rule)
 	{
 
 		if (isset($rule['synonyms'])) {

@@ -20,7 +20,7 @@ class Data {
 	public static function timer($msg = 'метка') {
 		$t =  microtime(true);
 		if (!Data::$timer) Data::$timer = $t;
-		if (!Data::$timerprev) Data::$timerprev = $t;		
+		if (!Data::$timerprev) Data::$timerprev = $t;
 		$begin = round(($t - Data::$timer) * 1000);
 		$prev = round(($t - Data::$timerprev) * 1000);
 		Data::$timerprev = $t;
@@ -99,7 +99,7 @@ class Data {
 	}
 	public static function loadShowcaseConfig(){
 		$opt = Load::loadJSON(Showcase::$conf['jsonoptions']);
-		
+
 		if(!$opt) $opt = [];
 		$opt += array(
 			'catalog'=>[],
@@ -112,7 +112,7 @@ class Data {
 			'props'=>[],
 			'groups'=>[],
 			'filters'=>[],
-			'values'=>[]	
+			'values'=>[]
 		);
 		$opt['filters'] += [
 			'buttons' => [],
@@ -120,10 +120,10 @@ class Data {
 			'props' => [],
 			'order' => 'name'
 		];
-		
+
 		//Data::initPropNick($opt['files']);
 		Data::initPropNick($opt['values']);
-		
+
 		$opt['justonevalue'][] = 'Цена';
 		$opt['justonevalue'][] = 'Старая цена';
 		$opt['justonevalue'][] = 'discount';
@@ -133,7 +133,7 @@ class Data {
 		$opt['numbers'][] = 'discount';
 		$opt['numbers'][] = 'Старая цена';
 		Data::initPropNick($opt['numbers']);
-		
+
 
 		$opt['texts'][] = 'Файлы';
 		$opt['texts'][] = 'Фото';
@@ -142,12 +142,12 @@ class Data {
 
 		$opt['texts'][] = 'Описание';
 		$opt['texts'][] = 'Наименование';
-		
+
 		foreach (Data::$files as $f) $opt['texts'][] = $f; //Все пути текстовые
 		Data::initPropNick($opt['texts']);
 
-		
-		
+
+
 		//Описание по умаолчанию для некоторых свойств
 		$props = [
 			'producer'=>[
@@ -187,7 +187,7 @@ class Data {
 			if (!isset($opt['props'][$n])) $opt['props'][$n] = [];
 			$opt['props'][$n] += $prop;
 		}
-		
+
 		//Описание для каждой группы
 		$keys = [];
 		foreach ($opt['groups'] as $k => $v) {
@@ -211,7 +211,7 @@ class Data {
 		Event::fire('Showcase.onconfig', $opt);
 		return $opt;
 	}
-	
+
 	public static function getOptions($part = false){
 		$opt = Data::loadShowcaseConfig();
 		Data::prepareOptionPart($opt['catalog']);
@@ -247,7 +247,7 @@ class Data {
 			if ($file[0] == '.') return;
 			if ($file[0] == '~') return;
 			if (!FS::is_file($folder.$file)) return;
-			
+
 			$file = Path::toutf($file);
 			$fd = Load::nameInfo($file);
 			$fd['mtime'] = FS::filemtime($folder.$file);
@@ -263,11 +263,11 @@ class Data {
 	public static function initProducer($value) {
 		if (!$value) return null;
 		$nick = Path::encode($value);
-		
+
 		$key = 'initProducer:'.$nick;
 		if (isset(Data::$once[$key])) return Data::$once[$key];
 
-		
+
 		$row = Data::fetch('SELECT producer_id, producer, producer_nick from showcase_producers where producer_nick = ?', [$nick]);
 		if ($row) {
 			if ($row['producer'] != $value || $row['producer_nick'] != $nick) {
@@ -281,7 +281,7 @@ class Data {
 			[$value, $nick]
 		);
 	}
-	
+
 	public static function actionClearAll() {
 		Data::exec('TRUNCATE `showcase_prices`');
 		Data::exec('TRUNCATE showcase_catalog');
@@ -303,7 +303,7 @@ class Data {
 		$nick = Path::encode($value);
 		$id = Data::col('SELECT '.$strid.' from '.$table.' where '.$strnick.' = ?', [$nick]);
 		if ($id) return Data::$once[$key] = $id;
-		return false;	
+		return false;
 	}
 	public static function initValue($value) {
 		$key = 'initValue:'.$value;
@@ -320,18 +320,18 @@ class Data {
 		return Data::$once[$key] = Data::lastId(
 			'INSERT INTO '.$table.' ('.$strval.','.$strnick.') VALUES(?,?)',
 			[$value, $nick]
-		);	
+		);
 	}
 	public static function initProp($prop, $type = false) {
 		if ($type == 'article') return false;
-		
-	
+
+
 
 		if (!$prop) return null;
 
 		$key = 'initProp:'.$prop.':'.$type;
 		if (isset(Data::$once[$key])) return Data::$once[$key];
-		
+
 		$nick = Path::encode($prop);
 
 		$row = Data::fetch('SELECT prop_id, type from showcase_props where prop_nick = ?', [$nick]);
@@ -347,9 +347,9 @@ class Data {
 		return Data::$once[$key] = Data::lastId(
 			'INSERT INTO showcase_props (prop, prop_nick, type) VALUES(?,?,?)',
 			[$prop, $nick, $type]
-		);	
+		);
 	}
-	
+
 	public static function checkType($prop) {
 		$options = Data::loadShowcaseConfig();
 		$prop_nick = Path::encode($prop);
@@ -358,10 +358,10 @@ class Data {
 		if (in_array($prop_nick, $options['numbers'])) return 'number';
 		if (in_array($prop_nick, $options['texts'])) return 'text';
 		if (in_array($prop_nick, $options['values'])) return 'value';
-		
+
 		if (in_array($prop_nick, $options['filters']['groups'])) return 'value';
 		if (in_array($prop_nick, $options['filters']['buttons'])) return 'value';
-		
+
 		return 'value';
 	}
 	public static function clearProp($prop_id) {
@@ -382,7 +382,7 @@ class Data {
 			Data::clearProp($p['prop_id']);
 
 		}
-		
+
 	}
 	public static function fileType($src) {
 		$fd = Load::pathInfo($src);
@@ -397,15 +397,15 @@ class Data {
 				$prop_id = Data::initProp($type, 'text'); //Удаляем все параметры связаные с файлами images, files, texts
 				$r = Data::exec('DELETE mv FROM showcase_iprops mv, showcase_models m, showcase_producers pr
 					WHERE m.model_id = mv.model_id and m.producer_id = pr.producer_id and pr.producer_nick = ?
-					and mv.prop_id = ?', [$producer_nick, $prop_id]);	
+					and mv.prop_id = ?', [$producer_nick, $prop_id]);
 			}
 		} else {
 			foreach (Data::$files as $type) {
 				$prop_id = Data::initProp($type, 'text'); //Удаляем все параметры связаные с файлами images, files, texts
-				Data::exec('DELETE FROM `showcase_iprops` where prop_id = ?', [$prop_id]);	
+				Data::exec('DELETE FROM `showcase_iprops` where prop_id = ?', [$prop_id]);
 			}
 		}
-		
+
 	}
 	public static function applyIllustracii($producer_nick) {
 		$prop_id = Data::initProp('Иллюстрации','text');
@@ -415,7 +415,7 @@ class Data {
 				INNER JOIN showcase_producers pr on (m.producer_id = pr.producer_id and pr.producer_nick = ?)
 				INNER JOIN showcase_props p on (mv.prop_id = p.prop_id and p.prop_id = ?)
 			',[$producer_nick, $prop_id]);
-			
+
 		} else {
 			$images = Data::all('SELECT mv.text, mv.model_id, mv.item_num FROM showcase_iprops mv
 				INNER JOIN showcase_props p on mv.prop_id = p.prop_id
@@ -448,7 +448,7 @@ class Data {
 		if ($name) {
 			$options = Data::getOptions('catalog');
 			if (isset($options[$name]['producer'])) {
-				$producer_nick = $options[$name]['producer'];	
+				$producer_nick = $options[$name]['producer'];
 			} else {
 				$producer_nick = $name;
 			}
@@ -466,13 +466,13 @@ class Data {
 		$key = 'actionAddFiles:'.$producer_nick;
 		if (isset(Data::$once[$key])) return Data::$once[$key];
 
-		
+
 		$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$producer_nick]);
-	
+
 		$ans = [];
 		if ($producer_nick) {
 			if ($producer_id) {
-				$ans['Поиск'] = 'По производителю '.$producer_nick;	
+				$ans['Поиск'] = 'По производителю '.$producer_nick;
 			} else {
 				$ans['Поиск'] = 'Производитель не найден '.$producer_nick;
 				return $ans;
@@ -482,14 +482,14 @@ class Data {
 		}
 		$list = [];
 		Data::addFilesFaylov($list, $producer_nick); //Файлы
-		
+
 
 		Data::addFilesFS($list, $producer_nick); //Из папок
-		
+
 
 		Data::addFilesSyns($list, $producer_nick); //Синонимы Фото и Файл для поиска
-		
-		
+
+
 		$db = &Db::cpdo();
 		$db->beginTransaction();
 		Data::removeFiles($producer_nick);
@@ -502,16 +502,16 @@ class Data {
 			return array_reduce($arts, function ($ak, $items) {
 				return array_reduce($items, function ($ak, $items) {
 					return array_merge($ak, $items);
-				},$ak);		
+				},$ak);
 			},$ak);
 		}, []);
 		$ans['Файлов'] = sizeof($ans['Бесхозные файлы']);
 
 		foreach ($list as $prod => $arts) {
-			
+
 			$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$prod]);
 			foreach ($arts as $art => $items) {
-				
+
 				$altart = str_ireplace(mb_strtolower($prod), '', $art); //Удалили из артикула продусера
 				$altart = Path::encode($altart);
 				$model_id = Data::col('SELECT m.model_id
@@ -520,8 +520,8 @@ class Data {
 
 				if (!$model_id) continue;//Имя файла как артикул не зарегистрировано, даже если удалить производителя из артикула
 				$values = [];
-				
-				if (!empty($items[0])) { 
+
+				if (!empty($items[0])) {
 					//Картинки для всех позиций. Но мы не знаем сколько там позиций
 					//Добавляем для правильной сортировки
 					$files0 = $items[0];
@@ -536,14 +536,14 @@ class Data {
 				foreach ($items as $item_num => $files) {
 					$order = 0;
 					//$files = array_unique($files);
-					
+
 					ksort($files);
 					foreach ($files as $src => $type) { //Все эти файлы относятся к найденной модели
 						$order++;
 						//$value_id = Data::initValue($src);
 						$ans['Найденные файлы'][$src] = true;
 						unset($ans['Бесхозные файлы'][$src]);
-						
+
 						$prop_id = Data::initProp($type, 'text');
 						if ($item_num) {
 							Data::exec(
@@ -570,7 +570,7 @@ class Data {
 				}
 			}
 		}
-		
+
 		$ans['Бесхозные файлы'] = array_keys($ans['Бесхозные файлы']);
 		$ans['Найденные файлы'] = array_keys($ans['Найденные файлы']);
 
@@ -606,7 +606,7 @@ class Data {
 		}, $icons);
 
 		$images_id = Data::initProp('images');
-		
+
 		$root = Data::getGroups();
 		$conf = Showcase::$conf;
 		$groups = 0;
@@ -615,7 +615,7 @@ class Data {
 			$groups++;
 			//Ищим свою картинку
 			$group['icon'] = null;
-			
+
 			$icon = false;
 			if (!$icon) {
 				$nick = $group['group_nick'];
@@ -631,7 +631,7 @@ class Data {
 					unset($icons[$nick]);
 				}
 			}
-			
+
 			/*if (!$icon) {
 				$icon = Rubrics::find(Showcase::$conf['icons'], $group['group_nick'], Data::$images);
 			}
@@ -646,7 +646,7 @@ class Data {
 			} else {
 				//Ищим картинку своей позииции
 				$row = Data::fetch('SELECT g.group_nick, g.group, g.group_id, mv.text as icon from showcase_groups g
-					inner join showcase_models m on (m.group_id = g.group_id)	
+					inner join showcase_models m on (m.group_id = g.group_id)
 					inner join showcase_iprops mv on (mv.model_id = m.model_id and mv.prop_id = :images_id)
 					where g.group_id = :group_id
 					', [':images_id' => $images_id, ':group_id' => $group['group_id']]);
@@ -666,16 +666,16 @@ class Data {
 
 				}
 			}
-			
+
 			Data::exec('UPDATE showcase_groups SET icon = ? WHERE group_id = ?',
 				[$group['icon'], $group['group_id']]
 			);
-			
+
 			$r = null;
 			return $r;
 		}, true);
 
-		
+
 		$list = Data::all('SELECT producer_nick, producer FROM showcase_producers');
 		$logos = 0;
 		foreach ($list as $k => $prod) {
@@ -741,7 +741,7 @@ class Data {
 		$ans['Всего иконок'] = sizeof($icons);
 		$ans['Всего производителей'] = sizeof($list);
 		$ans['Всего логотипов'] = $logos;
-		
+
 		return Data::$once[$key] = $ans;
 
 	}
@@ -758,7 +758,7 @@ class Data {
 			return Data::lastId(
 				'INSERT INTO '.$table.' ('.$strval.','.$strnick.') VALUES(?,?)',
 				[$value, $nick]
-			);	
+			);
 		}, [$value]);
 	}*/
 	public static function dirNickFolders($src){
@@ -777,7 +777,7 @@ class Data {
 		$key = 'getProdFS:';
 		if (isset(Data::$once[$key])) return Data::$once[$key];
 
-		
+
 		$prodsfs = [];
 		foreach (Data::$files as $type) {
 			if (empty(Showcase::$conf[$type])) continue;
@@ -791,7 +791,7 @@ class Data {
 	}
 	public static function addFilesFS(&$list, $prod) {
 		$prodsfs = Data::getProdFS();
-		
+
 		if ($prod) {
 			$prod_nick = Path::encode($prod);
 			if (empty($prodsfs[$prod_nick])) return;
@@ -807,7 +807,7 @@ class Data {
 		//echo '<pre>';
 		//print_r($list);
 		//exit;
-		//foreach ($list as $prod => $arts) if (!$arts) unset($list[$prod]); 
+		//foreach ($list as $prod => $arts) if (!$arts) unset($list[$prod]);
 	}
 	public static function addFilesFStype($dir, &$list, $prod, $type) { //files, texts, images, videos
 		if (!Path::theme($dir)) return; //Подходят только папки
@@ -827,7 +827,7 @@ class Data {
 	public static function indexdir($dir, &$list) {
 		FS::scandir($dir, function ($file) use (&$list, $dir) {
 			$fd = Load::nameInfo($file);
-			if (in_array($fd['ext'], Data::$iexts)) return;	
+			if (in_array($fd['ext'], Data::$iexts)) return;
 			$src = $dir.$file;
 			if (!Path::theme($src.'/')) {
 				$type = Data::fileType($src);
@@ -844,12 +844,12 @@ class Data {
 			$art = mb_strtolower($fart);
 			$art = Path::encode($art);
 			if (in_array($art, Data::$files)) return;
-				
+
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
 			$list[$prod][$art][0][$artdir] = 'folders';
 			Data::indexdir($artdir, $list[$prod][$art][0]);
 		});
-		
+
 		foreach (Data::$files as $type) {
 			if ($type == 'folders') {
 				FS::scandir($dir.$type.'/', function ($userdir) use ($dir, $type, &$list, $prod) {
@@ -865,7 +865,7 @@ class Data {
 				}
 			}
 		}
-		
+
 		/*$index = Data::getIndex($dir.'texts/',  Data::$texts);
 		foreach ($index as $art => $texts) {
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
@@ -873,14 +873,14 @@ class Data {
 			$list[$prod][$art][0] += $texts;
 		}*/
 
-		
+
 		/*$index = Data::getIndex($dir.'files/');
 		foreach ($index as $art => $files) {
 			if (!isset($list[$prod][$art])) $list[$prod][$art] = [0=>[]];
 			foreach ($files as $src) {
 				$list[$prod][$art][0][$src] = Data::fileType($src);
 			}
-			
+
 		}*/
 	}
 	/*public static function addFilesFSimages(&$list, $prod) {
@@ -912,9 +912,9 @@ class Data {
 				INNER JOIN showcase_models m ON m.model_id = mv.model_id
 				INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
 				WHERE mv.prop_id = ? ',
-			[$fayliid]);	
+			[$fayliid]);
 		}
-		
+
 		foreach ($fayli as $fayl) {
 			$prod_nick = $fayl['producer_nick'];
 			$art = mb_strtolower($fayl['article_nick']);
@@ -927,9 +927,9 @@ class Data {
 			if (preg_match('/http::/',$fayl['value'])) {
 				$list[$prod_nick][$art][$num][$src] = 'images';
 				continue;
-			} 
+			}
 			$src = $dir.$fayl['value'];
-			
+
 			if (!Path::theme($src)) $src = $fayl['value'];
 			if (!Path::theme($src)) {
 				if (Path::theme(Showcase::$conf['tables'].$src)) {
@@ -938,7 +938,7 @@ class Data {
 					continue; //В Файлы путь указывается от корня data
 				}
 			}
-			
+
 			if (FS::is_dir($src)) {
 				$list[$prod_nick][$art][$num][$src] = 'folders';
 				$fs = [];
@@ -957,16 +957,16 @@ class Data {
 	public static function addFilesSyns(&$list, $producer) {
 		//В list уже есть все файлы, нужно их привязать к артикулам на которые есть синонимы в Фото и Файл
 		$fotoid = Data::initProp('Фото', 'value');//Имя файла который считать images. producer не отменяется
-		
+
 		//!!!!Имя файла может содержать имя производителя
 		$rows = Data::all('SELECT pr.producer_nick, pr.producer, m.article, m.article_nick, mv.item_num, v.value from showcase_iprops mv
 			INNER JOIN showcase_values v ON v.value_id = mv.value_id
 			INNER JOIN showcase_models m ON mv.model_id = m.model_id
 			INNER JOIN showcase_producers pr ON pr.producer_id = m.producer_id
 			WHERE prop_id = ?',[$fotoid]);
-		
+
 		$fotos = []; //[$producer][$fimage] = ['article', 'item_num'];
-		
+
 		foreach ($rows as $row) {
 			if (!isset($fotos[$row['producer_nick']])) $fotos[$row['producer_nick']] = [];
 			$val = mb_strtolower(Path::encode($row['value']));
@@ -974,7 +974,7 @@ class Data {
 			$fotos[$row['producer_nick']][$val][] = $row;
 		}
 
-		
+
 		foreach ($fotos as $prod => $artsyns) {
 			foreach ($artsyns as $syn => $syns) {
 				if (empty($list[$prod][$syn])) continue;
@@ -999,7 +999,7 @@ class Data {
 			WHERE prop_id = ?',[$faylid]);
 		$fayls = [];
 
-		
+
 
 		foreach ($rows as $row) {
 			if (!isset($fayls[$row['producer_nick']])) $fayls[$row['producer_nick']] = [];
@@ -1042,7 +1042,7 @@ class Data {
 				$name1 = Data::encode($name);
 				if (!$name1) continue;
 				//$name2 = mb_strtolower(Path::encode($name)); //Для фото, когда у itemoв свои номера
-				
+
 				if (empty($list[$name1])) $list[$name1] = array();
 				$list[$name1][] = $src;
 
@@ -1054,14 +1054,14 @@ class Data {
 	}
 	public static $once = array();
 	public static function getGroups($group_nick = false) {
-		
+
 		$key = 'getGroups:'.$group_nick;
 		if (isset(Data::$once[$key])) return Data::$once[$key];
 
-		
+
 
 		$cost_id = Data::initProp("Цена");
-		
+
 		$list = Data::fetchto('
 			SELECT g.group_id, g.parent_id, g.group_nick, g.icon, g.order, g.group, c.name as catalog, count(distinct m.model_id) as count, max(m.model_id) as notempty, min(mn.number) as min, max(mn.number) as max, g2.group_nick as parent_nick, g2.group as parent FROM showcase_groups g
 			left JOIN showcase_models m ON g.group_id = m.group_id
@@ -1071,7 +1071,7 @@ class Data {
 			GROUP BY group_nick
 			ORDER by c.order, g.order
 		','group_nick',[$cost_id]);
-		
+
 		$parents = [];
 		foreach ($list as $i=>&$group) {
 			if(!$group['notempty']) $group['count'] = 0;
@@ -1079,13 +1079,13 @@ class Data {
 			if (empty($parent[$group['parent_nick']])) $parent[$group['parent_nick']] = [];
 			$parents[$group['parent_nick']][] = &$group;
 		}
-		
+
 		$p = null;
 		foreach ($list as $i => &$group) {
 			if (!isset($parents[$group['group_nick']])) continue;
 			$group['childs'] = $parents[$group['group_nick']];
 		}
-		
+
 		if (!$parents || !isset($parents[''])) return array('childs'=>[], 'group_nick'=>false, 'group'=>'Группа не найдена');
 		$childs = $parents[''];
 		$root = $childs[0];
@@ -1110,21 +1110,21 @@ class Data {
 			foreach ($grs as $g) {
 				if (isset($opt['groups'][$g])) $group['showcase'] += $opt['groups'][$g];
 			}
-			
-			
+
+
 			$group['sum'] = $group['count'];
 			if (isset($group['childs'])) {
 				foreach ($group['childs'] as $child) {
 					$group['sum'] += $child['sum'];
 				}
-				
+
 			}
 			$r = null;
 			return $r;
 		}, true);
-		
-		
-		
+
+
+
 		$root['path'] = [];
 		if ($group_nick) {
 			return Data::$once[$key] = Xlsx::runGroups($root, function &($group) use ($group_nick){
@@ -1145,7 +1145,7 @@ class Data {
 		if (empty($skip['Без цен'])) $skip['Без цен'] = 0;
 		if (empty($skip['Без прайса'])) $skip['Без прайса'] = 0;
 		//if (empty($skip['Ошибки каталога'])) $skip['Ошибки каталога'] = 0;
-		
+
 		$images = $prod['Без картинок'] - $skip['Без картинок'];
 		$costs = $prod['Без цен'] - $skip['Без цен'];
 		$tables = $prod['Без прайса'] - $skip['Без прайса'];
@@ -1163,8 +1163,8 @@ class Data {
 		$opt = Data::getOptions();
 		if ($producer_nick) {
 
-			$list = Data::fetch('SELECT p.producer, p.producer_id, p.logo, p.producer_nick, 
-				GROUP_CONCAT(DISTINCT c.name SEPARATOR \', \') as catalog, 
+			$list = Data::fetch('SELECT p.producer, p.producer_id, p.logo, p.producer_nick,
+				GROUP_CONCAT(DISTINCT c.name SEPARATOR \', \') as catalog,
 				GROUP_CONCAT(DISTINCT pp.name SEPARATOR \', \') as price
 				from showcase_models m
 				INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = :producer_nick)
@@ -1174,7 +1174,7 @@ class Data {
 				GROUP BY producer',[':producer_nick'=>$producer_nick,':cost_id'=>$cost_id]);
 			if (!$list) $list = [];
 
-			
+
 			$list['count'] = Data::col('SELECT count(*) FROM showcase_models m
 				INNER JOIN showcase_producers p on (p.producer_id = m.producer_id and p.producer_nick = ?)
 				',[$producer_nick]);
@@ -1188,9 +1188,9 @@ class Data {
 			// 	left join showcase_models m on (m.model_id = i.model_id)
 			// 	left join showcase_producers pr on (m.producer_id = pr.producer_id)
 			// 	left join showcase_iprops ip on (i.model_id = ip.model_id and i.item_num = ip.item_num)
-			// 	WHERE 
+			// 	WHERE
 			// 		ip.price_id is not null
-			// 		and pr.producer_nick = :producer_nick	
+			// 		and pr.producer_nick = :producer_nick
 			// 	',[':producer_nick' => $producer_nick]);
 			// $list['С прайсом'] = $costs;
 
@@ -1198,18 +1198,18 @@ class Data {
 				left join showcase_models m on (m.model_id = i.model_id)
 				left join showcase_producers pr on (m.producer_id = pr.producer_id)
 				left join showcase_iprops ip on (i.model_id = ip.model_id and i.item_num = ip.item_num and ip.prop_id = :cost_id)
-				WHERE 
+				WHERE
 					ip.number is null
-					and pr.producer_nick = :producer_nick	
+					and pr.producer_nick = :producer_nick
 				',[':cost_id' => $cost_id,':producer_nick' => $producer_nick]);
 			$list['Без цен'] = $costs;
 
-			
 
-			/*$costs = Data::col('SELECT count(distinct m.model_id) FROM showcase_items i 
+
+			/*$costs = Data::col('SELECT count(distinct m.model_id) FROM showcase_items i
 				left join showcase_models m on (i.model_id = m.model_id)
 				left join showcase_producers pr on (m.producer_id = pr.producer_id)
-				
+
 				left join showcase_iprops n on (n.model_id = i.model_id and i.item_num = n.item_num and n.prop_id = :cost_id)
 				where n.number is null and pr.producer_nick = :producer_nick
 				',[':cost_id'=>$cost_id,':producer_nick'=>$producer_nick]);
@@ -1225,7 +1225,7 @@ class Data {
 				',[':image_id'=>$image_id,':producer_nick'=>$producer_nick]);
 			$list['Без картинок'] = $list['count'] - $images;
 
-			
+
 			if (isset($opt['producers'][$producer_nick])) {
 				$list += $opt['producers'][$producer_nick];
 			}
@@ -1244,7 +1244,7 @@ class Data {
 			$list['Без прайса'] = $list['count'] - $prices;
 			$list['С прайсом'] = $prices;
 
-			
+
 			//Есть в прайсе, но нет в каталоге
 			/*$options = Prices::getList();
 			$list['Ошибки каталога'] = 0;
@@ -1257,10 +1257,10 @@ class Data {
 			Data::checkCls($list);
 
 			return $list;
-			
+
 		} else {
 			$list = Data::all('SELECT p.producer, p.logo, p.producer_nick, count(distinct m.model_id) as `count`,
-				GROUP_CONCAT(DISTINCT c.name SEPARATOR \', \') as catalog, 
+				GROUP_CONCAT(DISTINCT c.name SEPARATOR \', \') as catalog,
 				GROUP_CONCAT(DISTINCT pp.name SEPARATOR \', \') as price
 				from showcase_models m
 				INNER JOIN showcase_producers p on p.producer_id = m.producer_id
@@ -1285,7 +1285,7 @@ class Data {
 
 			foreach($list as $i => $row) {
 				if (empty($costs[$row['producer_nick']])) $list[$i]['Без цен'] = 0;
-				else $list[$i]['Без цен'] = $costs[$row['producer_nick']]['count'];	
+				else $list[$i]['Без цен'] = $costs[$row['producer_nick']]['count'];
 			}
 
 			$images = Data::fetchto('SELECT pr.producer_nick, count(DISTINCT m.model_id) as count FROM showcase_models m
@@ -1295,7 +1295,7 @@ class Data {
 				','producer_nick', [':image_id'=>$image_id]);
 			foreach($list as $i => $row) {
 				if (isset($images[$row['producer_nick']])) {
-					$list[$i]['Без картинок'] = $listcost[$row['producer_nick']]['count'] - $images[$row['producer_nick']]['count'];	
+					$list[$i]['Без картинок'] = $listcost[$row['producer_nick']]['count'] - $images[$row['producer_nick']]['count'];
 				} else {
 					$list[$i]['Без картинок'] = $listcost[$row['producer_nick']]['count'];
 				}
@@ -1306,7 +1306,7 @@ class Data {
 				inner join showcase_iprops n on (n.model_id = m.model_id and n.prop_id = :price_id)
 				GROUP BY m.producer_id
 				','producer_nick', [':price_id'=>$price_id]);
-			
+
 			foreach($list as $i => $row) {
 				if (isset($prices[$row['producer_nick']])) {
 					$list[$i]['Без прайса'] = $listcost[$row['producer_nick']]['count'] - $prices[$row['producer_nick']]['count'];
@@ -1316,7 +1316,7 @@ class Data {
 					$list[$i]['С прайсом'] = 0;
 				}
 			}
-			
+
 
 
 
@@ -1349,11 +1349,11 @@ class Data {
 
 			return $list;
 		}
-		
+
 	}
 	public static function getModels() {
-		
-		$list = Data::all('SELECT p.producer, p.producer_nick, g.group, g.group_nick, m.article_nick, m.article, count(*) as `count`, c.name  as catalog, 
+
+		$list = Data::all('SELECT p.producer, p.producer_nick, g.group, g.group_nick, m.article_nick, m.article, count(*) as `count`, c.name  as catalog,
 			n.number as Цена,
 			iv.value as img
 			FROM showcase_models m
@@ -1365,7 +1365,7 @@ class Data {
 			LEFT JOIN showcase_props ps2 on (ps2.prop_nick = "images")
 			LEFT JOIN showcase_iprops im on (im.model_id = m.model_id and im.prop_id = ps2.prop_id)
 			LEFT JOIN showcase_values iv on (iv.value_id = im.value_id)
-			
+
 			LEFT JOIN showcase_items i on i.model_id = m.model_id
 			INNER JOIN showcase_catalog c on c.catalog_id = m.catalog_id
 			GROUP BY m.model_id
