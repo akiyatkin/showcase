@@ -630,7 +630,7 @@ class Showcase
 			LEFT JOIN showcase_groups g on g.group_id = m.group_id
 			LEFT JOIN showcase_groups p on g.parent_id = p.group_id
 			LEFT JOIN showcase_producers pr on pr.producer_id = m.producer_id
-			LEFT JOIN showcase_iprops mn3 on (mn3.model_id = m.model_id and mn3.prop_id = :image_id)
+			LEFT JOIN showcase_iprops mn3 on (mn3.model_id = m.model_id and mn3.prop_id = :image_id and mn3.item_num = i.item_num)
 			' . $join . '
 			WHERE m.model_id = i.model_id ' . $grquery . ' ' . $prquery . ' ' . $no . '
 			GROUP BY m.group_id
