@@ -640,7 +640,6 @@ $meta->addAction('search', function () {
 	$md = Showcase::initMark($ans);
 	$ans['page'] = $this->get('p');
 	$count = 0;
-
 	if ($count) $md['count'] = $count;
 	if ($ans['page'] < 1) $ans['page'] = 1;
 	$ans['is'] = ''; //group producer search Что было найдено по запросу val (Отдельный файл is:change)
@@ -1075,10 +1074,11 @@ $meta->addAction('search', function () {
 		' . $limit . '
 		';
 
-
+	
 	$binds += [':cost_id' => $cost_id, ':nalichie_id' => $nalichie_id, ':image_id' => $image_id];
 
 	$models = Data::all($sql, $binds);
+	
 
 	$size = Data::col('SELECT FOUND_ROWS()');
 	$ans['count'] = (int) $size;
@@ -1107,15 +1107,16 @@ $meta->addAction('search', function () {
 		LEFT JOIN showcase_groups g on g.group_id = m.group_id
 		LEFT JOIN showcase_groups p on g.parent_id = p.group_id
 		LEFT JOIN showcase_producers pr on pr.producer_id = m.producer_id
-		LEFT JOIN showcase_iprops mn3 on (mn3.model_id = m.model_id and mn3.prop_id = :image_id)
-		LEFT JOIN showcase_iprops mn2 on (mn2.model_id = m.model_id and mn2.prop_id = :cost_id)
+		LEFT JOIN showcase_iprops mn3 on (mn3.model_id = m.model_id and mn3.prop_id = :image_id and mn3.item_num = i.item_num)
+		LEFT JOIN showcase_iprops mn2 on (mn2.model_id = m.model_id and mn2.prop_id = :cost_id and mn2.item_num = i.item_num)
 		' . $join . '
 		WHERE m.model_id = i.model_id ' . $grquery . ' ' . $prquery . ' ' . $no . '
 		GROUP BY m.group_id
 		';
 
-	
+
 	$groups = Data::all($sql, $groupbinds);
+
 	if (isset($groups[0]) && $groups[0]['group_id'] == $group_id) {
 		$childs = API::getChilds($groups, false);
 	} else {
@@ -1124,7 +1125,7 @@ $meta->addAction('search', function () {
 	
 	$ans['childs'] = $childs;
 	
-
+	
 
 
 	$showlist = $this->get('showlist') || !empty($group['options']['showlist']);	
