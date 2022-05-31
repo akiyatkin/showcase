@@ -459,7 +459,8 @@ $meta->addAction('filters', function () {
 						left join showcase_values v on v.value_id = mv.value_id
 						where '.$grwhere.' and v.value is not null
 						group by v.value_id
-						order by count DESC
+						/*order by count DESC*/
+						order by value
 						';
 						$values = Data::all($sql,[':prop_id' => $prop_id]);
 						
