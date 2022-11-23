@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS `showcase_models` (
 	`catalog_id` SMALLINT unsigned COMMENT '',
 	`time` DATETIME NULL DEFAULT NULL COMMENT '',
 	`group_id` SMALLINT unsigned NOT NULL COMMENT '',
-	`search` TEXT NOT NULL COLLATE latin1_bin COMMENT 'латиница после Path::encode слова разделены пробелом',
+	`search` TEXT NULL DEFAULT NULL COLLATE latin1_bin COMMENT 'латиница после Path::encode слова разделены пробелом',
 	FULLTEXT INDEX (`search`),
 	PRIMARY KEY (`model_id`),
 	UNIQUE INDEX (`producer_id`,`article_nick`),

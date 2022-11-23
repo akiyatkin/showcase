@@ -33,7 +33,6 @@ class Catalog {
 			Access::adminSetTime();
 		}
 		
-		
 		Catalog::init();
 		Prices::init();
 		
@@ -670,7 +669,8 @@ class Catalog {
 		$producer_id = Data::col('SELECT producer_id FROM showcase_producers where producer_nick = ?', [$producer_nick]);
 		
 		$row = Data::fetch('SELECT catalog_id, `order`, producer_id from showcase_catalog WHERE name = ?', 
-			[$name]);		
+			[$name]);
+		if (!$producer_id) $producer_id = null;
 		if ($row) {
 			if ($row['order'] != $order || $row['producer_id'] != $producer_id) {
 				Data::exec('UPDATE showcase_catalog SET `order` = ?, producer_id = ? WHERE catalog_id = ?', 
